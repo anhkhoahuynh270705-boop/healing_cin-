@@ -1,0 +1,73 @@
+HELP.md
+target/
+/data/
+
+# Local secrets and machine-specific Spring configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+application-secret.properties
+application-secrets.properties
+application-secrets.yml
+application-secrets.yaml
+application-private.properties
+application-private.yml
+application-private.yaml
+application-local.properties
+application-local.yml
+application-local.yaml
+application-*.local.properties
+application-*.local.yml
+application-*.local.yaml
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.secrets.json
+*credentials*.json
+*.token
+id_rsa*
+id_ed25519*
+
+# Local database exports and logs
+*.dump
+*.backup
+*.bak
+*.sql.gz
+*.log
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
