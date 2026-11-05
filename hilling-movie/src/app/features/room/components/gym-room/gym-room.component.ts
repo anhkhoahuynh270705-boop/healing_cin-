@@ -238,14 +238,18 @@ export class GymRoomComponent implements AfterViewInit, OnChanges, OnDestroy {
         this.resize();
         if (!this.frameId) this.frameId = requestAnimationFrame(this.draw);
       } else {
-        cancelAnimationFrame(this.frameId);
+        if (typeof cancelAnimationFrame !== 'undefined' && this.frameId) {
+          cancelAnimationFrame(this.frameId);
+        }
         this.frameId = 0;
       }
     }
   }
 
   ngOnDestroy(): void {
-    cancelAnimationFrame(this.frameId);
+    if (typeof cancelAnimationFrame !== 'undefined' && this.frameId) {
+      cancelAnimationFrame(this.frameId);
+    }
     this.resizeObserver?.disconnect();
     const viewport = this.viewportRef.nativeElement;
     viewport.removeEventListener('pointerdown', this.onPointerDown);

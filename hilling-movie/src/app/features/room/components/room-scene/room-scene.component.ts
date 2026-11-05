@@ -139,6 +139,9 @@ export class RoomSceneComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    // The prerendered server has no canvas animation or browser event APIs.
+    if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
+
     const canvas = this.canvasRef.nativeElement;
     this.ctx = canvas.getContext('2d')!;
     this.resizeObserver = new ResizeObserver(() => this.resizeCanvas());
@@ -201,12 +204,16 @@ export class RoomSceneComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    cancelAnimationFrame(this.frameId);
+    if (typeof cancelAnimationFrame !== 'undefined' && this.frameId) {
+      cancelAnimationFrame(this.frameId);
+    }
     this.resizeObserver?.disconnect();
     this.subscriptions.unsubscribe();
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
-    window.removeEventListener('blur', this.clearKeys);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keydown', this.onKeyDown);
+      window.removeEventListener('keyup', this.onKeyUp);
+      window.removeEventListener('blur', this.clearKeys);
+    }
   }
 
   private readonly clearKeys = (): void => this.keys.clear();
