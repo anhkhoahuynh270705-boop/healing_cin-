@@ -84,8 +84,10 @@ public class RoomService {
     @Transactional
     public RoomState join(String roomId, String sessionId, String clientId, String name, String avatar,
             Integer seat, Integer shirtColorIndex, Integer accessoryIndex, Integer hairColorIndex,
-            Integer ignoredVipTier, String userId, String gender, String shirtColor, Integer shirtTier) {
+            Integer ignoredVipTier, String userId, String gender, String shirtColor, Integer shirtTier,
+            String environment) {
         RoomEntity room = getRoom(roomId);
+        String safeEnvironment = safeEnvironment(environment);
         String safeName = name == null || name.isBlank() ? "Khách" : limit(name.strip(), 18);
         String safeAvatar = avatar != null && AVATARS.contains(avatar) ? avatar : "🧸";
         if (clientId != null && !clientId.isBlank()) {
@@ -95,6 +97,7 @@ public class RoomService {
         long count = guestRepository.countByRoomId(roomId);
         GuestSessionEntity guest = GuestSessionEntity.builder()
                 .id(sessionId).roomId(roomId).clientId(clientId).userId(userId)
+                .environment(safeEnvironment)
                 .name(safeName).avatar(safeAvatar).gender(validGender(gender) ? gender : "male")
                 .shirtColor(validShirtColor(shirtColor) ? shirtColor : "#9FADD9")
                 .shirtTier(validShirtTier(shirtTier))
@@ -110,10 +113,10 @@ public class RoomService {
             room.setHostId(sessionId);
         }
         if (seat != null && seat >= 0 && seat < SEAT_COUNT) {
-            assignSeat(roomId, guest, seat);
+            assignSeat(roomId, safeEnvironment, guest, seat);
         }
         roomRepository.save(room);
-        return snapshot(roomId);
+        return snapshot(roomId, safeEnvironment);
     }
 
     @Transactional(readOnly = true)
@@ -147,9 +150,11 @@ public class RoomService {
     @Transactional
     public RoomState snapshot(String roomId, String environment) {
         RoomEntity room = getRoom(roomId);
-        String trackId = playbackRoomId(roomId, environment);
-        RoomEntity playbackRoom = getPlaybackRoom(roomId, environment);
-        List<Guest> guests = guestRepository.findByRoomIdOrderByJoinedAtAsc(roomId).stream()
+        String safeEnvironment = safeEnvironment(environment);
+        String trackEnvironment = "gym".equals(safeEnvironment) ? "indoor" : safeEnvironment;
+        String trackId = playbackRoomId(roomId, trackEnvironment);
+        RoomEntity playbackRoom = getPlaybackRoom(roomId, trackEnvironment);
+        List<Guest> guests = guestRepository.findByRoomIdAndEnvironmentOrderByJoinedAtAsc(roomId, safeEnvironment).stream()
                 .map(GuestMapper::toDto).toList();
         List<VideoItem> queue = queueRepository.findByRoomIdOrderByQueuedAtAscIdAsc(trackId).stream()
                 .map(item -> QueueMapper.toDto(item,
@@ -159,7 +164,7 @@ public class RoomService {
         List<ChatMessageDto> chat = chatRepository.findTop100ByRoomIdOrderByTimeDesc(roomId).stream()
                 .sorted(java.util.Comparator.comparingLong(ChatMessageEntity::getTime))
                 .map(ChatMapper::toDto).toList();
-        long guestCount = guestRepository.countByRoomId(roomId);
+        long guestCount = guestRepository.countByRoomIdAndEnvironment(roomId, safeEnvironment);
         int skipVotes = (int) skipVoteRepository.countByRoomId(trackId);
         String roomName = ROOM_ID.equals(roomId) ? "Rạp chung" : room.getName();
         return RoomMapper.toState(roomId, roomName,
@@ -194,9 +199,26 @@ public class RoomService {
     }
 
     @Transactional
-    public Movement move(String roomId, String sessionId, Double requestedX, Double requestedY, Integer requestedFace) {
+    public boolean setEnvironment(String roomId, String sessionId, String environment) {
         GuestSessionEntity guest = guestRepository.findFirstByRoomIdAndId(roomId, sessionId).orElse(null);
-        if (guest == null || requestedX == null || requestedY == null
+        if (guest == null) return false;
+        String target = safeEnvironment(environment);
+        if (target.equals(guest.getEnvironment())) return true;
+        guest.setEnvironment(target);
+        guest.setSeat(null);
+        guest.setX(.5);
+        guest.setY(.78);
+        guest.setFace(1);
+        guest.setAction("idle");
+        guest.setLastMoveAt(System.currentTimeMillis());
+        guestRepository.save(guest);
+        return true;
+    }
+
+    public Movement move(String roomId, String sessionId, Double requestedX, Double requestedY, Integer requestedFace,
+            String environment) {
+        GuestSessionEntity guest = guestRepository.findFirstByRoomIdAndId(roomId, sessionId).orElse(null);
+        if (guest == null || !safeEnvironment(environment).equals(guest.getEnvironment()) || requestedX == null || requestedY == null
                 || !Double.isFinite(requestedX) || !Double.isFinite(requestedY)) {
             return null;
         }
@@ -216,21 +238,24 @@ public class RoomService {
     }
 
     @Transactional
-    public boolean claimSeat(String roomId, String sessionId, Integer seatIndex) {
+    public boolean claimSeat(String roomId, String sessionId, Integer seatIndex, String environment) {
+        String safeEnvironment = safeEnvironment(environment);
         if (seatIndex == null || seatIndex < 0 || seatIndex >= SEAT_COUNT) {
             return false;
         }
         GuestSessionEntity guest = guestRepository.findFirstByRoomIdAndId(roomId, sessionId).orElse(null);
-        if (guest == null || guestRepository.existsByRoomIdAndSeatAndIdNot(roomId, seatIndex, sessionId)) {
+        if (guest == null || !safeEnvironment.equals(guest.getEnvironment())
+                || guestRepository.existsByRoomIdAndEnvironmentAndSeatAndIdNot(roomId, safeEnvironment, seatIndex, sessionId)) {
             return false;
         }
-        return assignSeat(roomId, guest, seatIndex);
+        return assignSeat(roomId, safeEnvironment, guest, seatIndex);
     }
 
     @Transactional
-    public boolean setDanceAction(String roomId, String sessionId, String action, Integer returnSeat) {
+    public boolean setDanceAction(String roomId, String sessionId, String action, Integer returnSeat, String environment) {
+        String safeEnvironment = safeEnvironment(environment);
         GuestSessionEntity guest = guestRepository.findFirstByRoomIdAndId(roomId, sessionId).orElse(null);
-        if (guest == null || action == null) return false;
+        if (guest == null || !safeEnvironment.equals(guest.getEnvironment()) || action == null) return false;
 
         String safeAction = action.strip().toLowerCase(java.util.Locale.ROOT);
         if (!Set.of("idle", "sway", "bounce", "spin", "groove").contains(safeAction)) return false;
@@ -239,12 +264,12 @@ public class RoomService {
         if ("idle".equals(safeAction)) {
             guest.setSeat(null);
             if (returnSeat != null && returnSeat >= 0 && returnSeat < SEAT_COUNT
-                    && !guestRepository.existsByRoomIdAndSeatAndIdNot(roomId, returnSeat, sessionId)) {
-                assignSeat(roomId, guest, returnSeat);
+                    && !guestRepository.existsByRoomIdAndEnvironmentAndSeatAndIdNot(roomId, safeEnvironment, returnSeat, sessionId)) {
+                assignSeat(roomId, safeEnvironment, guest, returnSeat);
             }
         } else {
             // Đưa người chơi ra khoảng sàn trống giữa rạp, chia thành các vị trí để avatar không chồng lên nhau.
-            List<GuestSessionEntity> guests = guestRepository.findByRoomIdOrderByJoinedAtAsc(roomId);
+            List<GuestSessionEntity> guests = guestRepository.findByRoomIdAndEnvironmentOrderByJoinedAtAsc(roomId, safeEnvironment);
             int slot = Math.max(0, guests.indexOf(guest));
             guest.setSeat(null);
             guest.setX(.36 + (slot % 3) * .14);
@@ -256,8 +281,8 @@ public class RoomService {
         return true;
     }
 
-    private boolean assignSeat(String roomId, GuestSessionEntity guest, int seatIndex) {
-        if (guestRepository.existsByRoomIdAndSeatAndIdNot(roomId, seatIndex, guest.getId())) {
+    private boolean assignSeat(String roomId, String environment, GuestSessionEntity guest, int seatIndex) {
+        if (guestRepository.existsByRoomIdAndEnvironmentAndSeatAndIdNot(roomId, environment, seatIndex, guest.getId())) {
             return false;
         }
         if (seatIndex < BASE_SEAT_COUNT) {
@@ -300,9 +325,9 @@ public class RoomService {
     }
 
     @Transactional(readOnly = true)
-    public Reaction reaction(String roomId, String sessionId, String emoji) {
+    public Reaction reaction(String roomId, String sessionId, String emoji, String environment) {
         GuestSessionEntity guest = guestRepository.findFirstByRoomIdAndId(roomId, sessionId).orElse(null);
-        if (guest == null || emoji == null || emoji.isBlank()) {
+        if (guest == null || !safeEnvironment(environment).equals(guest.getEnvironment()) || emoji == null || emoji.isBlank()) {
             return null;
         }
         long now = System.currentTimeMillis();
@@ -477,15 +502,18 @@ public class RoomService {
 
     @Transactional
     public boolean voteSkip(String roomId, String sessionId, String environment) {
-        String trackId = playbackRoomId(roomId, environment);
-        if (!guestRepository.existsByRoomIdAndId(roomId, sessionId)
+        String safeEnvironment = safeEnvironment(environment);
+        String trackEnvironment = "gym".equals(safeEnvironment) ? "indoor" : safeEnvironment;
+        String trackId = playbackRoomId(roomId, trackEnvironment);
+        if (guestRepository.findFirstByRoomIdAndId(roomId, sessionId)
+                .filter(guest -> safeEnvironment.equals(guest.getEnvironment())).isEmpty()
                 || skipVoteRepository.existsByRoomIdAndSessionId(trackId, sessionId)) {
             return false;
         }
         skipVoteRepository.save(SkipVoteEntity.builder().id(UUID.randomUUID().toString())
                 .roomId(trackId).sessionId(sessionId).build());
-        if (skipVoteRepository.countByRoomId(trackId) >= requiredSkipVotes(guestRepository.countByRoomId(roomId))) {
-            RoomEntity playbackRoom = getPlaybackRoom(roomId, environment);
+        if (skipVoteRepository.countByRoomId(trackId) >= requiredSkipVotes(guestRepository.countByRoomIdAndEnvironment(roomId, safeEnvironment))) {
+            RoomEntity playbackRoom = getPlaybackRoom(roomId, trackEnvironment);
             advance(trackId, playbackRoom);
             roomRepository.save(playbackRoom);
         }
@@ -707,5 +735,11 @@ public class RoomService {
 
     private static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private static String safeEnvironment(String environment) {
+        if ("outdoor".equalsIgnoreCase(environment)) return "outdoor";
+        if ("gym".equalsIgnoreCase(environment)) return "gym";
+        return "indoor";
     }
 }

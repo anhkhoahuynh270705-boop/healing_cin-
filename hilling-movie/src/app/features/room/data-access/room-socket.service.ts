@@ -6,6 +6,8 @@ import { Reaction } from '../../chat/models/reaction.model';
 import { Movement, Playback, RoomState } from '../models';
 
 const DEFAULT_ROOM_ID = 'rap-chua-lanh';
+type RoomEnvironment = 'indoor' | 'outdoor' | 'gym';
+type CinemaEnvironment = 'indoor' | 'outdoor';
 
 @Injectable({ providedIn: 'root' })
 export class RoomSocketService {
@@ -36,8 +38,8 @@ export class RoomSocketService {
   private currentUserId = '';
   private currentAuthToken = '';
   private roomId = DEFAULT_ROOM_ID;
-  private currentEnvironment: 'indoor' | 'outdoor' = 'indoor';
-  private readonly statesByEnvironment = new Map<'indoor' | 'outdoor', RoomState>();
+  private currentEnvironment: RoomEnvironment = 'indoor';
+  private readonly statesByEnvironment = new Map<RoomEnvironment, RoomState>();
   private socketGeneration = 0;
 
   constructor(private ngZone: NgZone) {}
@@ -80,12 +82,12 @@ export class RoomSocketService {
 
   sendMove(x: number, y: number, face: number): void {
     this.currentSeat = null;
-    this.send(`/app/room/${this.roomId}/move`, { clientId: this.clientId, x, y, face });
+    this.send(`/app/room/${this.roomId}/move`, { clientId: this.clientId, x, y, face, environment: this.currentEnvironment });
   }
 
   claimSeat(seatIndex: number): void {
     this.currentSeat = seatIndex;
-    this.send(`/app/room/${this.roomId}/seat`, { clientId: this.clientId, seatIndex });
+    this.send(`/app/room/${this.roomId}/seat`, { clientId: this.clientId, seatIndex, environment: this.currentEnvironment });
   }
 
   addVideo(videoId: string, title: string): void {
@@ -93,7 +95,7 @@ export class RoomSocketService {
       clientId: this.clientId,
       videoId,
       title,
-      environment: this.currentEnvironment,
+      environment: this.playbackEnvironment,
     });
   }
 
@@ -101,7 +103,7 @@ export class RoomSocketService {
     roomId: string,
     videoId: string,
     title: string,
-    environment: 'indoor' | 'outdoor' = this.currentEnvironment,
+    environment: CinemaEnvironment = this.playbackEnvironment,
   ): void {
     this.send(`/app/room/${roomId}/queue/title`, {
       clientId: this.clientId,
@@ -115,14 +117,14 @@ export class RoomSocketService {
     this.send(`/app/room/${this.roomId}/queue/vote`, {
       clientId: this.clientId,
       videoId,
-      environment: this.currentEnvironment,
+      environment: this.playbackEnvironment,
     });
   }
 
   voteSkip(): void {
     this.send(`/app/room/${this.roomId}/vote-skip`, {
       clientId: this.clientId,
-      environment: this.currentEnvironment,
+      environment: this.playbackEnvironment,
     });
   }
 
@@ -166,7 +168,7 @@ export class RoomSocketService {
   }
 
   sendReaction(emoji: string): void {
-    this.send(`/app/room/${this.roomId}/reaction`, { clientId: this.clientId, emoji });
+    this.send(`/app/room/${this.roomId}/reaction`, { clientId: this.clientId, emoji, environment: this.currentEnvironment });
   }
 
   sendDanceAction(action: 'idle' | 'sway' | 'bounce' | 'spin' | 'groove', returnSeat: number | null): void {
@@ -174,6 +176,7 @@ export class RoomSocketService {
       clientId: this.clientId,
       action,
       returnSeat,
+      environment: this.currentEnvironment,
     });
   }
 
@@ -183,14 +186,22 @@ export class RoomSocketService {
       action,
       playing,
       position,
-      environment: this.currentEnvironment,
+      environment: this.playbackEnvironment,
     });
   }
 
-  setEnvironment(environment: 'indoor' | 'outdoor'): void {
-    this.currentEnvironment = environment === 'outdoor' ? 'outdoor' : 'indoor';
-    const cachedState = this.statesByEnvironment.get(this.currentEnvironment);
-    if (cachedState) this.state$.next(cachedState);
+  setEnvironment(environment: RoomEnvironment): void {
+    const next = environment === 'outdoor' || environment === 'gym' ? environment : 'indoor';
+    if (next === this.currentEnvironment) return;
+    this.currentEnvironment = next;
+    this.currentSeat = null;
+    // Clear the old scene immediately; the backend will publish the authoritative roster for the destination.
+    this.state$.next(null);
+    this.send(`/app/room/${this.roomId}/environment`, { clientId: this.clientId, environment: next });
+  }
+
+  private get playbackEnvironment(): CinemaEnvironment {
+    return this.currentEnvironment === 'outdoor' ? 'outdoor' : 'indoor';
   }
 
   disconnect(): void {
@@ -291,9 +302,14 @@ export class RoomSocketService {
       for (const destination of [
         `${base}/state/indoor`,
         `${base}/state/outdoor`,
+        `${base}/state/gym`,
         `${base}/joined/${this.clientId}`,
-        `${base}/movement`,
-        `${base}/reaction`,
+        `${base}/movement/indoor`,
+        `${base}/movement/outdoor`,
+        `${base}/movement/gym`,
+        `${base}/reaction/indoor`,
+        `${base}/reaction/outdoor`,
+        `${base}/reaction/gym`,
         `${base}/chat`,
         `${base}/playback/indoor`,
         `${base}/playback/outdoor`,
@@ -302,6 +318,7 @@ export class RoomSocketService {
         this.subscribe(destination);
       this.send(`/app/room/${this.roomId}/join`, {
         clientId: this.clientId,
+        environment: this.currentEnvironment,
         name: this.currentName,
         avatar: this.currentAvatar,
         seat: this.currentSeat,
@@ -325,11 +342,13 @@ export class RoomSocketService {
 
     try {
       const destination = headers['destination'] || '';
-      if (destination.endsWith('/state/indoor') || destination.endsWith('/state/outdoor') || destination.endsWith('/state')) {
+      if (destination.endsWith('/state/indoor') || destination.endsWith('/state/outdoor') || destination.endsWith('/state/gym') || destination.endsWith('/state')) {
         const raw = JSON.parse(body) as RoomState;
         // Không cho state cũ hoặc phát nhầm topic làm đổi phim của phòng hiện tại.
         if (raw?.roomId !== this.roomId || raw?.playback?.roomId !== this.roomId) return;
-        const environment = destination.endsWith('/state/outdoor') ? 'outdoor' : 'indoor';
+        const environment: RoomEnvironment = destination.endsWith('/state/gym')
+          ? 'gym'
+          : destination.endsWith('/state/outdoor') ? 'outdoor' : 'indoor';
         const state = this.mapState(raw);
         this.statesByEnvironment.set(environment, state);
         if (environment === this.currentEnvironment) this.state$.next(state);
@@ -342,11 +361,15 @@ export class RoomSocketService {
           return;
         this.sessionId$.next(joined.sessionId);
         const state = this.mapState(joined.state);
-        this.statesByEnvironment.set('indoor', state);
-        if (this.currentEnvironment === 'indoor') this.state$.next(state);
-      } else if (destination.endsWith('/movement'))
-        this.movement$.next(JSON.parse(body) as Movement);
-      else if (destination.endsWith('/reaction')) this.reaction$.next(JSON.parse(body) as Reaction);
+        this.statesByEnvironment.set(this.currentEnvironment, state);
+        this.state$.next(state);
+      } else if (destination.includes('/movement/')) {
+        const environment = destination.slice(destination.lastIndexOf('/') + 1) as RoomEnvironment;
+        if (environment === this.currentEnvironment) this.movement$.next(JSON.parse(body) as Movement);
+      } else if (destination.includes('/reaction/')) {
+        const environment = destination.slice(destination.lastIndexOf('/') + 1) as RoomEnvironment;
+        if (environment === this.currentEnvironment) this.reaction$.next(JSON.parse(body) as Reaction);
+      }
       else if (destination.endsWith('/chat')) {
         const dto = JSON.parse(body) as {
           id: string;
@@ -380,6 +403,14 @@ export class RoomSocketService {
           const updated = { ...current, playback };
           this.statesByEnvironment.set(environment, updated);
           if (environment === this.currentEnvironment) this.state$.next(updated);
+        }
+        if (environment === 'indoor' && this.currentEnvironment === 'gym') {
+          const gymState = this.statesByEnvironment.get('gym');
+          if (gymState) {
+            const updatedGymState = { ...gymState, playback };
+            this.statesByEnvironment.set('gym', updatedGymState);
+            this.state$.next(updatedGymState);
+          }
         }
       } else if (destination.endsWith(`/errors/${this.clientId}`)) {
         this.error$.next((JSON.parse(body) as { message: string }).message);

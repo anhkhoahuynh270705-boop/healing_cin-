@@ -10,7 +10,7 @@ public final class RoomDtos {
     private RoomDtos() {
     }
 
-    public record JoinRequest(String clientId, String name, String avatar, Integer seat, Integer shirtColorIndex, Integer accessoryIndex, Integer hairColorIndex, Integer vipTier, String userId, String authToken, String gender, String shirtColor, Integer shirtTier) {}
+    public record JoinRequest(String clientId, String name, String avatar, Integer seat, Integer shirtColorIndex, Integer accessoryIndex, Integer hairColorIndex, Integer vipTier, String userId, String authToken, String gender, String shirtColor, Integer shirtTier, String environment) {}
 
     public record QueueRequest(String clientId, String videoId, String title, String environment) {}
 
@@ -18,13 +18,15 @@ public final class RoomDtos {
 
     public record VideoTitleRequest(String clientId, String videoId, String title, String environment) {}
 
-    public record SeatRequest(String clientId, Integer seatIndex) {}
+    public record EnvironmentRequest(String clientId, String environment) {}
 
-    public record MoveRequest(String clientId, Double x, Double y, Integer face) {}
+    public record SeatRequest(String clientId, Integer seatIndex, String environment) {}
 
-    public record ReactionRequest(String clientId, String emoji) {}
+    public record MoveRequest(String clientId, Double x, Double y, Integer face, String environment) {}
 
-    public record DanceActionRequest(String clientId, String action, Integer returnSeat) {}
+    public record ReactionRequest(String clientId, String emoji, String environment) {}
+
+    public record DanceActionRequest(String clientId, String action, Integer returnSeat, String environment) {}
 
     public record PlaybackCommand(String clientId, String action, Boolean playing, Double position, String environment) {}
 

@@ -54,6 +54,7 @@ export class PaymentApiService {
 
   getStatus(userId: string, token: string): Promise<Response> {
     return fetch(`${this.baseUrl}/api/payments/status?userId=${encodeURIComponent(userId)}`, {
+      cache: 'no-store',
       headers: { 'X-User-Token': token },
     });
   }

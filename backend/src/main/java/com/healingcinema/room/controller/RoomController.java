@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import com.healingcinema.room.dto.RoomDtos.ChatMessageDto;
 import com.healingcinema.room.dto.RoomDtos.ChatRequest;
 import com.healingcinema.room.dto.RoomDtos.DanceActionRequest;
+import com.healingcinema.room.dto.RoomDtos.EnvironmentRequest;
 import com.healingcinema.room.dto.RoomDtos.JoinRequest;
 import com.healingcinema.room.dto.RoomDtos.MoveRequest;
 import com.healingcinema.room.dto.RoomDtos.Movement;
@@ -44,7 +45,7 @@ public class RoomController {
         String sessionId = headers.getSessionId();
         try {
             String verifiedUserId = auth.isValidSession(request.userId(), request.authToken()) ? request.userId() : null;
-            RoomState state = rooms.join(roomId, sessionId, request.clientId(), request.name(), request.avatar(), request.seat(), request.shirtColorIndex(), request.accessoryIndex(), request.hairColorIndex(), request.vipTier(), verifiedUserId, request.gender(), request.shirtColor(), request.shirtTier());
+            RoomState state = rooms.join(roomId, sessionId, request.clientId(), request.name(), request.avatar(), request.seat(), request.shirtColorIndex(), request.accessoryIndex(), request.hairColorIndex(), request.vipTier(), verifiedUserId, request.gender(), request.shirtColor(), request.shirtTier(), request.environment());
             messaging.convertAndSend("/topic/room/" + roomId + "/joined/" + request.clientId(),
                     RoomMapper.toJoined(sessionId, state));
             broadcastState(roomId);
@@ -56,9 +57,10 @@ public class RoomController {
     @MessageMapping("/room/{roomId}/move")
     public void move(@DestinationVariable String roomId, @Payload MoveRequest request, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        Movement movement = rooms.move(roomId, headers.getSessionId(), request.x(), request.y(), request.face());
+        String environment = safeEnvironment(request.environment());
+        Movement movement = rooms.move(roomId, headers.getSessionId(), request.x(), request.y(), request.face(), environment);
         if (movement != null) {
-            messaging.convertAndSend("/topic/room/" + roomId + "/movement", movement);
+            messaging.convertAndSend("/topic/room/" + roomId + "/movement/" + environment, movement);
             if (movement.seatReleased()) {
                 broadcastState(roomId);
             }
@@ -68,9 +70,18 @@ public class RoomController {
     @MessageMapping("/room/{roomId}/seat")
     public void seat(@DestinationVariable String roomId, @Payload SeatRequest request, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        if (!rooms.claimSeat(roomId, headers.getSessionId(), request.seatIndex())) {
+        if (!rooms.claimSeat(roomId, headers.getSessionId(), request.seatIndex(), request.environment())) {
             sendError(roomId, request.clientId(), "Ghế này đã có người hoặc không hợp lệ."); 
         } else {
+            broadcastState(roomId);
+        }
+    }
+
+    @MessageMapping("/room/{roomId}/environment")
+    public void changeEnvironment(@DestinationVariable String roomId, @Payload EnvironmentRequest request,
+            SimpMessageHeaderAccessor headers) {
+        if (!safeRoom(roomId)) return;
+        if (rooms.setEnvironment(roomId, headers.getSessionId(), request.environment())) {
             broadcastState(roomId);
         }
     }
@@ -111,9 +122,10 @@ public class RoomController {
     @MessageMapping("/room/{roomId}/reaction")
     public void reaction(@DestinationVariable String roomId, @Payload ReactionRequest request, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        Reaction reaction = rooms.reaction(roomId, headers.getSessionId(), request.emoji());
+        String environment = safeEnvironment(request.environment());
+        Reaction reaction = rooms.reaction(roomId, headers.getSessionId(), request.emoji(), environment);
         if (reaction != null) {
-            messaging.convertAndSend("/topic/room/" + roomId + "/reaction", reaction);
+            messaging.convertAndSend("/topic/room/" + roomId + "/reaction/" + environment, reaction);
         }
     }
 
@@ -121,7 +133,7 @@ public class RoomController {
     public void danceAction(@DestinationVariable String roomId, @Payload DanceActionRequest request,
             SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        boolean updated = rooms.setDanceAction(roomId, headers.getSessionId(), request.action(), request.returnSeat());
+        boolean updated = rooms.setDanceAction(roomId, headers.getSessionId(), request.action(), request.returnSeat(), request.environment());
         if (updated) broadcastState(roomId);
         else sendError(roomId, request.clientId(), "Không thể cập nhật động tác lúc này.");
     }
@@ -191,7 +203,7 @@ public class RoomController {
 
     private void broadcastState(String roomId) {
         if (!safeRoom(roomId)) return;
-        for (String environment : java.util.List.of("indoor", "outdoor")) {
+        for (String environment : java.util.List.of("indoor", "outdoor", "gym")) {
             messaging.convertAndSend("/topic/room/" + roomId + "/state/" + environment,
                     rooms.snapshot(roomId, environment));
         }
@@ -205,6 +217,12 @@ public class RoomController {
 
     private boolean safeRoom(String roomId) {
         return rooms.isRoomAvailable(roomId);
+    }
+
+    private String safeEnvironment(String environment) {
+        if ("outdoor".equalsIgnoreCase(environment)) return "outdoor";
+        if ("gym".equalsIgnoreCase(environment)) return "gym";
+        return "indoor";
     }
 
     private void sendError(String roomId, String clientId, String message) {

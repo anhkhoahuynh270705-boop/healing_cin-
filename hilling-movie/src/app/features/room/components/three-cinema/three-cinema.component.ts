@@ -1276,7 +1276,21 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   private syncGuests(): void {
-    if (!this.state || !this.scene) return;
+    if (!this.scene) return;
+    if (!this.state) {
+      for (const walker of this.walkers.values()) {
+        this.scene.remove(walker.group);
+        if (walker.order) this.disposeCharacter(walker.order.carryObject);
+      }
+      this.walkers.clear();
+      for (const group of this.characters.values()) {
+        this.scene.remove(group);
+        this.disposeCharacter(group);
+      }
+      this.characters.clear();
+      this.danceAnimations.clear();
+      return;
+    }
     this.syncSeatAppearances();
     const live = new Set(this.state.guests.map((g) => g.id));
     for (const [id, grp] of this.characters) {

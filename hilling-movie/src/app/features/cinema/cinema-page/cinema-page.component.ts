@@ -254,6 +254,9 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   switchRoom(room: 'cinema' | 'gym'): void {
     this.currentRoom = room;
+    this.roomSocket.setEnvironment(
+      room === 'gym' ? 'gym' : this.outdoorCinemaMode ? 'outdoor' : 'indoor',
+    );
     this.activePanelId = null;
     this.cdr.markForCheck();
   }
@@ -1933,6 +1936,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       if (!response.ok) return;
       const data = await response.json();
+      const wasPrivateRoomPending = this.privateRoomPending;
+      const previousPrivateRoomCodes = new Set(this.privateRoomCodes.map((room) => room.code));
       this.chatAccessStatus = data.status;
       this.privateRoomPending = Boolean(data.privateRoomPending);
       this.privateRoomCodes = Array.isArray(data.privateRooms)
@@ -1944,6 +1949,12 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
               typeof (room as PrivateRoomView).name === 'string',
           )
         : [];
+      const newlyApprovedRoom = this.privateRoomCodes.find(
+        (room) => !previousPrivateRoomCodes.has(room.code),
+      );
+      if (wasPrivateRoomPending && !this.privateRoomPending && newlyApprovedRoom) {
+        this.toast(`Phòng riêng “${newlyApprovedRoom.name}” đã được duyệt. Mã phòng đã sẵn sàng.`);
+      }
       this.myVipTier = Number(data.tier) || 0;
       const ownedTiers = Array.isArray(data.tiers)
         ? data.tiers.map((tier: unknown) => Number(tier)).filter(Number.isInteger)
@@ -1965,9 +1976,9 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
           JSON.stringify({ frameTier: this.equippedFrameTier, shirtTier: this.equippedShirtTier }),
         );
       }
-      if (data.status === 'PENDING' && !this.chatStatusTimer) {
+      if ((data.status === 'PENDING' || this.privateRoomPending) && !this.chatStatusTimer) {
         this.chatStatusTimer = setInterval(() => void this.refreshChatAccess(), 5000);
-      } else if (data.status !== 'PENDING' && this.chatStatusTimer) {
+      } else if (data.status !== 'PENDING' && !this.privateRoomPending && this.chatStatusTimer) {
         clearInterval(this.chatStatusTimer);
         this.chatStatusTimer = undefined;
       }
@@ -2247,6 +2258,9 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         throw new Error('Máy chủ chưa xác nhận đã lưu yêu cầu. Vui lòng thử lại sau.');
       }
       this.privateRoomPending = true;
+      if (!this.chatStatusTimer) {
+        this.chatStatusTimer = setInterval(() => void this.refreshChatAccess(), 5000);
+      }
       this.toast('Đã gửi yêu cầu phòng riêng. Admin sẽ duyệt sau khi xác nhận 10.000đ.');
       void this.refreshChatAccess();
     } catch (error) {

@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "room_guests", indexes = @Index(name = "idx_room_guests_room", columnList = "room_id"), uniqueConstraints = @UniqueConstraint(name = "uq_room_guest_seat", columnNames = {
-        "room_id", "seat" }))
+@Table(name = "room_guests", indexes = @Index(name = "idx_room_guests_room_environment", columnList = "room_id,environment"), uniqueConstraints = @UniqueConstraint(name = "uq_room_guest_seat", columnNames = {
+        "room_id", "environment", "seat" }))
 @Getter
 @Setter
 @Builder
@@ -27,6 +27,8 @@ public class GuestSessionEntity {
     private String id;
     @Column(name = "room_id", nullable = false, length = 80)
     private String roomId;
+    @Column(nullable = false, length = 8)
+    private String environment;
     @Column(name = "client_id", length = 64)
     private String clientId;
     @Column(name = "user_id", length = 36)

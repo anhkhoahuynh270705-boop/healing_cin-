@@ -63,7 +63,7 @@ public class PaymentController {
     public ResponseEntity<?> status(@RequestParam String userId,
             @RequestHeader(value = "X-User-Token", required = false) String token) {
         if (!auth.isValidSession(userId, token)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        return ResponseEntity.ok(Map.of(
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of(
                 "status", payments.status(userId),
                 "tier", payments.approvedTier(userId),
                 "tiers", payments.approvedTiers(userId),
