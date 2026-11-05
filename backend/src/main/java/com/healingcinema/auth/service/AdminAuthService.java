@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.healingcinema.auth.entity.AdminSessionEntity;
+import com.healingcinema.auth.entity.AdminAccountEntity;
+import com.healingcinema.auth.repository.AdminAccountRepository;
 import com.healingcinema.auth.repository.AdminSessionRepository;
 
 /** Tạo admin token có chữ ký để phiên còn hiệu lực sau khi Spring Boot khởi động lại. */
@@ -23,24 +25,69 @@ public class AdminAuthService {
     private final String password;
     private final String adminKey;
     private final AdminSessionRepository sessions;
+    private final AdminAccountRepository accounts;
+    private final PasswordHashService passwordHashes;
     private static final long SESSION_TTL_MS = 30L * 24 * 60 * 60 * 1000;
 
     public AdminAuthService(
             @Value("${app.admin.username}") String username,
             @Value("${app.admin.password}") String password,
             @Value("${app.admin-key}") String adminKey,
-            AdminSessionRepository sessions) {
+            AdminSessionRepository sessions,
+            AdminAccountRepository accounts,
+            PasswordHashService passwordHashes) {
         this.username = username;
         this.password = password;
         this.adminKey = adminKey;
         this.sessions = sessions;
+        this.accounts = accounts;
+        this.passwordHashes = passwordHashes;
     }
 
     @Transactional
     public String login(String candidateUsername, String candidatePassword, String candidateKey) {
-        if (!matches(username, candidateUsername)
-                || !matches(password, candidatePassword)
-                || !matches(adminKey, candidateKey)) return null;
+        if (!matches(adminKey, candidateKey)) return null;
+
+        boolean bootstrapLogin = matches(username, candidateUsername) && matches(password, candidatePassword);
+        boolean registeredLogin = candidatePassword != null && accounts
+                .findByUsernameIgnoreCase(candidateUsername == null ? "" : candidateUsername.trim())
+                .filter(account -> passwordHashes.matches(candidatePassword, account.getPasswordSalt(), account.getPasswordHash()))
+                .isPresent();
+        if (!bootstrapLogin && !registeredLogin) return null;
+
+        return createSessionToken();
+    }
+
+    @Transactional
+    public RegistrationResult register(String candidateUsername, String candidatePassword, String candidateKey) {
+        String cleanUsername = candidateUsername == null ? "" : candidateUsername.trim();
+        if (!matches(adminKey, candidateKey)) {
+            return new RegistrationResult(false, "Admin key không đúng.");
+        }
+        if (!cleanUsername.matches("[A-Za-z0-9_.-]{3,32}")) {
+            return new RegistrationResult(false, "Tên admin phải có 3–32 ký tự gồm chữ, số, dấu chấm, gạch dưới hoặc gạch ngang.");
+        }
+        if (candidatePassword == null || candidatePassword.length() < 8) {
+            return new RegistrationResult(false, "Mật khẩu admin phải có ít nhất 8 ký tự.");
+        }
+        if (matches(username, cleanUsername) || accounts.existsByUsernameIgnoreCase(cleanUsername)) {
+            return new RegistrationResult(false, "Tên admin này đã được sử dụng.");
+        }
+
+        PasswordHashService.HashedPassword hashed = passwordHashes.hash(candidatePassword);
+        accounts.save(AdminAccountEntity.builder()
+                .id(UUID.randomUUID().toString())
+                .username(cleanUsername)
+                .passwordSalt(hashed.salt())
+                .passwordHash(hashed.hash())
+                .createdAt(System.currentTimeMillis())
+                .build());
+        return new RegistrationResult(true, "Đã tạo tài khoản admin. Bạn có thể đăng nhập.");
+    }
+
+    public record RegistrationResult(boolean success, String message) {}
+
+    private String createSessionToken() {
 
         long expiresAt = System.currentTimeMillis() + SESSION_TTL_MS;
         String payload = "admin:" + expiresAt + ":" + UUID.randomUUID();

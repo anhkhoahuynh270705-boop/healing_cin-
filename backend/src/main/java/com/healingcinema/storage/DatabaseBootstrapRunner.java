@@ -11,14 +11,15 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.healingcinema.auth.entity.UserEntity;
+import com.healingcinema.donation.DonationTransferCode;
 import com.healingcinema.auth.repository.AdminSessionRepository;
 import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.auth.repository.UserSessionRepository;
 import com.healingcinema.auth.service.PasswordHashService;
 import com.healingcinema.room.entity.RoomEntity;
-import com.healingcinema.room.repository.GuestSessionRepository;
+import com.healingcinema.room.guest.repository.GuestSessionRepository;
 import com.healingcinema.room.repository.RoomRepository;
-import com.healingcinema.room.repository.SkipVoteRepository;
+import com.healingcinema.room.playback.repository.SkipVoteRepository;
 
 /** Khởi tạo rạp chung và dọn presence/vote còn sót sau khi process cũ dừng đột ngột. */
 @Component
@@ -55,9 +56,12 @@ public class DatabaseBootstrapRunner implements ApplicationRunner {
     private void seedDemoAccount() {
         if (users.existsByUsernameIgnoreCase("demo")) return;
         PasswordHashService.HashedPassword password = passwordHasher.hash("123456");
-        users.save(UserEntity.builder().id(UUID.randomUUID().toString()).username("demo")
+        String userId = UUID.randomUUID().toString();
+        users.save(UserEntity.builder().id(userId).username("demo")
                 .passwordSalt(password.salt()).passwordHash(password.hash()).displayName("Khán giả VIP")
                 .avatar("🦊").shirtColorIndex(0).accessoryIndex(0).hairColorIndex(0).vipTier(1)
+                .donationTransferCode(DonationTransferCode.forUser(userId))
+                .donationTotalConfirmed(0).donationUsableBalance(0).experiencePoints(0)
                 .createdAt(System.currentTimeMillis()).build());
     }
 

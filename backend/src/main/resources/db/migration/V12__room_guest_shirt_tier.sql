@@ -1,0 +1,2 @@
+ALTER TABLE room_guests
+    ADD COLUMN shirt_tier INTEGER NOT NULL DEFAULT 0;

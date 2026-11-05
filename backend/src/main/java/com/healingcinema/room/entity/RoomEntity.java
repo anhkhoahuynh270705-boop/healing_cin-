@@ -36,6 +36,8 @@ public class RoomEntity {
     private boolean playbackPlaying;
     @Column(name = "playback_updated_at", nullable = false)
     private long playbackUpdatedAt;
+    @Column(name = "playback_duration_seconds", nullable = false)
+    private int playbackDurationSeconds;
     @Column(name = "lofi_index", nullable = false)
     private int lofiIndex;
     @Column(name = "host_id", length = 100)

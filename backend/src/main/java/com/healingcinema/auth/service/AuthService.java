@@ -16,6 +16,8 @@ import com.healingcinema.auth.dto.AuthDtos.RegisterRequest;
 import com.healingcinema.auth.dto.AuthDtos.UserProfile;
 import com.healingcinema.auth.entity.UserEntity;
 import com.healingcinema.auth.entity.UserSessionEntity;
+import com.healingcinema.auth.mapper.UserMapper;
+import com.healingcinema.donation.DonationTransferCode;
 import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.auth.repository.UserSessionRepository;
 
@@ -25,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final int MAX_VIP_TIER = 4;
+    private static final int MAX_VIP_TIER = 6;
 
     private final UserRepository users;
     private final UserSessionRepository sessions;
@@ -51,8 +53,9 @@ public class AuthService {
         String displayName = req.displayName() == null || req.displayName().isBlank()
                 ? username : limit(req.displayName().strip(), 20);
         PasswordHashService.HashedPassword password = passwordHashService.hash(req.password());
+        String userId = UUID.randomUUID().toString();
         UserEntity user = users.save(UserEntity.builder()
-                .id(UUID.randomUUID().toString())
+                .id(userId)
                 .username(username)
                 .passwordSalt(password.salt())
                 .passwordHash(password.hash())
@@ -62,11 +65,15 @@ public class AuthService {
                 .accessoryIndex(0)
                 .hairColorIndex(0)
                 .vipTier(0)
+                .donationTransferCode(DonationTransferCode.forUser(userId))
+                .donationTotalConfirmed(0)
+                .donationUsableBalance(0)
+                .experiencePoints(0)
                 .createdAt(System.currentTimeMillis())
                 .build());
 
         String token = issueToken(user.getId());
-        return new AuthResponse(true, "Đăng ký thành công!", token, toProfile(user));
+        return new AuthResponse(true, "Đăng ký thành công!", token, UserMapper.toProfile(user));
     }
 
     @Transactional
@@ -79,7 +86,7 @@ public class AuthService {
             return new AuthResponse(false, "Tên đăng nhập hoặc mật khẩu không chính xác.", null, null);
         }
         String token = issueToken(user.getId());
-        return new AuthResponse(true, "Đăng nhập thành công!", token, toProfile(user));
+        return new AuthResponse(true, "Đăng nhập thành công!", token, UserMapper.toProfile(user));
     }
 
     @Transactional
@@ -95,7 +102,7 @@ public class AuthService {
         if (validIndex(req.shirtColorIndex())) user.setShirtColorIndex(req.shirtColorIndex());
         if (validIndex(req.accessoryIndex())) user.setAccessoryIndex(req.accessoryIndex());
         if (validIndex(req.hairColorIndex())) user.setHairColorIndex(req.hairColorIndex());
-        return toProfile(users.save(user));
+        return UserMapper.toProfile(users.save(user));
     }
 
     @Transactional
@@ -104,12 +111,12 @@ public class AuthService {
         UserEntity user = users.findById(userId).orElse(null);
         if (user == null) return null;
         user.setVipTier(Math.max(user.getVipTier(), Math.max(0, Math.min(MAX_VIP_TIER, vipTier))));
-        return toProfile(users.save(user));
+        return UserMapper.toProfile(users.save(user));
     }
 
     @Transactional(readOnly = true)
     public UserProfile getProfile(String userId) {
-        return userId == null ? null : users.findById(userId).map(AuthService::toProfile).orElse(null);
+        return userId == null ? null : users.findById(userId).map(UserMapper::toProfile).orElse(null);
     }
 
     @Transactional(readOnly = true)
@@ -143,12 +150,6 @@ public class AuthService {
 
     private static String limit(String value, int maxLength) {
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
-    }
-
-    private static UserProfile toProfile(UserEntity user) {
-        return new UserProfile(user.getId(), user.getUsername(), user.getDisplayName(), user.getAvatar(),
-                user.getShirtColorIndex(), user.getAccessoryIndex(), user.getHairColorIndex(), user.getVipTier(),
-                user.getCreatedAt());
     }
 
 }

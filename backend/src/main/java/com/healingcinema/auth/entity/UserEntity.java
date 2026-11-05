@@ -52,6 +52,18 @@ public class UserEntity {
     @Column(nullable = false)
     private int vipTier;
 
+    @Column(name = "donation_transfer_code", nullable = false, unique = true, length = 40)
+    private String donationTransferCode;
+
+    @Column(name = "donation_total_confirmed", nullable = false)
+    private long donationTotalConfirmed;
+
+    @Column(name = "donation_usable_balance", nullable = false)
+    private long donationUsableBalance;
+
+    @Column(name = "experience_points", nullable = false)
+    private long experiencePoints;
+
     @Column(nullable = false)
     private long createdAt;
 }

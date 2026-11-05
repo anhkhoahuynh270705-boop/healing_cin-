@@ -1,0 +1,2 @@
+ALTER TABLE room_guests
+    ADD COLUMN shirt_color VARCHAR(32) NOT NULL DEFAULT '#9FADD9';

@@ -13,8 +13,8 @@ import lombok.RequiredArgsConstructor;
 
 import com.healingcinema.room.dto.RoomDtos.ChatMessageDto;
 import com.healingcinema.room.dto.RoomDtos.ChatRequest;
+import com.healingcinema.room.dto.RoomDtos.DanceActionRequest;
 import com.healingcinema.room.dto.RoomDtos.JoinRequest;
-import com.healingcinema.room.dto.RoomDtos.Joined;
 import com.healingcinema.room.dto.RoomDtos.MoveRequest;
 import com.healingcinema.room.dto.RoomDtos.Movement;
 import com.healingcinema.room.dto.RoomDtos.PlaybackCommand;
@@ -27,6 +27,7 @@ import com.healingcinema.room.dto.RoomDtos.RoomError;
 import com.healingcinema.room.dto.RoomDtos.RoomState;
 import com.healingcinema.room.dto.RoomDtos.SeatRequest;
 import com.healingcinema.room.dto.RoomDtos.VoteSkipRequest;
+import com.healingcinema.room.mapper.RoomMapper;
 import com.healingcinema.room.service.RoomService;
 import com.healingcinema.auth.service.AuthService;
 
@@ -43,8 +44,9 @@ public class RoomController {
         String sessionId = headers.getSessionId();
         try {
             String verifiedUserId = auth.isValidSession(request.userId(), request.authToken()) ? request.userId() : null;
-            RoomState state = rooms.join(roomId, sessionId, request.clientId(), request.name(), request.avatar(), request.seat(), request.shirtColorIndex(), request.accessoryIndex(), request.hairColorIndex(), request.vipTier(), verifiedUserId);
-            messaging.convertAndSend("/topic/room/" + roomId + "/joined/" + request.clientId(), new Joined(sessionId, state));
+            RoomState state = rooms.join(roomId, sessionId, request.clientId(), request.name(), request.avatar(), request.seat(), request.shirtColorIndex(), request.accessoryIndex(), request.hairColorIndex(), request.vipTier(), verifiedUserId, request.gender(), request.shirtColor(), request.shirtTier());
+            messaging.convertAndSend("/topic/room/" + roomId + "/joined/" + request.clientId(),
+                    RoomMapper.toJoined(sessionId, state));
             broadcastState(roomId);
         } catch (RuntimeException ex) {
             sendError(roomId, request.clientId(), ex.getMessage());
@@ -77,9 +79,9 @@ public class RoomController {
     public void queue(@DestinationVariable String roomId, @Payload QueueRequest request, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
         try {
-            rooms.addVideo(roomId, headers.getSessionId(), request.videoId(), request.title());
+            rooms.addVideo(roomId, headers.getSessionId(), request.videoId(), request.title(), request.environment());
             broadcastState(roomId);
-            messaging.convertAndSend("/topic/room/" + roomId + "/playback", rooms.playbackSnapshot(roomId));
+            broadcastPlayback(roomId, request.environment());
         } catch (RuntimeException ex) {
             sendError(roomId, request.clientId(), ex.getMessage());
         }
@@ -89,9 +91,9 @@ public class RoomController {
     public void updateVideoTitle(@DestinationVariable String roomId, @Payload VideoTitleRequest request,
             SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        if (rooms.updateVideoTitle(roomId, headers.getSessionId(), request.videoId(), request.title())) {
+        if (rooms.updateVideoTitle(roomId, headers.getSessionId(), request.videoId(), request.title(), request.environment())) {
             broadcastState(roomId);
-            messaging.convertAndSend("/topic/room/" + roomId + "/playback", rooms.playbackSnapshot(roomId));
+            broadcastPlayback(roomId, request.environment());
         }
     }
 
@@ -99,7 +101,7 @@ public class RoomController {
     public void voteQueueVideo(@DestinationVariable String roomId, @Payload QueueVoteRequest request,
             SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        if (rooms.voteQueueVideo(roomId, headers.getSessionId(), request.videoId())) {
+        if (rooms.voteQueueVideo(roomId, headers.getSessionId(), request.videoId(), request.environment())) {
             broadcastState(roomId);
         } else {
             sendError(roomId, request.clientId(), "Bạn đã vote video này rồi hoặc video không còn trong hàng chờ.");
@@ -115,6 +117,15 @@ public class RoomController {
         }
     }
 
+    @MessageMapping("/room/{roomId}/action")
+    public void danceAction(@DestinationVariable String roomId, @Payload DanceActionRequest request,
+            SimpMessageHeaderAccessor headers) {
+        if (!safeRoom(roomId)) return;
+        boolean updated = rooms.setDanceAction(roomId, headers.getSessionId(), request.action(), request.returnSeat());
+        if (updated) broadcastState(roomId);
+        else sendError(roomId, request.clientId(), "Không thể cập nhật động tác lúc này.");
+    }
+
     @MessageMapping("/room/{roomId}/chat")
     public void chat(@DestinationVariable String roomId, @Payload ChatRequest request, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
@@ -126,6 +137,8 @@ public class RoomController {
         ChatMessageDto msg = rooms.chat(roomId, sessionId, request.text(), request.vipTier());
         if (msg != null) {
             messaging.convertAndSend("/topic/room/" + roomId + "/chat", msg);
+            // Phát state sau khi transaction lưu xong để client nhận lịch sử mới nhất của đúng phòng.
+            broadcastState(roomId);
         } else {
             sendError(roomId, request.clientId(), "Tin nhắn trống hoặc không hợp lệ.");
         }
@@ -134,7 +147,7 @@ public class RoomController {
     @MessageMapping("/room/{roomId}/profile")
     public void profile(@DestinationVariable String roomId, @Payload JoinRequest request, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        if (rooms.updateProfile(roomId, headers.getSessionId(), request.name(), request.avatar(), request.shirtColorIndex(), request.accessoryIndex(), request.hairColorIndex(), request.vipTier())) {
+        if (rooms.updateProfile(roomId, headers.getSessionId(), request.name(), request.avatar(), request.shirtColorIndex(), request.accessoryIndex(), request.hairColorIndex(), request.vipTier(), request.gender(), request.shirtColor(), request.shirtTier())) {
             broadcastState(roomId);
         }
     }
@@ -142,18 +155,18 @@ public class RoomController {
     @MessageMapping("/room/{roomId}/vote-skip")
     public void voteSkip(@DestinationVariable String roomId, @Payload VoteSkipRequest request, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        if (rooms.voteSkip(roomId, headers.getSessionId())) {
+        if (rooms.voteSkip(roomId, headers.getSessionId(), request.environment())) {
             broadcastState(roomId);
-            messaging.convertAndSend("/topic/room/" + roomId + "/playback", rooms.playbackSnapshot(roomId));
+            broadcastPlayback(roomId, request.environment());
         }
     }
 
     @MessageMapping("/room/{roomId}/playback")
     public void playback(@DestinationVariable String roomId, @Payload PlaybackCommand command, SimpMessageHeaderAccessor headers) {
         if (!safeRoom(roomId)) return;
-        var updated = rooms.command(roomId, headers.getSessionId(), command.action(), command.playing(), command.position());
+        var updated = rooms.command(roomId, headers.getSessionId(), command.action(), command.playing(), command.position(), command.environment());
         if (updated != null) {
-            messaging.convertAndSend("/topic/room/" + roomId + "/playback", updated);
+            broadcastPlayback(roomId, command.environment());
             broadcastState(roomId);
         }
     }
@@ -161,7 +174,8 @@ public class RoomController {
     @Scheduled(fixedRate = 5000)
     public void syncPlayback() {
         for (String roomId : rooms.allRoomIds()) {
-            messaging.convertAndSend("/topic/room/" + roomId + "/playback", rooms.playbackSnapshot(roomId));
+            broadcastPlayback(roomId, "indoor");
+            broadcastPlayback(roomId, "outdoor");
         }
     }
 
@@ -170,12 +184,23 @@ public class RoomController {
         String roomId = rooms.leaveFromAnyRoom(event.getSessionId());
         if (roomId != null) {
             broadcastState(roomId);
-            messaging.convertAndSend("/topic/room/" + roomId + "/playback", rooms.playbackSnapshot(roomId));
+            broadcastPlayback(roomId, "indoor");
+            broadcastPlayback(roomId, "outdoor");
         }
     }
 
     private void broadcastState(String roomId) {
-        if (safeRoom(roomId)) messaging.convertAndSend("/topic/room/" + roomId + "/state", rooms.snapshot(roomId));
+        if (!safeRoom(roomId)) return;
+        for (String environment : java.util.List.of("indoor", "outdoor")) {
+            messaging.convertAndSend("/topic/room/" + roomId + "/state/" + environment,
+                    rooms.snapshot(roomId, environment));
+        }
+    }
+
+    private void broadcastPlayback(String roomId, String environment) {
+        String safeEnvironment = "outdoor".equalsIgnoreCase(environment) ? "outdoor" : "indoor";
+        messaging.convertAndSend("/topic/room/" + roomId + "/playback/" + safeEnvironment,
+                rooms.playbackSnapshot(roomId, safeEnvironment));
     }
 
     private boolean safeRoom(String roomId) {

@@ -1,10 +1,13 @@
 package com.healingcinema.payment.controller;
 
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,52 +15,54 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import lombok.RequiredArgsConstructor;
 
+import com.healingcinema.auth.entity.UserEntity;
+import com.healingcinema.auth.mapper.AdminUserMapper;
+import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.auth.service.AdminAuthService;
 import com.healingcinema.auth.service.AuthService;
+import com.healingcinema.payment.dto.PaymentDtos.PaymentRequest;
+import com.healingcinema.payment.service.AdminPaymentNotifier;
 import com.healingcinema.payment.service.PaymentApprovalService;
-import com.healingcinema.payment.service.PaymentApprovalService.PaymentRequest;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 public class PaymentController {
     public record SubmitPayment(String userId, String authToken, String username, int tier, int amount, String memo, String type, String roomName) {}
     public record AdminLoginRequest(String username, String password, String key) {}
-
+    public record AdminRegisterRequest(String username, String password, String key) {}
     private final PaymentApprovalService payments;
     private final AuthService auth;
     private final AdminAuthService adminAuth;
-    private final SimpMessagingTemplate messaging;
+    private final UserRepository users;
+    private final AdminPaymentNotifier notifier;
 
     @PostMapping("/api/payments/request")
     public ResponseEntity<?> submit(@RequestBody SubmitPayment request) {
         try {
             if (!auth.isValidSession(request.userId(), request.authToken())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(java.util.Map.of("message", "Vui lòng đăng nhập lại."));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Vui lòng đăng nhập lại."));
             }
             if ("PRIVATE_ROOM".equals(request.type())) {
                 PaymentRequest created = payments.submitPrivateRoom(request.userId(), request.username(), request.amount(), request.memo(), request.roomName());
-                notifyAdmins(created);
+                notifier.notifyAdmins(created);
                 return ResponseEntity.ok(created);
             }
             PaymentRequest created = payments.submit(request.userId(), request.username(), request.tier(), request.amount(), request.memo());
-            notifyAdmins(created);
+            notifier.notifyAdmins(created);
             return ResponseEntity.ok(created);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
-    }
-
-    private void notifyAdmins(PaymentRequest request) {
-        messaging.convertAndSendToUser("admin", "/queue/admin/payments", request);
     }
 
     @GetMapping("/api/payments/status")
     public ResponseEntity<?> status(@RequestParam String userId,
             @RequestHeader(value = "X-User-Token", required = false) String token) {
         if (!auth.isValidSession(userId, token)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        return ResponseEntity.ok(java.util.Map.of(
+        return ResponseEntity.ok(Map.of(
                 "status", payments.status(userId),
                 "tier", payments.approvedTier(userId),
                 "tiers", payments.approvedTiers(userId),
@@ -69,8 +74,34 @@ public class PaymentController {
     public ResponseEntity<?> adminLogin(@RequestBody AdminLoginRequest request) {
         String token = adminAuth.login(request.username(), request.password(), request.key());
         if (token == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(java.util.Map.of("message", "Tên đăng nhập, mật khẩu hoặc admin key không đúng."));
-        return ResponseEntity.ok(java.util.Map.of("token", token));
+                .body(Map.of("message", "Tên đăng nhập, mật khẩu hoặc admin key không đúng."));
+        return ResponseEntity.ok(Map.of("token", token));
+    }
+
+    @PostMapping("/api/admin/register")
+    public ResponseEntity<?> adminRegister(@RequestBody AdminRegisterRequest request) {
+        AdminAuthService.RegistrationResult result = adminAuth.register(
+                request.username(), request.password(), request.key());
+        if (!result.success()) {
+            return ResponseEntity.badRequest().body(Map.of("message", result.message()));
+        }
+        return ResponseEntity.ok(Map.of("message", result.message()));
+    }
+
+    @GetMapping("/api/admin/users")
+    public ResponseEntity<?> adminUsers(
+            @RequestHeader(value = "X-Admin-Token", required = false) String token,
+            @RequestParam(defaultValue = "") String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (!adminAuth.isValid(token)) return adminSessionExpired();
+
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(50, Math.max(1, size));
+        Page<UserEntity> results = users.searchForAdmin(
+                query == null ? "" : query.strip(),
+                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return ResponseEntity.ok(AdminUserMapper.toPage(results));
     }
 
     @GetMapping("/api/admin/payments")
@@ -99,6 +130,6 @@ public class PaymentController {
 
     private ResponseEntity<?> adminSessionExpired() {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(java.util.Map.of("message", "Admin session hết hạn. Hãy đăng nhập lại."));
+                .body(Map.of("message", "Admin session hết hạn. Hãy đăng nhập lại."));
     }
 }

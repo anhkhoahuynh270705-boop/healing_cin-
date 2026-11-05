@@ -1,6 +1,7 @@
 HELP.md
 target/
 /data/
+/storage/media/
 
 # Local secrets and machine-specific Spring configuration
 .env
