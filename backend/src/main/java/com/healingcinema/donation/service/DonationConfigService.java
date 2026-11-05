@@ -1,12 +1,12 @@
-package com.healingcinema.donation;
+package com.healingcinema.donation.service;
 
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.healingcinema.donation.DonationDtos.Config;
-import com.healingcinema.donation.DonationDtos.Tier;
+import com.healingcinema.donation.dto.DonationDtos.Config;
+import com.healingcinema.donation.dto.DonationDtos.Tier;
 
 @Service
 public class DonationConfigService {

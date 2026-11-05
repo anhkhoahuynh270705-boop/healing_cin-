@@ -1,4 +1,4 @@
-package com.healingcinema.media;
+package com.healingcinema.media.service;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.healingcinema.auth.entity.UserEntity;
 import com.healingcinema.auth.repository.UserRepository;
-import com.healingcinema.media.MediaDtos.UploadResponse;
+import com.healingcinema.media.dto.MediaDtos.UploadResponse;
 import com.healingcinema.media.entity.PersonalMediaEntity;
 import com.healingcinema.media.repository.PersonalMediaRepository;
 import com.healingcinema.room.guest.entity.GuestSessionEntity;

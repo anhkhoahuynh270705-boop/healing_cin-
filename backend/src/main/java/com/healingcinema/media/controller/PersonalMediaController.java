@@ -1,4 +1,4 @@
-package com.healingcinema.media;
+package com.healingcinema.media.controller;
 
 import java.nio.file.Files;
 import java.util.Map;
@@ -21,8 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.healingcinema.auth.service.AuthService;
-import com.healingcinema.media.MediaDtos.UploadResponse;
+import com.healingcinema.media.dto.MediaDtos.UploadResponse;
 import com.healingcinema.media.entity.PersonalMediaEntity;
+import com.healingcinema.media.service.PersonalMediaService;
 import com.healingcinema.room.service.RoomService;
 
 import lombok.RequiredArgsConstructor;

@@ -3,8 +3,8 @@ package com.healingcinema.wardrobe.mapper;
 import java.util.List;
 
 import com.healingcinema.auth.entity.UserEntity;
-import com.healingcinema.wardrobe.WardrobeDtos.Account;
-import com.healingcinema.wardrobe.WardrobeDtos.CatalogItem;
+import com.healingcinema.wardrobe.dto.WardrobeDtos.Account;
+import com.healingcinema.wardrobe.dto.WardrobeDtos.CatalogItem;
 import com.healingcinema.wardrobe.entity.WardrobeCatalogItemEntity;
 
 /** Mapper dữ liệu danh mục và tài khoản tủ đồ. */

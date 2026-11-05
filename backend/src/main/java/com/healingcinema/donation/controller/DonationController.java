@@ -1,4 +1,4 @@
-package com.healingcinema.donation;
+package com.healingcinema.donation.controller;
 
 import java.util.Map;
 
@@ -16,12 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.healingcinema.auth.entity.UserEntity;
 import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.auth.service.AuthService;
-import com.healingcinema.donation.DonationDtos.Account;
-import com.healingcinema.donation.DonationDtos.Config;
-import com.healingcinema.donation.DonationDtos.CreateRequest;
-import com.healingcinema.donation.DonationDtos.Submission;
-import com.healingcinema.donation.DonationDtos.Tier;
+import com.healingcinema.donation.dto.DonationDtos.Account;
+import com.healingcinema.donation.dto.DonationDtos.Config;
+import com.healingcinema.donation.dto.DonationDtos.CreateRequest;
+import com.healingcinema.donation.dto.DonationDtos.Submission;
+import com.healingcinema.donation.dto.DonationDtos.Tier;
 import com.healingcinema.donation.mapper.DonationMapper;
+import com.healingcinema.donation.service.DonationConfigService;
 import com.healingcinema.payment.service.AdminPaymentNotifier;
 import com.healingcinema.payment.dto.PaymentDtos.PaymentRequest;
 import com.healingcinema.payment.service.PaymentApprovalService;

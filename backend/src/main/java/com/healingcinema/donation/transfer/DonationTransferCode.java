@@ -1,4 +1,4 @@
-package com.healingcinema.donation;
+package com.healingcinema.donation.transfer;
 
  public final class DonationTransferCode {
     private DonationTransferCode() {}

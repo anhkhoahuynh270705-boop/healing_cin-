@@ -1,4 +1,4 @@
-package com.healingcinema.wardrobe;
+package com.healingcinema.wardrobe.dto;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.healingcinema.donation;
+package com.healingcinema.donation.dto;
 
 import java.util.List;
 

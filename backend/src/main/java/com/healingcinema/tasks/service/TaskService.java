@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.healingcinema.auth.entity.UserEntity;
 import com.healingcinema.auth.repository.UserRepository;
-import com.healingcinema.donation.DonationConfigService;
+import com.healingcinema.donation.service.DonationConfigService;
 import com.healingcinema.room.chat.repository.ChatMessageRepository;
 import com.healingcinema.room.guest.repository.GuestSessionRepository;
 import com.healingcinema.tasks.dto.Definition;

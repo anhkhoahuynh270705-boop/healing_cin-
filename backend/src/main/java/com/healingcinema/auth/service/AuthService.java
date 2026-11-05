@@ -17,9 +17,9 @@ import com.healingcinema.auth.dto.AuthDtos.UserProfile;
 import com.healingcinema.auth.entity.UserEntity;
 import com.healingcinema.auth.entity.UserSessionEntity;
 import com.healingcinema.auth.mapper.UserMapper;
-import com.healingcinema.donation.DonationTransferCode;
 import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.auth.repository.UserSessionRepository;
+import com.healingcinema.donation.transfer.DonationTransferCode;
 
 import lombok.RequiredArgsConstructor;
 

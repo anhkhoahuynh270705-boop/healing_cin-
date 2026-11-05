@@ -1,4 +1,4 @@
-package com.healingcinema.wardrobe;
+package com.healingcinema.wardrobe.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -14,8 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.healingcinema.auth.service.AuthService;
-import com.healingcinema.wardrobe.WardrobeDtos.CatalogItem;
-import com.healingcinema.wardrobe.WardrobeDtos.PurchaseRequest;
+import com.healingcinema.wardrobe.dto.WardrobeDtos.CatalogItem;
+import com.healingcinema.wardrobe.dto.WardrobeDtos.PurchaseRequest;
+import com.healingcinema.wardrobe.service.WardrobeService;
 
 import lombok.RequiredArgsConstructor;
 

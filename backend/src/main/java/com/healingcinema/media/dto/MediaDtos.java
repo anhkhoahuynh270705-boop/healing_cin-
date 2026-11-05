@@ -1,4 +1,4 @@
-package com.healingcinema.media;
+package com.healingcinema.media.dto;
 
 public final class MediaDtos {
     private MediaDtos() {}

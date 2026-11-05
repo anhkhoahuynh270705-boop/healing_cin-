@@ -11,11 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.healingcinema.auth.entity.UserEntity;
-import com.healingcinema.donation.DonationTransferCode;
 import com.healingcinema.auth.repository.AdminSessionRepository;
 import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.auth.repository.UserSessionRepository;
 import com.healingcinema.auth.service.PasswordHashService;
+import com.healingcinema.donation.transfer.DonationTransferCode;
 import com.healingcinema.room.entity.RoomEntity;
 import com.healingcinema.room.guest.repository.GuestSessionRepository;
 import com.healingcinema.room.repository.RoomRepository;

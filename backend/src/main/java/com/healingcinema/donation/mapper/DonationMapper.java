@@ -1,8 +1,8 @@
 package com.healingcinema.donation.mapper;
 
 import com.healingcinema.auth.entity.UserEntity;
-import com.healingcinema.donation.DonationDtos.Account;
-import com.healingcinema.donation.DonationDtos.Tier;
+import com.healingcinema.donation.dto.DonationDtos.Account;
+import com.healingcinema.donation.dto.DonationDtos.Tier;
 
 /** Mapper phản hồi tài khoản ủng hộ. */
 public final class DonationMapper {

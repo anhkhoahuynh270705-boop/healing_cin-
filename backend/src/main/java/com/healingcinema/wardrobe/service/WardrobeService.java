@@ -1,4 +1,4 @@
-package com.healingcinema.wardrobe;
+package com.healingcinema.wardrobe.service;
 
 import java.util.List;
 import java.util.Map;
@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.healingcinema.auth.entity.UserEntity;
 import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.payment.service.PaymentApprovalService;
-import com.healingcinema.wardrobe.WardrobeDtos.Account;
-import com.healingcinema.wardrobe.WardrobeDtos.CatalogItem;
+import com.healingcinema.wardrobe.dto.WardrobeDtos.Account;
+import com.healingcinema.wardrobe.dto.WardrobeDtos.CatalogItem;
 import com.healingcinema.wardrobe.entity.WardrobeCatalogItemEntity;
 import com.healingcinema.wardrobe.entity.WardrobePurchaseEntity;
 import com.healingcinema.wardrobe.mapper.WardrobeMapper;
