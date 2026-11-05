@@ -5679,3 +5679,309 @@ app-cinema-page {
   box-shadow: none;
   background: transparent;
 }
+
+/* Tablet layout: keep all room controls reachable while giving the scene room to breathe. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  :root {
+    --left-w: 176px;
+    --right-w: 64px;
+    --topbar-h: 48px;
+    --bottom-h: 52px;
+  }
+
+  .cinema-topbar {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .topbar-center {
+    gap: 7px;
+  }
+
+  .status-badge,
+  .online-number {
+    font-size: 9px;
+  }
+
+  .brand-sub,
+  .topbar-action span,
+  .topbar-wallet span {
+    display: none;
+  }
+
+  .topbar-action,
+  .topbar-wallet {
+    width: 32px;
+    padding-inline: 0;
+  }
+
+  .left-sidebar {
+    padding: 12px 9px;
+  }
+
+  .right-sidebar {
+    right: 6px;
+  }
+
+  .cinema-bottombar {
+    gap: 7px;
+    padding-inline: 8px;
+  }
+
+  .side-panel {
+    right: calc(var(--right-w) + 12px);
+    width: min(360px, calc(100vw - var(--left-w) - var(--right-w) - 28px));
+  }
+}
+
+/* Phones: move room actions into a horizontal, swipeable toolbar. */
+@media (max-width: 760px) {
+  :root {
+    --left-w: 0px;
+    --right-w: 0px;
+    --topbar-h: 44px;
+    --bottom-h: 56px;
+  }
+
+  .cinema-topbar {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .topbar-center {
+    display: none;
+  }
+
+  .topbar-right {
+    gap: 2px;
+  }
+
+  .brand-logo {
+    gap: 6px;
+  }
+
+  .brand-sub,
+  .user-profile-name,
+  .topbar-action span,
+  .topbar-wallet span,
+  .logout-btn span:last-child {
+    display: none;
+  }
+
+  .brand-name {
+    font-size: 11px;
+  }
+
+  .topbar-action,
+  .topbar-wallet,
+  .user-profile-badge,
+  .room-exit-btn {
+    width: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    gap: 0;
+  }
+
+  .topbar-action,
+  .topbar-wallet {
+    font-size: 12px;
+  }
+
+  .topbar-right .tb-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .tb-btn-primary {
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .right-sidebar {
+    inset: auto 7px 7px;
+    width: auto;
+    height: 50px;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    background: rgba(12, 9, 19, 0.92);
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .right-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rs-btn {
+    flex: 0 0 54px;
+    width: 54px;
+    min-height: 42px;
+    gap: 3px;
+    padding: 4px 2px;
+    font-size: 8px;
+  }
+
+  .rs-btn > i {
+    font-size: 15px;
+  }
+
+  .rs-badge {
+    top: 1px;
+    right: 5px;
+  }
+
+  .cinema-bottombar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 0 6px;
+  }
+
+  .bottom-left,
+  .bottom-right {
+    gap: 1px;
+  }
+
+  .bl-btn,
+  .br-btn {
+    width: 27px;
+    height: 32px;
+  }
+
+  .bottom-center {
+    gap: 4px;
+    padding-inline: 8px;
+  }
+
+  .chat-emoji-btn,
+  .chat-picker-toggle {
+    font-size: 13px;
+  }
+
+  .chat-input {
+    min-width: 0;
+    font-size: 12px;
+  }
+
+  .chat-count,
+  .volume-slider-wrap,
+  .volume-value {
+    display: none;
+  }
+
+  .chat-send-btn {
+    flex: 0 0 26px;
+    width: 26px;
+    height: 30px;
+  }
+
+  .side-panel,
+  .side-panel--wide {
+    top: calc(var(--topbar-h) + 6px);
+    right: 7px;
+    bottom: calc(var(--bottom-h) + 62px);
+    left: 7px;
+    width: auto;
+    max-width: none;
+    border-radius: 14px;
+    transform: translateY(12px) scale(0.985);
+  }
+
+  .side-panel.open {
+    transform: translateY(0) scale(1);
+  }
+
+  .unmute-banner {
+    bottom: 70px;
+    max-width: calc(100% - 92px);
+    font-size: 11px;
+  }
+
+  .auth-modal-overlay {
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  }
+
+  .auth-modal-card {
+    max-height: 96dvh;
+    border-radius: 15px;
+  }
+
+  .auth-modal-header {
+    padding: 14px 16px 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .cinema-bottombar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .bottom-right {
+    display: none;
+  }
+
+  .bottom-left .bl-btn:first-child {
+    display: none;
+  }
+
+  .brand-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .topbar-right .tb-btn[title='Thông tin'] {
+    display: none;
+  }
+
+  .side-panel .sp-body {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 350px) {
+  .brand-name {
+    max-width: 102px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-right .tb-btn[title='Toàn màn hình'] {
+    display: none;
+  }
+
+  .rs-btn {
+    flex-basis: 50px;
+    width: 50px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --topbar-h: 38px;
+    --bottom-h: 46px;
+  }
+
+  .right-sidebar {
+    height: 44px;
+  }
+
+  .rs-btn {
+    min-height: 36px;
+    flex-basis: 52px;
+  }
+
+  .side-panel {
+    top: calc(var(--topbar-h) + 4px);
+    bottom: calc(var(--bottom-h) + 54px);
+  }
+}

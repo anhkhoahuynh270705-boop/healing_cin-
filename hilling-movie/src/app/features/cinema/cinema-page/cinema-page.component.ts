@@ -1440,21 +1440,12 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.toast('Ghế này đã có người ngồi rồi!');
       return;
     }
-    this.danceReturnSeat = null;
-    this.mySeat = index;
-    try {
-      localStorage.setItem('healing_my_seat', String(index));
-    } catch {}
+    // Clicking the seat already assigned to this character should not restart its walk route.
+    if (this.mySeat === index && this.isMySeat(index)) return;
 
-    // Cập nhật ngay ghế của mình không cần đợi server roundtrip
-    if (this.state && this.sessionId) {
-      const me = this.state.guests.find((g) => g.id === this.sessionId);
-      if (me) {
-        me.seat = index;
-      }
-      this.cdr.markForCheck();
-    }
-    // Kích hoạt ngay lập tức animation nhân vật đứng lên và đi bộ tới ghế mới!
+    this.danceReturnSeat = null;
+    // Animate from the current seat before updating the optimistic room state. The 3D scene
+    // uses that state to recover the character's origin if its model has not been created yet.
     if (this.sessionId) {
       this.threeCinema?.walkToSeat(
         this.sessionId,
@@ -1468,6 +1459,18 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.characterShirtColor,
         this.equippedShirtTier,
       );
+    }
+
+    this.mySeat = index;
+    try {
+      localStorage.setItem('healing_my_seat', String(index));
+    } catch {}
+
+    // Cập nhật ngay ghế của mình không cần đợi server roundtrip
+    if (this.state && this.sessionId) {
+      const me = this.state.guests.find((g) => g.id === this.sessionId);
+      if (me) me.seat = index;
+      this.cdr.markForCheck();
     }
     void this.refreshTaskProgress();
     this.roomSocket.claimSeat(index);

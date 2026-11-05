@@ -1305,7 +1305,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
         (grp.userData['shirtIndex'] !== guest.shirtColorIndex ||
           grp.userData['vipTier'] !== guest.vipTier ||
           grp.userData['gender'] !== (guest.gender === 'female' ? 'female' : 'male') ||
-          grp.userData['displayName'] !== guest.name ||
+          grp.userData['displayName'] !== guest.name.slice(0, 10) ||
           grp.userData['shirtColor'] !== guest.shirtColor ||
           grp.userData['shirtTier'] !== (guest.shirtTier ?? 0))
       ) {
@@ -1455,7 +1455,18 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     const targetSd = this.seats[targetSeatIndex];
     if (!targetSd) return;
 
-    let grp = this.characters.get(id);
+    const targetPos = new THREE.Vector3(targetSd.x, targetSd.y + 0.12, targetSd.z - 0.04);
+    const activeWalker = this.walkers.get(id);
+    if (activeWalker?.targetSeatIndex === targetSeatIndex) return;
+
+    let grp = activeWalker?.group ?? this.characters.get(id);
+    if (!activeWalker && grp && grp.position.distanceTo(targetPos) < 0.45) {
+      grp.rotation.set(0, targetSd.rotation ?? Math.PI, 0);
+      return;
+    }
+
+    // A new destination replaces the current route and starts from the live position.
+    if (activeWalker) this.walkers.delete(id);
     const targetAisleX = this.environmentMode === 'outdoor' ? 0 : targetSd.x < 0 ? -3.19 : 3.19;
 
     // Hồ sơ có thể vừa đổi lúc nhân vật đã tồn tại trong scene; dựng lại model
@@ -1476,6 +1487,8 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     }
 
     if (!grp) {
+      const currentGuest = this.state?.guests.find((guest) => guest.id === id);
+      const currentSeat = currentGuest?.seat == null ? undefined : this.seats[currentGuest.seat];
       grp = this.makeCharacter(
         id,
         shirtIndex,
@@ -1487,8 +1500,17 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
         shirtColor,
         shirtTier,
       );
-      // Xuất hiện từ cuối lối đi
-      grp.position.set(targetAisleX, -0.15, 7.5);
+      // If the room state already has a seat, recover that position instead of respawning
+      // the character at the entrance before walking to the newly selected seat.
+      if (currentSeat) {
+        grp.position.set(currentSeat.x, currentSeat.y + 0.12, currentSeat.z - 0.04);
+      } else if (currentGuest && (currentGuest.action ?? 'idle') !== 'idle') {
+        grp.position.copy(this.dancePosition(currentGuest));
+      } else if (currentGuest) {
+        grp.position.copy(this.standingPosition(currentGuest));
+      } else {
+        grp.position.set(targetAisleX, -0.15, 7.5);
+      }
       grp.rotation.set(0, Math.PI, 0);
       this.scene.add(grp);
       this.characters.set(id, grp);

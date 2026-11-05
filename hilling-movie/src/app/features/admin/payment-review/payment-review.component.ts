@@ -34,6 +34,8 @@ export class PaymentReviewComponent implements OnInit, OnDestroy {
   private realtimeSubscriptions = new Subscription();
   private incomingDuringLoad: PaymentRequestView[] = [];
   private readonly locallyDecidedIds = new Set<string>();
+  private pendingRefreshTimer?: ReturnType<typeof setInterval>;
+  private refreshing = false;
 
   constructor(
     private readonly paymentApi: PaymentApiService,
@@ -55,21 +57,25 @@ export class PaymentReviewComponent implements OnInit, OnDestroy {
     this.requestsChange.emit(this.requests);
     void this.load();
     this.realtime.connect(this.adminToken);
+    // Keep the approval queue current when the WebSocket is unavailable or reconnecting.
+    this.pendingRefreshTimer = setInterval(() => {
+      if (document.visibilityState !== 'hidden') void this.load(true);
+    }, 5000);
   }
 
   ngOnDestroy(): void {
+    if (this.pendingRefreshTimer) clearInterval(this.pendingRefreshTimer);
     this.realtimeSubscriptions.unsubscribe();
     this.realtime.disconnect();
   }
 
-  async load(): Promise<void> {
+  async load(silent = false): Promise<void> {
     if (!this.adminToken) return;
-    if (this.loading) {
-      return;
-    }
-    this.loading = true;
+    if (this.refreshing) return;
+    this.refreshing = true;
+    if (!silent) this.loading = true;
     this.incomingDuringLoad = [];
-    this.error = '';
+    if (!silent) this.error = '';
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     try {
@@ -86,15 +92,18 @@ export class PaymentReviewComponent implements OnInit, OnDestroy {
       this.persistRequests();
       this.requestsChange.emit(this.requests);
     } catch (error) {
-      this.error =
-        error instanceof DOMException && error.name === 'AbortError'
-          ? 'Máy chủ phản hồi chậm. Yêu cầu mới vẫn sẽ hiện qua realtime; hãy thử làm mới lại.'
-          : error instanceof Error
-            ? error.message
-            : 'Không tải được yêu cầu thanh toán.';
+      if (!silent) {
+        this.error =
+          error instanceof DOMException && error.name === 'AbortError'
+            ? 'Máy chủ phản hồi chậm. Yêu cầu mới vẫn sẽ hiện qua cập nhật tự động; hãy thử làm mới lại.'
+            : error instanceof Error
+              ? error.message
+              : 'Không tải được yêu cầu thanh toán.';
+      }
     } finally {
       clearTimeout(timeout);
-      this.loading = false;
+      if (!silent) this.loading = false;
+      this.refreshing = false;
     }
   }
 

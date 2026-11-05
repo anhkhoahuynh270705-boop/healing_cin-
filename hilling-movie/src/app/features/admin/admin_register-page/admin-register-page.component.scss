@@ -107,3 +107,24 @@ h2 {
   color: #ff9797;
   font-size: 12px;
 }
+
+@media (max-width: 420px) {
+  :host {
+    margin: 8px auto;
+  }
+
+  .admin-register-card {
+    padding: 20px 16px;
+    border-radius: 13px;
+  }
+
+  .admin-login-form {
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .admin-login-form input {
+    min-height: 46px;
+    font-size: 16px;
+  }
+}

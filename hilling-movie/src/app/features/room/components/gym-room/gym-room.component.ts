@@ -130,15 +130,34 @@ const ROOM_SPACING = 1.65;
     .gym-equipment-card small { font-size:7px; }
     .gym-equipment-arrow { margin-left:auto; color:#8bb98e; font-size:8px; }
     @media (max-width:760px) {
-      .gym-topbar { top:9px; left:9px; right:76px; gap:6px; }
+      .gym-topbar { top:9px; left:8px; right:8px; gap:6px; }
       .gym-return-button { margin-right:0; padding:8px; font-size:0; }
       .gym-return-button i { font-size:12px; }
       .gym-live-pill { display:none; }
-      .gym-status-card { left:9px; bottom:225px; max-width:calc(100% - 18px); }
-      .gym-scene-hint { right:76px; bottom:278px; }
-      .gym-equipment-dock { right:76px; bottom:8px; left:8px; gap:7px; padding:8px; }
-      .gym-equipment-grid { grid-template-columns:repeat(3,minmax(0,1fr)); max-height:158px; overflow:auto; }
+      .gym-status-card { left:8px; bottom:calc(34dvh + 76px); max-width:calc(100% - 16px); }
+      .gym-scene-hint { top:58px; right:8px; bottom:auto; max-width:48%; }
+      .gym-equipment-dock { right:8px; bottom:62px; left:8px; max-height:34dvh; gap:7px; padding:8px; overflow:hidden; }
+      .gym-dock-heading small { max-width:54vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .gym-equipment-grid { grid-template-columns:repeat(3,minmax(0,1fr)); max-height:23dvh; overflow:auto; overscroll-behavior:contain; }
       .gym-equipment-card { min-height:43px; }
+    }
+    @media (max-width:420px) {
+      .gym-brand { gap:7px; padding:7px 9px; }
+      .gym-brand-icon { width:27px; height:27px; }
+      .gym-brand strong { font-size:9px; }
+      .gym-brand small { font-size:7px; }
+      .gym-equipment-card { gap:5px; padding:5px; }
+      .gym-equipment-icon { width:23px; height:23px; }
+      .gym-equipment-card strong { font-size:7px; }
+      .gym-equipment-card small { display:none; }
+      .gym-status-card { max-width:calc(100% - 16px); padding:8px; }
+    }
+    @media (orientation:landscape) and (max-height:500px) {
+      .gym-status-card { bottom:calc(38dvh + 72px); }
+      .gym-scene-hint { top:48px; }
+      .gym-equipment-dock { max-height:38dvh; }
+      .gym-equipment-grid { grid-template-columns:repeat(4,minmax(0,1fr)); max-height:25dvh; }
+      .gym-dock-heading { display:none; }
     }
   `],
 })
