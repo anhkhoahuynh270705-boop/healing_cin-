@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://<ten-backend>.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": " https://healing-cin.onrender.com" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
