@@ -148,8 +148,8 @@ cd backend
 ## Run the application
 
 - Frontend development server: `http://localhost:4200`
-- Backend HTTP API: `http://localhost:8080`
-- WebSocket endpoint: `ws://localhost:8080/ws`
+- Backend HTTP API: `http://https://healing-cin.onrender.com`
+- WebSocket endpoint: `ws://https://healing-cin.onrender.com/ws`
 - PostgreSQL: `localhost:5432` (`healing_cinema` database)
 
 To try a shared room locally, open the app in more than one browser tab. The backend persists accounts and room/playback data in PostgreSQL. Flyway migrations are in `backend/src/main/resources/db/migration` and run automatically at startup. Uploaded media is stored under `backend/storage/media` by default.

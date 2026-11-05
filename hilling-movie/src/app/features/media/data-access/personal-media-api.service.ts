@@ -4,7 +4,7 @@ import { PersonalMediaUploadResult } from '../models/personal-media.model';
 @Injectable({ providedIn: 'root' })
 export class PersonalMediaApiService {
   private get baseUrl(): string {
-    if (typeof window === 'undefined') return 'http://localhost:8080';
+    if (typeof window === 'undefined') return 'http://https://healing-cin.onrender.com';
     return `${location.protocol}//${location.hostname || 'localhost'}:8080`;
   }
 

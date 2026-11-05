@@ -34,6 +34,6 @@ From this directory:
 docker compose up --build -d
 ```
 
-The API is available at `http://localhost:8080`. Docker Compose builds the backend image from `Dockerfile`, waits for PostgreSQL to become healthy, and keeps database and uploaded media in named volumes. View logs with `docker compose logs -f backend`; stop the services with `docker compose down`.
+The API is available at `http://https://healing-cin.onrender.com`. Docker Compose builds the backend image from `Dockerfile`, waits for PostgreSQL to become healthy, and keeps database and uploaded media in named volumes. View logs with `docker compose logs -f backend`; stop the services with `docker compose down`.
 
 For a deployed instance, set `DB_PASSWORD`, `CINEMA_ADMIN_USERNAME`, `CINEMA_ADMIN_PASSWORD`, and `CINEMA_ADMIN_KEY` in the environment before starting Compose. Do not use the local defaults on a public server.

@@ -4,7 +4,7 @@ import { TaskProgress } from '../models/task.model';
 @Injectable({ providedIn: 'root' })
 export class TaskApiService {
   private get baseUrl(): string {
-    if (typeof window === 'undefined') return 'http://localhost:8080';
+    if (typeof window === 'undefined') return 'http://https://healing-cin.onrender.com';
     return `${location.protocol}//${location.hostname || 'localhost'}:8080`;
   }
 
