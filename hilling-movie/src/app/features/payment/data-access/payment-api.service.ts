@@ -16,6 +16,7 @@ export class PaymentApiService {
   ): Promise<Response> {
     return fetch(`${this.baseUrl}/api/payments/request`, {
       method: 'POST',
+      cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId,
@@ -36,6 +37,7 @@ export class PaymentApiService {
   ): Promise<Response> {
     return fetch(`${this.baseUrl}/api/payments/request`, {
       method: 'POST',
+      cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId,
@@ -74,6 +76,7 @@ export class PaymentApiService {
 
   getPending(adminToken: string, signal?: AbortSignal): Promise<Response> {
     return fetch(`${this.baseUrl}/api/admin/payments`, {
+      cache: 'no-store',
       headers: { 'X-Admin-Token': adminToken },
       signal,
     });

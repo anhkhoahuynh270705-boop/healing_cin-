@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,11 +49,11 @@ public class PaymentController {
             if ("PRIVATE_ROOM".equals(request.type())) {
                 PaymentRequest created = payments.submitPrivateRoom(request.userId(), request.username(), request.amount(), request.memo(), request.roomName());
                 notifier.notifyAdmins(created);
-                return ResponseEntity.ok(created);
+                return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(created);
             }
             PaymentRequest created = payments.submit(request.userId(), request.username(), request.tier(), request.amount(), request.memo());
             notifier.notifyAdmins(created);
-            return ResponseEntity.ok(created);
+            return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(created);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -108,7 +109,7 @@ public class PaymentController {
     public ResponseEntity<?> pending(@RequestHeader(value = "X-Admin-Token", required = false) String token) {
         if (!adminAuth.isValid(token)) return adminSessionExpired();
         List<PaymentRequest> requests = payments.pending();
-        return ResponseEntity.ok(requests);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(requests);
     }
 
     @PostMapping("/api/admin/logout")

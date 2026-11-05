@@ -2234,8 +2234,18 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.handleExpiredSession();
         return;
       }
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Không gửi được yêu cầu.');
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.message || `Máy chủ từ chối yêu cầu (HTTP ${response.status}).`);
+      }
+      if (
+        !data ||
+        typeof data.id !== 'string' ||
+        data.type !== 'PRIVATE_ROOM' ||
+        data.status !== 'PENDING'
+      ) {
+        throw new Error('Máy chủ chưa xác nhận đã lưu yêu cầu. Vui lòng thử lại sau.');
+      }
       this.privateRoomPending = true;
       this.toast('Đã gửi yêu cầu phòng riêng. Admin sẽ duyệt sau khi xác nhận 10.000đ.');
       void this.refreshChatAccess();
