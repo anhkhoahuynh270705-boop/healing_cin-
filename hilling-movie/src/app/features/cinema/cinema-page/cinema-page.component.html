@@ -60,9 +60,6 @@
           <i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Rạp chung</span>
         </button>
       }
-      <button class="tb-btn" title="Chia sẻ phòng" (click)="copyRoomLink()">
-        <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
-      </button>
       <div class="notification-control">
         <button
           type="button"
@@ -70,7 +67,7 @@
           title="Thông báo"
           aria-label="Mở thông báo"
           [attr.aria-expanded]="notificationsOpen"
-          (click)="toggleNotifications()"
+          (click)="toggleNotifications($event)"
         >
           <i class="fa-solid fa-bell" aria-hidden="true"></i>
           @if (unreadNotificationCount) {
@@ -78,7 +75,12 @@
           }
         </button>
         @if (notificationsOpen) {
-          <section class="notification-popover" aria-label="Danh sách thông báo">
+          <section
+            class="notification-popover"
+            aria-label="Danh sách thông báo"
+            [style.left.px]="notificationLeft"
+            [style.top.px]="notificationTop"
+          >
             <header class="notification-popover-head">
               <div><strong>Thông báo</strong><span>{{ notifications.length }} mục</span></div>
               <button type="button" (click)="clearNotifications()" [disabled]="!notifications.length">Xóa tất cả</button>
@@ -104,6 +106,9 @@
           </section>
         }
       </div>
+      <button class="tb-btn" title="Chia sẻ phòng" (click)="copyRoomLink()">
+        <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+      </button>
       <button class="tb-btn" title="Toàn màn hình" (click)="toggleFullscreen()">
         <i class="fa-solid fa-expand" aria-hidden="true"></i>
       </button>
@@ -351,7 +356,7 @@
         title="Chọn động tác cho nhân vật"
         (click)="togglePanel('dance')"
       >
-        <i class="fa-solid fa-person-dancing" aria-hidden="true"></i>
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
         <span>Hành động</span>
       </button>
 

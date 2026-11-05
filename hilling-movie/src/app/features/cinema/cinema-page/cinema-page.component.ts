@@ -87,6 +87,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   isBootingRoom = false;
   notifications: UserNotification[] = [];
   notificationsOpen = false;
+  notificationLeft = 0;
+  notificationTop = 0;
   private notificationStorageKey = '';
   private paymentStatusesInitialized = false;
   private vipPaymentStatus = 'NONE';
@@ -2392,9 +2394,16 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.notifications.filter((notification) => !notification.read).length;
   }
 
-  toggleNotifications(): void {
+  toggleNotifications(event: MouseEvent): void {
     this.notificationsOpen = !this.notificationsOpen;
     if (this.notificationsOpen) {
+      const anchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      const width = Math.min(360, window.innerWidth - 20);
+      this.notificationLeft = Math.max(
+        10,
+        Math.min(anchor.right + 12 - width, window.innerWidth - width - 10),
+      );
+      this.notificationTop = anchor.bottom + 10;
       this.notifications = this.notifications.map((notification) => ({
         ...notification,
         read: true,

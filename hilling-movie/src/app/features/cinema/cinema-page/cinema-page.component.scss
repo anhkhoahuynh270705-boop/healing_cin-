@@ -394,8 +394,8 @@ app-cinema-page {
 .notification-popover {
   position: fixed;
   z-index: 1200;
-  top: calc(var(--topbar-h) + 8px);
-  right: 10px;
+  right: auto;
+  bottom: auto;
   display: flex;
   width: min(360px, calc(100vw - 20px));
   max-height: min(470px, calc(100dvh - 68px));
@@ -497,6 +497,14 @@ app-cinema-page {
 .notification-empty i {
   color: #776d85;
   font-size: 20px;
+}
+.rs-btn--dance > i {
+  color: #d3baff;
+  filter: drop-shadow(0 0 5px rgba(198, 173, 255, 0.34));
+}
+.rs-btn--dance.rs-btn--active > i {
+  color: #f0bb77;
+  filter: drop-shadow(0 0 6px rgba(240, 187, 119, 0.42));
 }
 .topbar-action,
 .topbar-wallet {
