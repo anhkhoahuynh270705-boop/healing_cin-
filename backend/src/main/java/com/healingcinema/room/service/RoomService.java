@@ -590,8 +590,9 @@ public class RoomService {
         }
         RoomEntity room = roomRepository.findById(roomId).orElse(null);
         if (room != null) {
-            // Tự động khôi phục nếu phòng đang lưu video cũ đã chết hoặc bị rỗng
-            if ("jfKfPfyJRdk".equals(room.getPlaybackVideoId()) || room.getPlaybackVideoId() == null || room.getPlaybackVideoId().isBlank()) {
+            // `jfKfPfyJRdk` is a valid lofi track; never reset a playing room just because
+            // that track is active. Reset only genuinely missing/blank playback IDs.
+            if (room.getPlaybackVideoId() == null || room.getPlaybackVideoId().isBlank()) {
                 setPlayback(room, LOFI.get(0), LOFI_TITLES.get(0), "lofi", 0, true);
                 room.setLofiIndex(0);
                 return roomRepository.save(room);
