@@ -1,0 +1,30 @@
+<section class="admin-login-card">
+  <div class="login-mark"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+  <p class="section-kicker">KHU VỰC QUẢN TRỊ</p>
+  <h2>Đăng nhập admin</h2>
+  <p class="login-description">Đăng nhập để đối chiếu giao dịch và cấp quyền cho khán giả.</p>
+  <form [formGroup]="form" (submit)="submit()" class="admin-login-form">
+    <label
+      ><span>Tên đăng nhập</span><input formControlName="username" autocomplete="username" required
+    /></label>
+    <label
+      ><span>Mật khẩu</span
+      ><input formControlName="password" type="password" autocomplete="current-password" required
+    /></label>
+    <label
+      ><span>Admin key</span
+      ><input formControlName="key" type="password" autocomplete="off" required
+    /></label>
+    <button type="submit" [disabled]="busy">
+      {{ busy ? 'Đang xác thực…' : 'Vào bảng quản lý' }}
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+    </button>
+  </form>
+  @if (error) {
+    <p class="admin-error" role="alert">{{ error }}</p>
+  }
+  <div class="admin-auth-switch">
+    <span>Chưa có tài khoản quản trị?</span
+    ><button type="button" (click)="showRegister.emit()">Đăng ký admin</button>
+  </div>
+</section>

@@ -1,0 +1,99 @@
+<div class="tasks-backdrop" (click)="closed.emit()">
+  <section
+    class="tasks-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tasks-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="tasks-header">
+      <div>
+        <span class="tasks-eyebrow">HÀNH TRÌNH CỦA BẠN</span>
+        <h2 id="tasks-title">Nhiệm vụ nhận EXP</h2>
+        <p>Nhiệm vụ tự làm mới mỗi ngày. EXP đã nhận vẫn được giữ để lên cấp.</p>
+      </div>
+      <button type="button" class="tasks-close" aria-label="Đóng nhiệm vụ" (click)="closed.emit()">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    @if (progress(); as data) {
+      <section class="tasks-exp-summary" aria-label="Tiến độ kinh nghiệm">
+        <div class="tasks-exp-top">
+          <span class="tasks-level">LV{{ data.level }}</span>
+          <strong>{{ data.experiencePoints }} EXP</strong>
+        </div>
+        <div
+          class="tasks-exp-track"
+          role="progressbar"
+          [attr.aria-valuenow]="data.levelExperience"
+          [attr.aria-valuemax]="data.nextLevelExperience"
+          aria-label="Tiến trình lên cấp"
+        >
+          <span [style.width.%]="(data.levelExperience / data.nextLevelExperience) * 100"></span>
+        </div>
+        <small
+          >Còn <b>{{ data.nextLevelExperience - data.levelExperience }} EXP</b> để lên LV{{
+            data.level + 1
+          }}</small
+        >
+      </section>
+
+      <div class="tasks-list">
+        @for (task of data.tasks; track task.id) {
+          <article class="task-row" [class.task-row--done]="task.claimed">
+            <span class="task-icon">
+              <i
+                class="fa-solid"
+                [class.fa-chair]="task.id === 'seat'"
+                [class.fa-shirt]="task.id === 'style'"
+                [class.fa-heart]="task.id === 'donation'"
+                [class.fa-box-open]="task.id === 'wardrobe'"
+                aria-hidden="true"
+              ></i>
+            </span>
+            <div class="task-copy">
+              <strong>{{ task.title }}</strong>
+              <p>{{ task.description }}</p>
+              <small>+{{ task.rewardExp }} EXP</small>
+            </div>
+            @if (task.claimed) {
+              <span class="task-state"
+                ><i class="fa-solid fa-check" aria-hidden="true"></i> Đã nhận</span
+              >
+            } @else if (task.eligible) {
+              <button
+                type="button"
+                class="task-claim"
+                [disabled]="claiming() !== null"
+                (click)="claim(task.id)"
+              >
+                @if (claiming() === task.id) {
+                  <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+                }
+                Nhận EXP
+              </button>
+            } @else {
+              <span class="task-locked"
+                ><i class="fa-solid fa-lock" aria-hidden="true"></i> Chưa xong</span
+              >
+            }
+          </article>
+        }
+      </div>
+    } @else if (loading()) {
+      <div class="tasks-message">
+        <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Đang tải nhiệm vụ…
+      </div>
+    }
+
+    @if (error()) {
+      <div class="tasks-error" role="alert">
+        <span>{{ error() }}</span>
+        @if (!progress()) {
+          <button type="button" (click)="load()">Thử lại</button>
+        }
+      </div>
+    }
+  </section>
+</div>

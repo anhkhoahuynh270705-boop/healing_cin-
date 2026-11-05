@@ -1,0 +1,128 @@
+<section class="user-management-page">
+  <header class="user-page-heading">
+    <div>
+      <p class="admin-eyebrow">TÀI KHOẢN & THÀNH VIÊN</p>
+      <h1>Quản lý người dùng</h1>
+      <p>Theo dõi tài khoản, ngày đăng ký và quyền lợi khung chat VIP.</p>
+    </div>
+    <button type="button" class="user-refresh-button" (click)="load()" [disabled]="loading">
+      <i class="fa-solid fa-rotate" [class.spinning]="loading" aria-hidden="true"></i>
+      Làm mới
+    </button>
+  </header>
+
+  <div class="user-overview-cards">
+    <article class="user-overview-card">
+      <span class="user-overview-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
+      <span
+        ><small>Tài khoản phù hợp</small><b>{{ totalUsers }}</b></span
+      >
+    </article>
+    <article class="user-overview-card">
+      <span class="user-overview-icon vip"
+        ><i class="fa-solid fa-crown" aria-hidden="true"></i
+      ></span>
+      <span
+        ><small>Kết quả trang hiện tại</small><b>{{ users.length }} / {{ pageSize }}</b></span
+      >
+    </article>
+  </div>
+
+  <form class="user-search-form" [formGroup]="searchForm" (submit)="search()">
+    <label class="user-search-input">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input formControlName="query" placeholder="Tìm theo username hoặc tên hiển thị" />
+    </label>
+    <button type="submit" [disabled]="loading">
+      <i class="fa-solid fa-filter" aria-hidden="true"></i> Tìm kiếm
+    </button>
+  </form>
+
+  @if (error) {
+    <p class="user-error" role="alert">{{ error }}</p>
+  }
+
+  <section class="user-table-card" aria-label="Danh sách người dùng">
+    <header class="user-table-heading">
+      <div>
+        <h2>Danh sách tài khoản</h2>
+        <p>{{ totalUsers }} kết quả phù hợp</p>
+      </div>
+      <span class="user-page-indicator"
+        >Trang {{ totalPages ? page + 1 : 0 }} / {{ totalPages }}</span
+      >
+    </header>
+
+    @if (loading && !users.length) {
+      <div class="user-loading">
+        <i class="fa-solid fa-spinner spinning" aria-hidden="true"></i> Đang tải danh sách user…
+      </div>
+    } @else if (users.length) {
+      <div class="user-table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>TÀI KHOẢN</th>
+              <th>TÊN HIỂN THỊ</th>
+              <th>QUYỀN LỢI</th>
+              <th>NGÀY THAM GIA</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users; track user.id) {
+              <tr>
+                <td>
+                  <div class="user-account-cell">
+                    <span class="user-avatar">{{ user.avatar || '•' }}</span>
+                    <span
+                      ><b>{{ user.username }}</b
+                      ><small>{{ user.id }}</small></span
+                    >
+                  </div>
+                </td>
+                <td>{{ user.displayName || '—' }}</td>
+                <td>
+                  @if (user.vipTier > 0) {
+                    <span class="user-tier-badge"
+                      ><i class="fa-solid fa-crown" aria-hidden="true"></i> VIP
+                      {{ user.vipTier }}</span
+                    >
+                  } @else {
+                    <span class="user-free-badge">Cơ bản</span>
+                  }
+                </td>
+                <td>{{ formatDate(user.createdAt) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="user-pagination">
+        <span>Hiển thị {{ users.length }} trên {{ totalUsers }} user</span>
+        <div>
+          <button
+            type="button"
+            (click)="changePage(page - 1)"
+            [disabled]="page === 0 || loading"
+            aria-label="Trang trước"
+          >
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          </button>
+          <button
+            type="button"
+            (click)="changePage(page + 1)"
+            [disabled]="page + 1 >= totalPages || loading"
+            aria-label="Trang tiếp"
+          >
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </button>
+        </div>
+      </footer>
+    } @else if (!loading) {
+      <div class="user-empty">
+        <i class="fa-solid fa-user-slash" aria-hidden="true"></i><b>Không tìm thấy tài khoản</b
+        ><span>Thử đổi từ khóa tìm kiếm.</span>
+      </div>
+    }
+  </section>
+</section>

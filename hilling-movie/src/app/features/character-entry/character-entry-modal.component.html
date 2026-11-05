@@ -1,0 +1,62 @@
+<div class="character-entry-backdrop" (click)="close()">
+  <section
+    class="character-entry-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="character-entry-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="entry-header">
+      <span class="entry-eyebrow">WETUBE CINÉ / CÙNG NHAU</span>
+      <button type="button" class="entry-close" aria-label="Đóng" title="Đóng" (click)="close()">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <div class="entry-title-wrap">
+      <h1 id="character-entry-title">Bạn sẽ là ai trong rạp?</h1>
+      <p>Tên của bạn được in trên áo. Tin nhắn sẽ hiện trên đầu nhân vật.</p>
+    </div>
+
+    <app-exp-card [experience]="experience()" />
+
+    <section class="character-stage" aria-label="Xem trước nhân vật">
+      <app-avatar-preview
+        [displayName]="avatarName()"
+        [gender]="gender()"
+        [shirtColor]="shirtColors[shirtColorIndex()].hex"
+        [shirtTier]="initialShirtTier()"
+      />
+      <span class="stage-caption">XEM TỪ PHÍA SAU</span>
+    </section>
+
+    <div class="entry-field">
+      <label for="shirt-name">Tên in trên áo</label>
+      <input
+        id="shirt-name"
+        type="text"
+        [formControl]="nameControl"
+        maxlength="10"
+        autocomplete="nickname"
+        placeholder="Nhập tên của bạn"
+        (input)="updateName()"
+      />
+      <span class="field-counter">{{ nameControl.value.length }}/10</span>
+    </div>
+
+    <div class="entry-field">
+      <span class="entry-label">Giới tính / ngoại hình</span>
+      <app-gender-toggle [value]="gender()" (genderChange)="gender.set($event)" />
+    </div>
+
+    <div class="entry-field entry-field--colors">
+      <span class="entry-label">Màu áo</span>
+      <app-color-picker [value]="shirtColorIndex()" (colorChange)="shirtColorIndex.set($event)" />
+    </div>
+
+    <button type="button" class="entry-cta" (click)="confirm()">
+      <span>Chọn ghế và vào rạp</span>
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+    </button>
+  </section>
+</div>

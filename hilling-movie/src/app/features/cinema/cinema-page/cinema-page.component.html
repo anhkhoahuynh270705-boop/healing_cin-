@@ -1,0 +1,1112 @@
+@if (isBootingRoom) {
+  <div class="room-startup-overlay" role="status" aria-live="polite">
+    <div class="room-startup-content">
+      <span class="room-startup-mark" aria-hidden="true">
+        <i class="fa-solid fa-film"></i>
+      </span>
+      <span class="room-startup-spinner" aria-hidden="true"></span>
+      <p class="room-startup-eyebrow">WETUBE CINÉ · HEALING MOVIE</p>
+      <h1>Đang khởi động rạp phim</h1>
+      <p class="room-startup-caption">Đang kết nối phòng chiếu và đồng bộ chỗ ngồi của bạn…</p>
+      <div class="room-startup-progress" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
+}
+
+<div class="cinema-layout">
+  <!-- ═══════ TOP BAR ═══════ -->
+  <header class="cinema-topbar">
+    <div class="topbar-left">
+      <div class="brand-logo">
+        <span class="brand-icon"><i class="fa-solid fa-film" aria-hidden="true"></i></span>
+        <div class="brand-text">
+          <span class="brand-name">Healing_ciné</span>
+          <span class="brand-sub">FILM · MUSIC · BEATS</span>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-center">
+      <div class="status-badge">
+        <span class="status-dot" [class.offline]="!connected"></span>
+        <span>{{ connected ? 'Đang chiếu' : 'Đang kết nối…' }}</span>
+      </div>
+      @if (state?.roomName) {
+        <div class="room-title-badge">
+          <i class="fa-solid fa-film" aria-hidden="true"></i> {{ state?.roomName }}
+        </div>
+      }
+      <div class="online-count">
+        <span class="online-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
+        <div class="online-info">
+          <span class="online-number">{{ guestCount }} đang online</span>
+          <span class="seat-count"
+            >{{ guestCount }} / {{ state?.seatCount ?? TOTAL_SEATS }} ghế</span
+          >
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      @if (isInPrivateRoom) {
+        <button
+          type="button"
+          class="room-exit-btn"
+          (click)="returnToCommonRoom()"
+          title="Rời phòng riêng và quay về rạp chung"
+        >
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Rạp chung</span>
+        </button>
+      }
+      <button class="tb-btn" title="Chia sẻ phòng" (click)="copyRoomLink()">
+        <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+      </button>
+      <button class="tb-btn" title="Toàn màn hình" (click)="toggleFullscreen()">
+        <i class="fa-solid fa-expand" aria-hidden="true"></i>
+      </button>
+      <button class="tb-btn" title="Thông tin">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="topbar-action"
+        (click)="openTasksModal()"
+        title="Nhiệm vụ nhận EXP"
+      >
+        <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>Nhiệm vụ</span>
+      </button>
+      <button
+        type="button"
+        class="topbar-wallet"
+        (click)="toggleDonationModal()"
+        title="Số dư ví ủng hộ"
+      >
+        <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+        <span>{{ formatWalletAmount(walletBalance) }}</span>
+      </button>
+      <button
+        type="button"
+        class="user-profile-badge"
+        (click)="openCharacterEntry()"
+        aria-label="Tùy chỉnh nhân vật trước khi vào rạp"
+        title="Tùy chỉnh nhân vật"
+      >
+        <span class="user-profile-name">{{ guestName }}</span>
+      </button>
+      @if (currentUser) {
+        <button class="tb-btn tb-btn-auth logout-btn" (click)="logout()" title="Đăng xuất">
+          <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>Đăng xuất</span>
+        </button>
+      }
+      @if (!currentUser) {
+        <button class="tb-btn-primary" (click)="openAuthModal('login')">Đăng nhập</button>
+      }
+    </div>
+  </header>
+
+  <!-- ═══════ BODY ═══════ -->
+  <div class="cinema-body">
+    <!-- LEFT SIDEBAR -->
+    <aside class="left-sidebar">
+      <div class="sidebar-section">
+        <p class="sidebar-eyebrow">TRÊN MÀN ẢNH</p>
+        @if (state?.playback?.videoId) {
+          <div class="sidebar-poster-wrap">
+            <img
+              class="sidebar-poster"
+              [src]="screenPosterUrl(state!.playback)"
+              [alt]="state!.playback.title"
+              loading="lazy"
+            />
+            <span class="sidebar-poster-badge"
+              ><i class="fa-solid fa-play" aria-hidden="true"></i> Đang chiếu</span
+            >
+          </div>
+        }
+        <h2 class="sidebar-title">{{ state?.playback?.title ?? 'Đang chuẩn bị phòng chiếu…' }}</h2>
+        <div class="sidebar-meta">
+          <span class="sidebar-source">
+            <i
+              class="fa-solid"
+              [class.fa-list-ol]="state?.playback?.source === 'queue'"
+              [class.fa-photo-film]="state?.playback?.source?.startsWith('personal-')"
+              [class.fa-radio]="state?.playback?.source === 'lofi'"
+              aria-hidden="true"
+            ></i>
+            {{ playbackSourceLabel(state?.playback?.source) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Vote skip (Backend processed: cần >= 90% số người đồng ý) -->
+      <div class="vote-section">
+        <button class="vote-btn" (click)="voteSkip()" [class.voted]="hasVotedSkip">
+          <span class="vote-icon"><i class="fa-solid fa-forward-step" aria-hidden="true"></i></span>
+          Vote bỏ qua (≥90%)
+          <strong>{{ skipVotes }}/{{ minSkipVotes }}</strong>
+        </button>
+        <div class="vote-bar-wrap">
+          <div class="vote-bar" [style.width.%]="skipPercent"></div>
+        </div>
+      </div>
+
+      <!-- Reaction buttons -->
+      <div class="sidebar-section">
+        <p class="sidebar-eyebrow">PHẢN ỨNG</p>
+        <div class="reaction-grid">
+          @for (emoji of reactionEmojis; track emoji) {
+            <button class="reaction-emoji-btn" (click)="sendReactionEmoji(emoji)" [title]="emoji">
+              {{ emoji }}
+            </button>
+          }
+        </div>
+      </div>
+    </aside>
+
+    <!-- 3D SCENE + YOUTUBE CINEMA SCREEN -->
+    <div class="scene-area" [class.outdoor-scene]="outdoorCinemaMode">
+      <!-- YouTube Screen đặt phía sau (z-index: 1, không box shadow) -->
+      <div class="cinema-screen-overlay">
+        <div #playerHost id="youtube-embed-screen"></div>
+        @if (showOutdoorScreenLoading) {
+          <div class="outdoor-screen-loading" role="status" aria-live="polite">
+            <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+            <span>Đang tải video</span>
+          </div>
+        }
+      </div>
+
+      <!-- Three.js Visualizer / 3D Auditorium Room đặt phía trên (z-index: 2) để ánh đèn, quả cầu disco và loa nằm trên màn hình -->
+      <app-three-cinema
+        [state]="state"
+        [sessionId]="sessionId"
+        [discoEnabled]="discoEnabled"
+        (seatSelected)="claimSeat($event)"
+        (environmentChanged)="onCinemaEnvironmentChanged($event)"
+      ></app-three-cinema>
+
+      <!-- Nút nổi bật để bật âm thanh khi trình duyệt autoplay ở chế độ tắt tiếng -->
+      @if (isMuted) {
+        <button class="unmute-banner" (click)="unmuteAudio()">
+          <span class="unmute-icon"
+            ><i class="fa-solid fa-volume-high" aria-hidden="true"></i
+          ></span>
+          <span>Bấm vào đây để bật âm thanh rạp</span>
+        </button>
+      }
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="right-sidebar">
+      <!-- 1. Phòng game -->
+      <button
+        class="rs-btn"
+        [class.rs-btn--active]="activePanelId === 'game'"
+        title="Phòng game"
+        (click)="togglePanel('game')"
+      >
+        <i class="fa-solid fa-gamepad" aria-hidden="true"></i>
+        <span>Phòng game</span>
+      </button>
+
+      <!-- 2. Chọn ghế -->
+      <button
+        class="rs-btn"
+        [class.rs-btn--active]="activePanelId === 'seats'"
+        title="Chọn ghế"
+        (click)="togglePanel('seats')"
+      >
+        <i class="fa-solid fa-couch" aria-hidden="true"></i>
+        <span>Chọn ghế</span>
+      </button>
+
+      <!-- 3. Nội dung cá nhân -->
+      <button
+        class="rs-btn"
+        [class.rs-btn--active]="activePanelId === 'personal-media'"
+        title="Tải ảnh hoặc video cá nhân lên màn ảnh"
+        (click)="togglePanel('personal-media')"
+      >
+        <i class="fa-solid fa-photo-film" aria-hidden="true"></i>
+        <span>Tải lên</span>
+      </button>
+
+      <!-- 4. Diễn đàn (guest list) -->
+      <button
+        class="rs-btn"
+        [class.rs-btn--active]="activePanelId === 'guests'"
+        title="Khán giả trong phòng"
+        (click)="togglePanel('guests')"
+      >
+        <i class="fa-solid fa-users" aria-hidden="true"></i>
+        <span>Diễn đàn</span>
+        @if (guestCount > 0) {
+          <span class="rs-badge">{{ guestCount }}</span>
+        }
+      </button>
+
+      <!-- 5. Hàng chờ -->
+      <button
+        class="rs-btn rs-btn--highlight"
+        [class.rs-btn--active]="activePanelId === 'queue'"
+        title="Hàng chờ video"
+        (click)="togglePanel('queue')"
+      >
+        <i class="fa-solid fa-rectangle-list" aria-hidden="true"></i>
+        <span>Hàng chờ</span>
+        @if (queueCount > 0) {
+          <span class="rs-badge">{{ queueCount }}</span>
+        }
+      </button>
+
+      <!-- 6. Trò chuyện (chat) -->
+      <button
+        class="rs-btn"
+        [class.rs-btn--active]="activePanelId === 'chat'"
+        title="Chat phòng"
+        (click)="togglePanel('chat')"
+      >
+        <i class="fa-solid fa-comments" aria-hidden="true"></i>
+        <span>Trò chuyện</span>
+        @if (chatMessages.length > 0) {
+          <span class="rs-badge rs-badge--violet">{{ chatMessages.length }}</span>
+        }
+      </button>
+
+      <!-- 7. Tủ đồ (wardrobe) -->
+      <button
+        class="rs-btn"
+        [class.rs-btn--active]="activePanelId === 'wardrobe'"
+        title="Tùy chỉnh nhân vật"
+        (click)="togglePanel('wardrobe')"
+      >
+        <i class="fa-solid fa-user-astronaut" aria-hidden="true"></i>
+        <span>Tủ đồ</span>
+      </button>
+
+      <!-- Động tác avatar -->
+      <button
+        class="rs-btn rs-btn--dance"
+        [class.rs-btn--active]="activePanelId === 'dance' || myDanceAction !== 'idle'"
+        title="Chọn động tác cho nhân vật"
+        (click)="togglePanel('dance')"
+      >
+        <i class="fa-solid fa-person-dancing" aria-hidden="true"></i>
+        <span>Hành động</span>
+      </button>
+
+      <!-- Phòng riêng đặt ngay trước nút ủng hộ -->
+      <button
+        class="rs-btn rs-btn--private"
+        title="Tạo hoặc tham gia phòng riêng"
+        (click)="openPrivateRoom()"
+      >
+        <i class="fa-solid fa-door-open" aria-hidden="true"></i>
+        <span>Phòng riêng</span>
+      </button>
+
+      <!-- 8. Ủng hộ (support) -->
+      <button
+        class="rs-btn"
+        [class.rs-btn--active]="donationModalOpen"
+        title="Ủng hộ admin"
+        (click)="toggleDonationModal()"
+      >
+        <i class="fa-solid fa-heart" aria-hidden="true"></i>
+        <span>ủng hộ</span>
+      </button>
+    </aside>
+  </div>
+
+  <!-- ═══════ BOTTOM BAR ═══════ -->
+  <footer class="cinema-bottombar">
+    <div class="bottom-left">
+      <button class="bl-btn" title="Chế độ phòng">
+        <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
+      </button>
+      <button class="bl-btn" title="Danh sách người dùng" (click)="togglePanel('guests')">
+        <i class="fa-solid fa-users" aria-hidden="true"></i>
+      </button>
+      <button class="bl-btn" title="Chat" (click)="togglePanel('chat')">
+        <i class="fa-solid fa-comments" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="bottom-center">
+      <button class="chat-emoji-btn" (click)="togglePanel('chat')" title="Mở trò chuyện">
+        <i class="fa-solid fa-comments" aria-hidden="true"></i>
+      </button>
+      <input
+        class="chat-input"
+        type="text"
+        [formControl]="footerChatControl"
+        [placeholder]="
+          !chatApproved
+            ? 'Chat cần admin duyệt'
+            : connected
+              ? 'Nói gì với cả rạp đi...'
+              : 'Đang kết nối lại…'
+        "
+        maxlength="100"
+        (keydown.enter)="sendChat()"
+      />
+      <button
+        type="button"
+        class="chat-picker-toggle"
+        (click)="toggleChatEmojiPicker('footer')"
+        [attr.aria-expanded]="chatEmojiPicker === 'footer'"
+        aria-label="Chọn icon cho tin nhắn"
+        title="Chèn icon"
+      >
+        <i class="fa-regular fa-face-smile" aria-hidden="true"></i>
+      </button>
+      <span class="chat-count">{{ footerChatControl.value.length }}/100</span>
+      <button class="chat-send-btn" (click)="sendChat()" [disabled]="!canChat" title="Gửi">
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+      </button>
+      @if (chatEmojiPicker === 'footer') {
+        <div class="chat-emoji-picker footer-emoji-picker" role="group" aria-label="Icon tin nhắn">
+          @for (emoji of chatEmojis; track emoji) {
+            <button
+              type="button"
+              (click)="insertChatEmoji(emoji)"
+              [attr.aria-label]="'Chèn ' + emoji"
+            >
+              {{ emoji }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="bottom-right">
+      <button class="br-btn" title="Cài đặt" (click)="togglePanel('wardrobe')">
+        <i class="fa-solid fa-gear" aria-hidden="true"></i>
+      </button>
+      <button
+        class="br-btn"
+        [class.br-btn--active]="discoEnabled"
+        [title]="discoEnabled ? 'Tắt quả cầu disco' : 'Bật quả cầu disco'"
+        [attr.aria-label]="discoEnabled ? 'Tắt quả cầu disco' : 'Bật quả cầu disco'"
+        (click)="toggleDisco()"
+      >
+        <i class="fa-solid fa-compact-disc" aria-hidden="true"></i>
+      </button>
+      <button
+        class="br-btn"
+        [title]="isMuted || volumeLevel === 0 ? 'Bật âm thanh' : 'Tắt âm thanh'"
+        (click)="toggleMute()"
+      >
+        @if (!isMuted && volumeLevel > 0) {
+          <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+        }
+        @if (isMuted || volumeLevel === 0) {
+          <i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>
+        }
+      </button>
+      <div class="volume-slider-wrap">
+        <input
+          type="range"
+          class="volume-slider"
+          min="0"
+          max="100"
+          step="1"
+          [formControl]="volumeControl"
+          (input)="onVolumeInput()"
+          [title]="'Âm lượng cá nhân: ' + (isMuted ? 0 : volumeLevel) + '%'"
+        />
+      </div>
+      <span class="volume-value">{{ isMuted ? 0 : volumeLevel }}%</span>
+    </div>
+  </footer>
+</div>
+
+@if (privateRoomModalOpen) {
+  <div class="vip-modal-overlay private-room-overlay" (click)="closePrivateRoom()">
+    <section
+      class="vip-modal private-room-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="private-room-title"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="vip-modal-close" (click)="closePrivateRoom()" aria-label="Đóng">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+      <h2 id="private-room-title">
+        <i class="fa-solid fa-film" aria-hidden="true"></i> Phòng chiếu riêng
+      </h2>
+      <div class="private-invite-entry">
+        <label for="private-room-invite-code">Được mời? Dán mã phòng để tham gia</label>
+        <div class="private-invite-entry-controls">
+          <input
+            id="private-room-invite-code"
+            type="text"
+            [formControl]="privateRoomInviteControl"
+            placeholder="private-xxxxxxxx"
+            autocomplete="off"
+            (keydown.enter)="enterPrivateRoomByInvite()"
+          />
+          <button type="button" (click)="enterPrivateRoomByInvite()">Vào phòng</button>
+        </div>
+      </div>
+      <div class="vip-payment-section" [formGroup]="privateRoomForm">
+        <label class="private-room-name-field">
+          Tên phòng
+          <input
+            type="text"
+            formControlName="name"
+            maxlength="40"
+            placeholder="Ví dụ: Góc phim cuối tuần"
+          />
+        </label>
+        <div class="vip-qr-box">
+          <div class="vip-qr-img-wrap">
+            <img
+              [src]="privateRoomQrUrl"
+              alt="Mã QR thanh toán phòng riêng 10.000 đồng"
+              class="vip-qr-img"
+            />
+          </div>
+          <div class="vip-qr-info">
+            <div class="vqi-row">
+              <span>Ngân hàng:</span><b class="vqi-bank">Techcombank (TCB)</b>
+            </div>
+            <div class="vqi-row"><span>Số tài khoản:</span><b class="vqi-acc">1221868856</b></div>
+            <div class="vqi-row">
+              <span>Nội dung CK:</span
+              ><code class="vqi-memo"
+                >Healing PHONG RIENG {{ currentUser?.username || 'KHACH' }}</code
+              >
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="vip-activate-test-btn"
+          (click)="requestPrivateRoom()"
+          [disabled]="privateRoomPending || !privateRoomForm.controls.name.value.trim()"
+        >
+          <i
+            class="fa-solid"
+            [class.fa-hourglass-half]="privateRoomPending"
+            [class.fa-money-bill-transfer]="!privateRoomPending"
+            aria-hidden="true"
+          ></i>
+          {{ privateRoomPending ? 'Đang chờ duyệt' : 'Tôi đã chuyển khoản 10.000đ' }}
+        </button>
+        @if (privateRoomPending) {
+          <p class="payment-review-status">Yêu cầu đang chờ xác nhận giao dịch.</p>
+        }
+        @if (privateRoomCodes.length) {
+          <div class="private-room-list">
+            <h3>Phòng riêng đã được duyệt</h3>
+            @for (room of privateRoomCodes; track room.code) {
+              <div class="private-room-entry">
+                <div class="private-room-entry-info">
+                  <strong>{{ room.name }}</strong>
+                  <code>{{ room.code }}</code>
+                </div>
+                <div class="private-room-entry-actions">
+                  <button type="button" (click)="copyPrivateRoomCode(room.code)">Copy mã</button>
+                  <button type="button" (click)="copyPrivateRoomLink(room.code)">
+                    Copy link mời
+                  </button>
+                  <button type="button" (click)="enterPrivateRoom(room.code)">Vào phòng</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (currentUser && !privateRoomPending) {
+          <p class="payment-review-status" (click)="refreshChatAccess()">
+            Bấm để kiểm tra trạng thái thanh toán.
+          </p>
+        }
+      </div>
+    </section>
+  </div>
+}
+
+<!-- ═══════════════════════════════════════════════
+    SIDE PANELS OVERLAY
+    ═══════════════════════════════════════════════ -->
+
+<!-- BACKDROP -->
+@if (activePanelId) {
+  <div class="panel-backdrop" [class.visible]="activePanelId" (click)="closePanel()"></div>
+}
+
+@if (donationModalOpen) {
+  <app-donation-modal
+    [isLoggedIn]="!!currentUser && !currentUser.id.startsWith('guest-')"
+    [userId]="currentUser?.id ?? ''"
+    (closed)="closeDonationModal()"
+    (loginRequested)="requestDonationLogin()"
+    (wardrobeRequested)="openWardrobeFromDonation()"
+  />
+}
+
+@if (tasksModalOpen && isAuthenticatedUser) {
+  <app-task-modal
+    [userId]="currentUser!.id"
+    [token]="userAuthToken"
+    (closed)="tasksModalOpen = false"
+    (progressChanged)="applyTaskProgress($event)"
+  />
+}
+
+<!-- ── PANEL: Phòng Game ── -->
+<div class="side-panel" [class.open]="activePanelId === 'game'">
+  <div class="sp-header">
+    <span class="sp-title"><i class="fa-solid fa-gamepad" aria-hidden="true"></i> Phòng Game</span>
+    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body game-panel">
+    <div class="game-title">
+      <i class="fa-solid fa-bolt" aria-hidden="true"></i> Kiểm tra phản xạ
+    </div>
+    <div class="game-subtitle">Bấm khi ô chuyển xanh!</div>
+
+    <div class="game-arena" [style.background]="gameColor" (click)="tapGame()">
+      @if (game.phase === 'idle') {
+        <div class="game-arena-inner">
+          <span class="game-big-icon"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></span>
+          <p>Nhấn <strong>Bắt đầu</strong> bên dưới</p>
+        </div>
+      }
+      @if (game.phase === 'waiting') {
+        <div class="game-arena-inner">
+          <span class="game-big-icon game-light-red"
+            ><i class="fa-solid fa-circle" aria-hidden="true"></i
+          ></span>
+          <p>Đợi…</p>
+        </div>
+      }
+      @if (game.phase === 'ready') {
+        <div class="game-arena-inner">
+          <span class="game-big-icon game-light-green"
+            ><i class="fa-solid fa-circle" aria-hidden="true"></i
+          ></span>
+          <p><strong>BẤM NGAY!</strong></p>
+        </div>
+      }
+      @if (game.phase === 'result') {
+        <div class="game-arena-inner">
+          @if (game.reactionTime >= 0) {
+            <span class="game-big-icon"
+              ><i class="fa-solid fa-stopwatch" aria-hidden="true"></i
+            ></span>
+          }
+          @if (game.reactionTime < 0) {
+            <span class="game-big-icon"
+              ><i class="fa-solid fa-face-frown" aria-hidden="true"></i
+            ></span>
+          }
+          @if (game.reactionTime >= 0) {
+            <p class="game-time">{{ game.reactionTime }} ms</p>
+          }
+          <p class="game-label">{{ getGameResultLabel() }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="game-stats">
+      <div class="game-stat">
+        <span class="gs-label">Kỷ lục</span>
+        <span class="gs-val">{{ game.bestTime === 9999 ? '—' : game.bestTime + ' ms' }}</span>
+      </div>
+    </div>
+
+    <div class="game-actions">
+      @if (game.phase === 'idle' || game.phase === 'result') {
+        <button class="game-btn" (click)="startGame()">
+          <i
+            class="fa-solid"
+            [class.fa-rotate-right]="game.phase === 'result'"
+            [class.fa-play]="game.phase !== 'result'"
+            aria-hidden="true"
+          ></i>
+          {{ game.phase === 'result' ? 'Chơi lại' : 'Bắt đầu' }}
+        </button>
+      }
+      @if (game.phase === 'waiting' || game.phase === 'ready') {
+        <button class="game-btn game-btn--cancel" (click)="resetGame()">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i> Huỷ
+        </button>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL: Chọn Ghế ── -->
+<div class="side-panel side-panel--wide" [class.open]="activePanelId === 'seats'">
+  <div class="sp-header">
+    <span class="sp-title"><i class="fa-solid fa-couch" aria-hidden="true"></i> Chọn ghế ngồi</span>
+    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body">
+    <div class="seat-legend">
+      <span class="seat-dot seat-dot--free"></span> Trống
+      <span class="seat-dot seat-dot--occupied"></span> Có người
+      <span class="seat-dot seat-dot--mine"></span> Của bạn
+    </div>
+    <div class="seat-screen-label">
+      <i class="fa-solid fa-display" aria-hidden="true"></i> MÀN HÌNH
+    </div>
+    <div class="seat-map">
+      @for (row of seatMapRows; track $index) {
+        @for (seatIndex of row; track $index) {
+          @if (seatIndex === null) {
+            <div class="seat-aisle-gap"></div>
+          } @else {
+            <div
+              class="seat-cell"
+              [class.seat-cell--occupied]="getSeatOccupant(seatIndex) && !isMySeat(seatIndex)"
+              [class.seat-cell--mine]="isMySeat(seatIndex)"
+              [class.seat-cell--free]="!getSeatOccupant(seatIndex)"
+              [title]="getSeatOccupant(seatIndex)?.name || 'Ghế trống – click để ngồi'"
+              (click)="claimSeat(seatIndex)"
+            >
+              @if (getSeatOccupant(seatIndex); as occupant) {
+                <span class="seat-avatar">{{ occupant.avatar }}</span>
+              } @else {
+                <span class="seat-num">{{ seatIndex + 1 }}</span>
+              }
+            </div>
+          }
+        }
+      }
+    </div>
+    <div class="seat-info">
+      {{ guestCount }} / {{ state?.seatCount ?? TOTAL_SEATS }} ghế đang có người
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL: Cất Video / Hàng chờ ── -->
+<div class="side-panel" [class.open]="activePanelId === 'queue'">
+  <div class="sp-header">
+    <span class="sp-title"
+      ><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Hàng chờ video</span
+    >
+    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body">
+    <form [formGroup]="queueForm" (submit)="addToQueue()" class="queue-form">
+      <input
+        formControlName="videoInput"
+        placeholder="Dán link hoặc ID video YouTube…"
+        autocomplete="off"
+        class="queue-input"
+      />
+      <button type="submit" class="queue-submit" [disabled]="addingVideo">
+        {{ addingVideo ? '…' : 'Thêm' }}
+      </button>
+    </form>
+    <p class="queue-hint">Video thêm vào sẽ tự động hiện lên danh sách và phát liên tục.</p>
+
+    <!-- 1. VIDEO ĐANG CHIẾU TRÊN MÀN HÌNH (NOW PLAYING) -->
+    @if (state?.playback?.videoId) {
+      <div class="queue-section-label">
+        <span class="live-dot"></span>
+        <span>ĐANG CHIẾU TRÊN RẠP</span>
+      </div>
+    }
+    @if (state?.playback?.videoId) {
+      <div class="yt-video-card yt-video-card--now-playing">
+        <div class="yt-thumb-wrap">
+          <img
+            class="yt-thumb"
+            [src]="screenPosterUrl(state!.playback)"
+            [alt]="state!.playback.title"
+            loading="lazy"
+          />
+          <span class="yt-badge yt-badge--live">LIVE</span>
+        </div>
+        <div class="yt-info">
+          <h4 class="yt-title" [title]="state!.playback.title">{{ state!.playback.title }}</h4>
+          <div class="yt-meta">
+            <span class="yt-source-tag">
+              <i
+                class="fa-solid"
+                [class.fa-list-ol]="state!.playback.source === 'queue'"
+                [class.fa-photo-film]="state!.playback.source.startsWith('personal-')"
+                [class.fa-radio]="state!.playback.source === 'lofi'"
+                aria-hidden="true"
+              ></i>
+              {{ playbackSourceLabel(state!.playback.source) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 2. HÀNG CHỜ TIẾP THEO (UPCOMING QUEUE) -->
+    <div class="queue-list-head">
+      <strong>HÀNG CHỜ TIẾP THEO</strong>
+      <span class="queue-count-badge">{{ queueCount }} video</span>
+    </div>
+
+    <div class="queue-list">
+      @for (item of state?.queue; track item; let i = $index) {
+        <div class="yt-video-card">
+          <span class="queue-order" [attr.aria-label]="'Thứ tự ' + (i + 1)">{{ i + 1 }}</span>
+          <div class="yt-thumb-wrap">
+            <img
+              class="yt-thumb"
+              [src]="'https://img.youtube.com/vi/' + item.videoId + '/mqdefault.jpg'"
+              [alt]="item.title"
+              loading="lazy"
+            />
+          </div>
+          <div class="yt-info">
+            <div class="queue-title-row">
+              <h4 class="yt-title" [title]="item.title">{{ item.title }}</h4>
+              <button
+                type="button"
+                class="queue-vote-btn"
+                (click)="voteForQueueVideo(item.videoId)"
+                [attr.aria-label]="'Vote video, hiện có ' + item.votes + ' lượt'"
+                title="Vote để video được ưu tiên phát"
+              >
+                <i class="fa-solid fa-arrow-up" aria-hidden="true"></i> {{ item.votes }}
+              </button>
+            </div>
+            <div class="yt-meta">
+              <span class="yt-by"
+                ><i class="fa-solid fa-user" aria-hidden="true"></i> Bởi
+                {{ item.requestedBy }}</span
+              >
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (!queueCount) {
+        <div class="queue-empty">
+          <span class="queue-empty-icon"><i class="fa-solid fa-music" aria-hidden="true"></i></span>
+          <p>Chưa có video tiếp theo trong hàng chờ</p>
+          <span class="queue-empty-sub">Dán link YouTube ở trên để thêm video tiếp theo!</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL: Hành động nhân vật ── -->
+<div class="side-panel dance-panel" [class.open]="activePanelId === 'dance'">
+  <div class="sp-header">
+    <span class="sp-title"><i class="fa-solid fa-person-dancing" aria-hidden="true"></i> Sàn nhảy</span>
+    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body dance-panel-body">
+    <div class="dance-intro">
+      <span class="dance-stage-icon"><i class="fa-solid fa-compact-disc" aria-hidden="true"></i></span>
+      <div>
+        <strong>{{ myDanceAction === 'idle' ? 'Lên sàn cùng cả rạp' : 'Bạn đang ở trên sàn' }}</strong>
+        <p>Chọn một động tác. Mọi người trong phòng sẽ thấy nhân vật của bạn biểu diễn.</p>
+      </div>
+    </div>
+    <div class="dance-action-list" role="group" aria-label="Chọn động tác">
+      @for (action of danceActions; track action.id) {
+        <button
+          type="button"
+          class="dance-action-option"
+          [class.dance-action-option--active]="myDanceAction === action.id"
+          [attr.aria-pressed]="myDanceAction === action.id"
+          (click)="chooseDanceAction(action.id)"
+        >
+          <span class="dance-action-icon"><i class="fa-solid" [class.fa-music]="action.id === 'sway'" [class.fa-arrow-up]="action.id === 'bounce'" [class.fa-rotate]="action.id === 'spin'" [class.fa-star]="action.id === 'groove'" aria-hidden="true"></i></span>
+          <span class="dance-action-copy"><strong>{{ action.name }}</strong><small>{{ action.description }}</small></span>
+          @if (myDanceAction === action.id) {
+            <i class="fa-solid fa-check dance-action-check" aria-hidden="true"></i>
+          }
+        </button>
+      }
+    </div>
+    @if (myDanceAction !== 'idle') {
+      <button type="button" class="dance-return-btn" (click)="returnFromDanceFloor()">
+        <i class="fa-solid fa-couch" aria-hidden="true"></i> Trở về ghế
+      </button>
+    }
+  </div>
+</div>
+
+<!-- ── PANEL: Tải ảnh/video cá nhân lên màn ảnh ── -->
+<div class="side-panel personal-media-panel" [class.open]="activePanelId === 'personal-media'">
+  <div class="sp-header">
+    <span class="sp-title"><i class="fa-solid fa-photo-film" aria-hidden="true"></i> Nội dung cá nhân</span>
+    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body personal-media-body">
+    <p class="personal-media-intro">Chiếu ảnh hoặc một đoạn video ngắn cho khán giả trong phòng này.</p>
+    <label class="personal-media-file">
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+        (change)="onPersonalMediaSelected($event)"
+      />
+      <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+      <span>{{ selectedPersonalMedia?.name ?? 'Chọn ảnh hoặc video' }}</span>
+      <small>JPG, PNG, WEBP, MP4, WEBM · tối đa 20 MB</small>
+    </label>
+    <label class="personal-media-duration" for="personal-media-seconds">
+      <span>Thời lượng chiếu</span>
+      <strong>{{ personalMediaForm.controls.durationSeconds.value }} giây</strong>
+    </label>
+    <input
+      id="personal-media-seconds"
+      class="personal-media-range"
+      type="range"
+      min="1"
+      max="10"
+      step="1"
+      [formControl]="personalMediaForm.controls.durationSeconds"
+    />
+    <div class="personal-media-price">
+      <span>Phí chiếu</span>
+      <strong>{{ formatWalletAmount(personalMediaCost) }}</strong>
+      <small>5.000đ / giây · trừ vào ví sử dụng được</small>
+    </div>
+    @if (isAuthenticatedUser) {
+      <p class="personal-media-balance">Số dư hiện có: <strong>{{ formatWalletAmount(walletBalance) }}</strong></p>
+      <button
+        type="button"
+        class="personal-media-submit"
+        (click)="uploadPersonalMedia()"
+        [disabled]="uploadingPersonalMedia || !selectedPersonalMedia"
+      >
+        <i class="fa-solid" [class.fa-spinner]="uploadingPersonalMedia" [class.fa-spin]="uploadingPersonalMedia" [class.fa-play]="!uploadingPersonalMedia" aria-hidden="true"></i>
+        {{ uploadingPersonalMedia ? 'Đang tải lên…' : 'Tải lên và chiếu' }}
+      </button>
+    } @else {
+      <button type="button" class="personal-media-submit" (click)="openAuthModal('login')">Đăng nhập để tải lên</button>
+    }
+    <p class="personal-media-note">Ảnh hiển thị theo thời lượng đã chọn. Video sẽ tự dừng sau thời lượng đó; tối đa 10 giây mỗi lượt.</p>
+  </div>
+</div>
+
+<!-- ── PANEL: Diễn Đàn / Khán giả ── -->
+<div class="side-panel" [class.open]="activePanelId === 'guests'">
+  <div class="sp-header">
+    <span class="sp-title"
+      ><i class="fa-solid fa-users" aria-hidden="true"></i> Khán giả ({{ guestCount }})</span
+    >
+    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body">
+    @if (!guestCount) {
+      <div class="guest-empty">
+        <span><i class="fa-solid fa-users" aria-hidden="true"></i></span>
+        <p>Chưa có ai trong phòng</p>
+      </div>
+    }
+    <div class="guest-list">
+      @for (guest of sortedGuests; track guest) {
+        <div class="guest-item" [class.guest-item--me]="guest.id === sessionId">
+          <span class="guest-avatar">{{ guest.avatar }}</span>
+          <div class="guest-info">
+            <span class="guest-name"
+              >{{ guest.name }}
+              @if (guest.id === sessionId) {
+                <span class="you-tag"> (Bạn)</span>
+              }
+            </span>
+            <span class="guest-seat">{{ getGuestSeatLabel(guest) }}</span>
+          </div>
+          @if (guest.id === state?.hostId) {
+            <span class="host-crown" title="Chủ phòng"
+              ><i class="fa-solid fa-crown" aria-hidden="true"></i
+            ></span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL: Tài Chuyện / Chat ── -->
+<div class="side-panel" [class.open]="activePanelId === 'chat'">
+  <div class="sp-header">
+    <span class="sp-title"
+      ><i class="fa-solid fa-comments" aria-hidden="true"></i> Trò chuyện phòng</span
+    >
+    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body chat-panel">
+    <div class="chat-messages" #chatScroll>
+      @if (!chatMessages.length) {
+        <div class="chat-empty">
+          <span><i class="fa-regular fa-comments" aria-hidden="true"></i></span>
+          <p>Chưa có tin nhắn nào</p>
+        </div>
+      }
+      @for (msg of chatMessages; track msg) {
+        <div class="chat-msg" [class.chat-msg--mine]="msg.isMine">
+          <span class="cm-avatar">{{ msg.senderAvatar }}</span>
+          <div
+            class="cm-bubble"
+            [class.cm-bubble--wardrobe-frame]="!!msg.vipTier"
+            [style.--chat-frame-color]="frameColorForTier(msg.vipTier ?? 0)"
+          >
+            <span class="cm-name">
+              {{ msg.senderName }}
+              @if (msg.vipTier && msg.vipTier > 0) {
+                <span class="cm-vip-badge-tag">{{ frameNameForTier(msg.vipTier) }}</span>
+              }
+            </span>
+            <p class="cm-text">{{ msg.text }}</p>
+            <span class="cm-time">{{ formatTime(msg.time) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="chat-input-row">
+      <button
+        type="button"
+        class="chat-panel-emoji-toggle"
+        (click)="toggleChatEmojiPicker('panel')"
+        [attr.aria-expanded]="chatEmojiPicker === 'panel'"
+        aria-label="Chọn icon cho tin nhắn"
+        title="Chèn icon"
+      >
+        <i class="fa-regular fa-face-smile" aria-hidden="true"></i>
+      </button>
+      @if (chatEmojiPicker === 'panel') {
+        <div class="chat-emoji-picker panel-emoji-picker" role="group" aria-label="Icon tin nhắn">
+          @for (emoji of chatEmojis; track emoji) {
+            <button
+              type="button"
+              (click)="insertChatEmoji(emoji)"
+              [attr.aria-label]="'Chèn ' + emoji"
+            >
+              {{ emoji }}
+            </button>
+          }
+        </div>
+      }
+      <input
+        class="chat-panel-input"
+        type="text"
+        [formControl]="panelChatControl"
+        [placeholder]="
+          !chatApproved
+            ? 'Chat đang chờ duyệt thanh toán'
+            : connected
+              ? 'Nhắn gì đó…'
+              : 'Đang kết nối lại…'
+        "
+        maxlength="100"
+        (keydown.enter)="sendChat()"
+      />
+      <button class="chat-panel-send" (click)="sendChat()" [disabled]="!canChat">
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+@if (activePanelId === 'wardrobe') {
+  <app-wardrobe-modal
+    [userId]="currentUser?.id ?? ''"
+    [authToken]="userAuthToken"
+    [isLoggedIn]="isAuthenticatedUser"
+    [displayNameInput]="currentUser?.displayName ?? guestName"
+    [initialFrameTier]="equippedFrameTier"
+    [initialShirtTier]="equippedShirtTier"
+    [initialGender]="characterGender"
+    [initialShirtColor]="characterShirtColor"
+    (closed)="closePanel()"
+    (loginRequested)="requestWardrobeLogin()"
+    (purchased)="onWardrobePurchase($event)"
+    (appearanceChanged)="onWardrobeAppearanceChanged($event)"
+  />
+}
+
+<!-- ── TOAST ── -->
+<div class="toast" [class.visible]="toastMessage">{{ toastMessage }}</div>
+
+@if (characterEntryOpen) {
+  <app-character-entry-modal
+    [initialName]="guestName"
+    [initialGender]="characterGender"
+    [initialColorIndex]="characterColorIndex"
+    [initialShirtTier]="equippedShirtTier"
+    [experience]="experiencePoints"
+    (closed)="characterEntryOpen = false"
+    (confirmed)="confirmCharacterEntry($event)"
+  />
+}
+
+<!-- ═══════ AUTH MODAL POPUP ═══════ -->
+@if (authModalOpen) {
+  <div class="auth-modal-overlay" [class.auth-modal-overlay--login]="authStep === 'login'">
+    <div class="auth-modal-card">
+      <!-- MODAL HEADER -->
+      <div class="auth-modal-header">
+        <div class="auth-brand-badge">
+          <span class="auth-sparkle"><i class="fa-solid fa-sparkles" aria-hidden="true"></i></span>
+          <br />
+          <span class="auth-brand-title">Healing_ciné</span>
+        </div>
+        @if (currentUser) {
+          <button
+            type="button"
+            class="auth-close-btn"
+            (click)="authModalOpen = false"
+            title="Đóng popup"
+          >
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        }
+      </div>
+      <!-- ── TAB: ĐĂNG NHẬP / ĐĂNG KÝ ── -->
+      @if (authStep === 'login' || authStep === 'register') {
+        <div class="auth-tabs-wrap">
+          <div class="auth-tabs">
+            <button
+              type="button"
+              class="auth-tab"
+              [class.active]="authStep === 'login'"
+              (click)="switchAuthStep('login')"
+            >
+              Đăng nhập
+            </button>
+            <button
+              type="button"
+              class="auth-tab"
+              [class.active]="authStep === 'register'"
+              (click)="switchAuthStep('register')"
+            >
+              Đăng ký tài khoản
+            </button>
+          </div>
+          @if (authStep === 'login') {
+            <app-client-login-page
+              (authenticated)="completeAuthentication($event)"
+              (guestLogin)="guestQuickLogin()"
+            ></app-client-login-page>
+          }
+          @if (authStep === 'register') {
+            <app-client-register-page
+              (registered)="completeAuthentication($event)"
+            ></app-client-register-page>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

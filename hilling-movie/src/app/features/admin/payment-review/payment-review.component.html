@@ -1,0 +1,149 @@
+@if (adminToken) {
+  <section class="admin-payment-panel">
+    <header class="panel-heading">
+      <div>
+        <p class="section-kicker">
+          {{
+            requestType === 'PRIVATE_ROOM'
+              ? 'PHÒNG CHIẾU RIÊNG'
+              : requestType === 'DONATION'
+                ? 'ỦNG HỘ RẠP'
+                : 'THANH TOÁN KHUNG CHAT VIP'
+          }}
+        </p>
+        <h2>
+          {{
+            requestType === 'PRIVATE_ROOM'
+              ? 'Duyệt phòng riêng'
+              : requestType === 'DONATION'
+                ? 'Duyệt ủng hộ'
+                : 'Duyệt mua khung chat'
+          }}
+        </h2>
+        <p class="panel-caption">
+          {{
+            requestType === 'PRIVATE_ROOM'
+              ? 'Xác nhận giao dịch 10.000đ để cấp quyền tạo phòng riêng.'
+              : requestType === 'DONATION'
+                ? 'Đối chiếu giao dịch trước khi cộng số dư ủng hộ cho người dùng.'
+                : 'Đối chiếu giao dịch trước khi cấp khung chat VIP cho người dùng.'
+          }}
+        </p>
+      </div>
+      <div class="admin-payment-tools">
+        <button
+          type="button"
+          class="refresh-button"
+          (click)="load()"
+          [disabled]="loading || busyRequestIds.size > 0"
+        >
+          <i class="fa-solid fa-rotate" aria-hidden="true" [class.spinning]="loading"></i>
+          {{ loading ? 'Đang tải…' : 'Làm mới' }}
+        </button>
+      </div>
+    </header>
+    <div class="request-summary">
+      <span class="summary-mark">{{ visibleRequests.length }}</span>
+      <span>yêu cầu đang chờ</span>
+      <span class="summary-dot" aria-hidden="true"></span>
+      <span>{{
+        realtime.connected$.value
+          ? 'Đang nhận yêu cầu realtime'
+          : loading
+            ? 'Đang đồng bộ'
+            : 'Đang kết nối realtime'
+      }}</span>
+    </div>
+    @if (error) {
+      <p class="admin-error" role="alert">{{ error }}</p>
+    }
+    @if (notice) {
+      <p class="admin-notice" role="status">
+        <i class="fa-solid fa-check" aria-hidden="true"></i> {{ notice }}
+      </p>
+    }
+    @if (visibleRequests.length) {
+      <div class="request-list">
+        @for (request of visibleRequests; track request) {
+          <article class="admin-payment-row">
+            <div
+              class="request-type-mark"
+              [class.private-mark]="request.type === 'PRIVATE_ROOM'"
+              [class.donation-mark]="request.type === 'DONATION'"
+            >
+              <i
+                class="fa-solid"
+                [class.fa-house]="request.type === 'PRIVATE_ROOM'"
+                [class.fa-heart]="request.type === 'DONATION'"
+                [class.fa-star]="!request.type || request.type === 'VIP'"
+                aria-hidden="true"
+              ></i>
+            </div>
+            <div class="request-main">
+              <div class="request-title-line">
+                <h3>
+                  {{
+                    request.type === 'PRIVATE_ROOM'
+                      ? request.roomName || 'Phòng riêng'
+                      : request.type === 'DONATION'
+                        ? 'Ủng hộ rạp'
+                        : 'Khung chat VIP ' + request.tier
+                  }}
+                </h3>
+                <span class="request-kind">{{
+                  request.type === 'PRIVATE_ROOM'
+                    ? 'PHÒNG RIÊNG'
+                    : request.type === 'DONATION'
+                      ? 'ỦNG HỘ'
+                      : 'NÂNG CẤP CHAT'
+                }}</span>
+              </div>
+              <p class="request-user">{{ request.username }} <span>·</span> {{ request.memo }}</p>
+              <time [attr.datetime]="request.createdAt | date: 'yyyy-MM-ddTHH:mm:ss'">
+                {{ request.createdAt | date: 'dd/MM/yyyy · HH:mm' }}
+              </time>
+            </div>
+            <div class="request-amount">{{ request.amount | number }}<small>đ</small></div>
+            <div class="request-actions">
+              <button
+                type="button"
+                class="approve-button"
+                (click)="decide(request.id, 'approve')"
+                [disabled]="busyRequestIds.has(request.id)"
+              >
+                {{ busyRequestIds.has(request.id) ? 'Đang xử lý…' : 'Duyệt' }}
+              </button>
+              <button
+                type="button"
+                class="reject-button"
+                (click)="decide(request.id, 'reject')"
+                [disabled]="busyRequestIds.has(request.id)"
+              >
+                Từ chối
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      @if (!loading) {
+        <div class="empty-requests">
+          <i class="fa-solid fa-check" aria-hidden="true"></i>
+          <h3>
+            {{
+              requestType === 'PRIVATE_ROOM'
+                ? 'Không có yêu cầu phòng riêng'
+                : requestType === 'DONATION'
+                  ? 'Không có yêu cầu ủng hộ'
+                  : 'Không có yêu cầu khung chat VIP'
+            }}
+          </h3>
+          <p>Các yêu cầu mới sẽ xuất hiện tại đây ngay khi người dùng gửi.</p>
+        </div>
+      }
+      @if (loading) {
+        <div class="loading-requests">Đang tải danh sách giao dịch…</div>
+      }
+    }
+  </section>
+}

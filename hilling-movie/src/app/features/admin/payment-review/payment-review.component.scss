@@ -1,0 +1,372 @@
+:host {
+  display: block;
+  width: min(1040px, calc(100% - 40px));
+  margin: 0 auto;
+  color: #f3eee6;
+}
+
+.admin-payment-panel {
+  border: 1px solid #34343c;
+  border-radius: 16px;
+  background: #1b1b22;
+}
+
+.section-kicker {
+  margin: 0 0 8px;
+  color: #d0a873;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  color: #faf7f1;
+  font-size: 22px;
+  letter-spacing: -0.3px;
+}
+
+.panel-caption {
+  margin: 8px 0 0;
+  color: #aaa7b0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.admin-payment-panel button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.admin-payment-panel button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.admin-payment-panel {
+  padding: 22px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 19px;
+  border-bottom: 1px solid #34333a;
+}
+
+.panel-heading h2 {
+  font-size: 20px;
+}
+
+.admin-payment-tools {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #e7d8c3;
+  background: #29272c;
+  border-color: #47434b !important;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: #343138;
+  border-color: #6a5b49 !important;
+}
+
+.refresh-button > i {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.spinning {
+  animation: refresh-spin 0.8s linear infinite;
+}
+
+@keyframes refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.logout-admin-button {
+  color: #c8c3cd;
+  background: transparent;
+  border-color: #45424a !important;
+}
+
+.logout-admin-button:hover {
+  color: #fff;
+  background: #29272d;
+}
+
+.request-summary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aaa7b0;
+  font-size: 11px;
+}
+
+.summary-mark {
+  min-width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #584831;
+  border-radius: 7px;
+  color: #e6c28f;
+  background: #29241e;
+  font-weight: 800;
+}
+
+.summary-dot {
+  width: 3px;
+  height: 3px;
+  margin: 0 3px;
+  border-radius: 50%;
+  background: #77737d;
+}
+
+.request-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-payment-row {
+  display: grid;
+  grid-template-columns: 40px minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid #35343b;
+  border-radius: 11px;
+  background: #202027;
+}
+
+.request-type-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #4e4435;
+  border-radius: 10px;
+  color: #e2be8b;
+  background: #2c2822;
+  font-size: 18px;
+}
+
+.request-type-mark.private-mark {
+  color: #c8b4e1;
+  border-color: #4b4157;
+  background: #29242f;
+}
+
+.request-type-mark.donation-mark {
+  color: #c9f27a;
+  border-color: #48583b;
+  background: #252e20;
+}
+
+.request-main {
+  min-width: 0;
+}
+
+.request-title-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.request-title-line h3 {
+  margin: 0;
+  color: #f2eee8;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.request-kind {
+  padding: 3px 6px;
+  border: 1px solid #45424a;
+  border-radius: 5px;
+  color: #aaa5b0;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+.request-user {
+  overflow: hidden;
+  margin: 5px 0 3px;
+  color: #aaa6b0;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.request-user span {
+  padding: 0 3px;
+  color: #625e67;
+}
+
+.request-main time {
+  color: #77737d;
+  font-size: 9px;
+}
+
+.request-amount {
+  color: #edcf9f;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.request-amount small {
+  padding-left: 3px;
+  color: #aaa19a;
+  font-size: 10px;
+}
+
+.request-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.approve-button {
+  color: #dce9df;
+  background: #284033;
+  border-color: #42614b !important;
+}
+
+.approve-button:hover:not(:disabled) {
+  background: #345440;
+}
+
+.reject-button {
+  color: #d7c5c7;
+  background: #382a2d;
+  border-color: #584044 !important;
+}
+
+.reject-button:hover:not(:disabled) {
+  background: #493438;
+}
+
+.admin-error,
+.admin-notice {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #68434a;
+  border-radius: 8px;
+  color: #ffb5b7;
+  background: #2c2024;
+  font-size: 11px;
+}
+
+.admin-notice {
+  border-color: #42614b;
+  color: #c3e2ca;
+  background: #202d25;
+}
+
+.empty-requests {
+  display: grid;
+  justify-items: center;
+  padding: 34px 18px 30px;
+  border: 1px dashed #46434b;
+  border-radius: 11px;
+  color: #aaa7b0;
+  text-align: center;
+}
+
+.empty-requests > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #42614b;
+  border-radius: 50%;
+  color: #b5d6bd;
+  background: #202d25;
+}
+
+.empty-requests h3 {
+  margin: 12px 0 4px;
+  color: #e9e5de;
+  font-size: 13px;
+}
+
+.empty-requests p,
+.loading-requests {
+  margin: 0;
+  color: #8f8b95;
+  font-size: 11px;
+}
+
+.loading-requests {
+  padding: 28px 10px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  :host {
+    width: calc(100% - 28px);
+  }
+  .admin-payment-panel {
+    padding: 16px;
+  }
+  .panel-heading {
+    flex-direction: column;
+  }
+  .admin-payment-tools {
+    width: 100%;
+  }
+  .admin-payment-tools button {
+    flex: 1;
+  }
+  .admin-payment-row {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px;
+  }
+  .request-amount {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 13px;
+  }
+  .request-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 420px) {
+  .request-summary .summary-dot,
+  .request-summary > span:last-child {
+    display: none;
+  }
+  .request-title-line h3 {
+    font-size: 12px;
+  }
+  .request-actions button {
+    flex: 1;
+  }
+}

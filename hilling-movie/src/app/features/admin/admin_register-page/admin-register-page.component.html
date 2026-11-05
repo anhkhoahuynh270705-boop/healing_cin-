@@ -1,0 +1,37 @@
+<section class="admin-register-card">
+  <div class="login-mark"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></div>
+  <p class="section-kicker">KHU VỰC QUẢN TRỊ</p>
+  <h2>Tạo tài khoản admin</h2>
+  <p class="login-description">Đăng ký cần Admin key do chủ hệ thống cung cấp.</p>
+  <form [formGroup]="form" (submit)="submit()" class="admin-login-form">
+    <label
+      ><span>Tên đăng nhập (3–32 ký tự)</span
+      ><input formControlName="username" autocomplete="username" required
+    /></label>
+    <label
+      ><span>Mật khẩu (ít nhất 8 ký tự)</span
+      ><input formControlName="password" type="password" autocomplete="new-password" required
+    /></label>
+    <label
+      ><span>Xác nhận mật khẩu</span
+      ><input
+        formControlName="confirmPassword"
+        type="password"
+        autocomplete="new-password"
+        required
+    /></label>
+    <label
+      ><span>Admin key</span
+      ><input formControlName="key" type="password" autocomplete="off" required
+    /></label>
+    <button type="submit" [disabled]="busy">
+      {{ busy ? 'Đang tạo tài khoản…' : 'Đăng ký admin' }}
+    </button>
+  </form>
+  @if (error) {
+    <p class="admin-error" role="alert">{{ error }}</p>
+  }
+  <div class="admin-auth-switch">
+    <span>Đã có tài khoản?</span><button type="button" (click)="showLogin.emit()">Đăng nhập</button>
+  </div>
+</section>

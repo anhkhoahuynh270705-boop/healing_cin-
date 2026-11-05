@@ -1,0 +1,219 @@
+@if (!adminAuthenticated) {
+  <div class="admin-login-screen">
+    @if (adminAuthPage === 'login') {
+      <app-admin-login-page
+        (authenticated)="onAuthenticationChange($event)"
+        (showRegister)="showAdminRegister()"
+      ></app-admin-login-page>
+    } @else {
+      <app-admin-register-page
+        (registered)="onAdminRegistered()"
+        (showLogin)="adminAuthPage = 'login'"
+      ></app-admin-register-page>
+    }
+  </div>
+}
+
+@if (adminAuthenticated) {
+  <main class="admin-shell">
+    <aside class="admin-sidebar">
+      <a routerLink="/admin" class="admin-brand" aria-label="Bảng điều khiển rạp phim">
+        <span class="brand-mark"><i class="fa-solid fa-film" aria-hidden="true"></i></span>
+        <span class="brand-copy"><b>Healing_ciné</b><small>QUẢN TRỊ RẠP</small></span>
+      </a>
+      <div class="sidebar-caption">KHÔNG GIAN LÀM VIỆC</div>
+      <nav class="admin-nav" aria-label="Điều hướng quản trị">
+        <button
+          type="button"
+          class="admin-nav-link"
+          [class.active]="adminTab === 'overview'"
+          (click)="selectTab('overview')"
+        >
+          <span class="nav-icon"><i class="fa-solid fa-house" aria-hidden="true"></i></span
+          ><span>Tổng quan</span>
+          @if (adminTab === 'overview') {
+            <span class="nav-active-dot" aria-hidden="true"></span>
+          }
+        </button>
+        <button
+          type="button"
+          class="admin-nav-link"
+          [class.active]="adminTab === 'payments'"
+          (click)="selectTab('payments')"
+        >
+          <span class="nav-icon"
+            ><i class="fa-solid fa-comments-dollar" aria-hidden="true"></i></span
+          ><span>Duyệt khung chat VIP</span>
+          @if (adminTab === 'payments') {
+            <span class="nav-active-dot" aria-hidden="true"></span>
+          }
+        </button>
+        <button
+          type="button"
+          class="admin-nav-link"
+          [class.active]="adminTab === 'donations'"
+          (click)="selectTab('donations')"
+        >
+          <span class="nav-icon"><i class="fa-solid fa-heart" aria-hidden="true"></i></span
+          ><span>Duyệt ủng hộ</span>
+          @if (adminTab === 'donations') {
+            <span class="nav-active-dot" aria-hidden="true"></span>
+          }
+        </button>
+        <button
+          type="button"
+          class="admin-nav-link"
+          [class.active]="adminTab === 'rooms'"
+          (click)="selectTab('rooms')"
+        >
+          <span class="nav-icon"><i class="fa-solid fa-door-open" aria-hidden="true"></i></span
+          ><span>Phòng chiếu</span>
+          @if (adminTab === 'rooms') {
+            <span class="nav-active-dot" aria-hidden="true"></span>
+          }
+        </button>
+        <button
+          type="button"
+          class="admin-nav-link"
+          [class.active]="adminTab === 'users'"
+          (click)="selectTab('users')"
+        >
+          <span class="nav-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span
+          ><span>Người dùng</span>
+          @if (adminTab === 'users') {
+            <span class="nav-active-dot" aria-hidden="true"></span>
+          }
+        </button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-room-status">
+        <span class="online-dot"></span>
+        <span><b>Rạp đang hoạt động</b><small>Máy chủ realtime</small></span>
+      </div>
+      <a routerLink="/" class="back-to-cinema"
+        ><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Về phòng chiếu</a
+      >
+    </aside>
+    <section class="admin-main-scroll">
+      <header class="admin-topbar">
+        <div class="breadcrumb">
+          <span>Quản trị</span><span>/</span><b>{{ pageTitle }}</b>
+        </div>
+        <div class="admin-identity">
+          <span class="identity-mark">A</span><span>Quản trị viên</span>
+          <button type="button" class="admin-topbar-logout" (click)="logoutAdmin()">
+            <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+      <div class="admin-content">
+        @if (adminTab === 'overview') {
+          <section class="admin-welcome">
+            <p class="admin-eyebrow">BẢNG ĐIỀU KHIỂN</p>
+            <h1>Chào mừng trở lại</h1>
+            <p>Tổng quan vận hành, thanh toán và tài khoản trong rạp chiếu.</p>
+          </section>
+        }
+        @if (adminTab === 'overview') {
+          <section class="admin-overview-page" aria-label="Tổng quan hệ thống">
+            <button type="button" class="admin-summary-card" (click)="selectTab('payments')">
+              <span class="summary-icon payment-icon"
+                ><i class="fa-solid fa-comments-dollar" aria-hidden="true"></i
+              ></span>
+              <span class="summary-copy"
+                ><b>{{ pendingVipCount }} yêu cầu khung chat VIP</b
+                ><small>Đối chiếu giao dịch trước khi cấp quyền sử dụng</small></span
+              >
+              <span class="summary-arrow"
+                ><i class="fa-solid fa-arrow-right" aria-hidden="true"></i
+              ></span>
+            </button>
+            <button type="button" class="admin-summary-card" (click)="selectTab('rooms')">
+              <span class="summary-icon chat-icon"
+                ><i class="fa-solid fa-door-open" aria-hidden="true"></i
+              ></span>
+              <span class="summary-copy"
+                ><b>{{ pendingRoomCount }} yêu cầu phòng riêng</b
+                ><small>Duyệt giao dịch tạo phòng riêng 10.000đ</small></span
+              >
+              <span class="summary-arrow"
+                ><i class="fa-solid fa-arrow-right" aria-hidden="true"></i
+              ></span>
+            </button>
+            <button type="button" class="admin-summary-card" (click)="selectTab('donations')">
+              <span class="summary-icon donation-icon"
+                ><i class="fa-solid fa-heart" aria-hidden="true"></i
+              ></span>
+              <span class="summary-copy"
+                ><b>{{ pendingDonationCount }} yêu cầu ủng hộ</b
+                ><small>Duyệt giao dịch và cộng số dư sau khi xác nhận</small></span
+              >
+              <span class="summary-arrow"
+                ><i class="fa-solid fa-arrow-right" aria-hidden="true"></i
+              ></span>
+            </button>
+            <button type="button" class="admin-summary-card" (click)="selectTab('users')">
+              <span class="summary-icon room-icon"
+                ><i class="fa-solid fa-users" aria-hidden="true"></i
+              ></span>
+              <span class="summary-copy"
+                ><b>Quản lý người dùng</b><small>Tìm tài khoản và xem quyền lợi VIP</small></span
+              >
+              <span class="summary-arrow"
+                ><i class="fa-solid fa-arrow-right" aria-hidden="true"></i
+              ></span>
+            </button>
+          </section>
+        }
+        @if (adminTab === 'rooms') {
+          <section class="admin-rooms-page">
+            <div class="admin-section-heading">
+              <p class="admin-eyebrow">QUẢN LÝ KHÔNG GIAN</p>
+              <h1>Phòng chiếu</h1>
+              <p>Rạp chung và các giao dịch tạo phòng riêng được theo dõi độc lập.</p>
+            </div>
+            <article class="admin-room-card">
+              <div class="admin-room-icon"><i class="fa-solid fa-film" aria-hidden="true"></i></div>
+              <div class="admin-room-details">
+                <span class="room-state-pill"><i></i> Phòng mặc định</span>
+                <h2>Rạp chung</h2>
+              </div>
+              <span class="room-request-count"
+                ><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
+                {{ pendingRoomCount }} yêu cầu chờ duyệt</span
+              >
+            </article>
+            <div class="room-management-note">
+              <b>Phòng riêng chờ duyệt: {{ pendingRoomCount }}</b>
+              <span
+                >Xác nhận giao dịch 10.000đ tại danh sách bên dưới. Phòng chỉ được cấp sau khi admin
+                duyệt.</span
+              >
+              <span class="room-review-hint"
+                ><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Danh sách duyệt phòng
+                riêng nằm bên dưới.</span
+              >
+            </div>
+          </section>
+        }
+        <section
+          class="admin-workspace"
+          [hidden]="adminTab !== 'payments' && adminTab !== 'donations' && adminTab !== 'rooms'"
+        >
+          <app-payment-review
+            [requestType]="
+              adminTab === 'rooms' ? 'PRIVATE_ROOM' : adminTab === 'donations' ? 'DONATION' : 'VIP'
+            "
+            (authenticatedChange)="onAuthenticationChange($event)"
+            (requestsChange)="onRequestsChange($event)"
+          ></app-payment-review>
+        </section>
+        @if (adminTab === 'users') {
+          <app-user-management-page (sessionExpired)="logoutAdmin()"></app-user-management-page>
+        }
+        <footer class="admin-footer">Healing_ciné <span>·</span> Bảng quản trị</footer>
+      </div>
+    </section>
+  </main>
+}

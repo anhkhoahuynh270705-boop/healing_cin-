@@ -1,0 +1,68 @@
+.auth-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.auth-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  border-radius: 8px;
+  color: #ff9c9c;
+  background: rgba(255, 70, 70, 0.08);
+  font-size: 11px;
+}
+.auth-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.auth-input-group label {
+  color: #c8bdd5;
+  font-size: 10px;
+  font-weight: 600;
+}
+.auth-input-group label small {
+  color: #94869f;
+  font-weight: 400;
+}
+.input-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid #342a47;
+  border-radius: 8px;
+  background: #100d18;
+}
+.input-prefix {
+  color: #8b7c9e;
+  font-size: 12px;
+}
+.input-with-icon input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: #f0eaf8;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+}
+.auth-btn-primary {
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  color: #211a29;
+  background: #d9b77d;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.auth-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

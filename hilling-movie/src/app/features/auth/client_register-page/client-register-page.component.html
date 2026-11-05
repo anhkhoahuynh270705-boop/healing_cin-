@@ -1,0 +1,66 @@
+<form [formGroup]="form" (submit)="submit()" class="auth-form-body">
+  @if (error) {
+    <div class="auth-error-banner" role="alert">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <span>{{ error }}</span>
+    </div>
+  }
+  <div class="auth-input-group">
+    <label>Tên đăng nhập <small>(tối thiểu 3 ký tự)</small></label>
+    <div class="input-with-icon">
+      <span class="input-prefix"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
+      <input
+        type="text"
+        formControlName="username"
+        placeholder="Ví dụ: user123"
+        autocomplete="username"
+        required
+      />
+    </div>
+  </div>
+  <div class="auth-input-group">
+    <label>Biệt danh hiển thị trong rạp</label>
+    <div class="input-with-icon">
+      <span class="input-prefix"><i class="fa-solid fa-sparkles" aria-hidden="true"></i></span>
+      <input
+        type="text"
+        formControlName="displayName"
+        placeholder="Tên bạn muốn bạn bè nhìn thấy…"
+      />
+    </div>
+  </div>
+  <div class="auth-input-group">
+    <label>Mật khẩu <small>(tối thiểu 4 ký tự)</small></label>
+    <div class="input-with-icon">
+      <span class="input-prefix"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+      <input
+        type="password"
+        formControlName="password"
+        placeholder="Nhập mật khẩu an toàn…"
+        autocomplete="new-password"
+        required
+      />
+    </div>
+  </div>
+  <div class="auth-input-group">
+    <label>Xác nhận lại mật khẩu</label>
+    <div class="input-with-icon">
+      <span class="input-prefix"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+      <input
+        type="password"
+        formControlName="confirmPassword"
+        placeholder="Gõ lại mật khẩu trên…"
+        autocomplete="new-password"
+        required
+      />
+    </div>
+  </div>
+  <button type="submit" class="auth-btn-primary" [disabled]="busy">
+    @if (!busy) {
+      <span>Tạo tài khoản <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+    }
+    @if (busy) {
+      <span>Đang tạo tài khoản…</span>
+    }
+  </button>
+</form>

@@ -1,0 +1,299 @@
+<svg
+  class="wardrobe-chat-frame-svg"
+  viewBox="0 0 300 110"
+  role="img"
+  [attr.aria-label]="'Khung ' + frameItem.name"
+>
+  <defs>
+    <linearGradient [attr.id]="'wardrobe-frame-metal-' + instanceId" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" [attr.stop-color]="frameItem.frameLight" />
+      <stop offset=".5" [attr.stop-color]="frameItem.frameMid" />
+      <stop offset="1" [attr.stop-color]="frameItem.frameDark" />
+    </linearGradient>
+    <linearGradient
+      [attr.id]="'wardrobe-frame-background-' + instanceId"
+      x1="0"
+      y1="0"
+      x2="0"
+      y2="1"
+    >
+      <stop offset="0" [attr.stop-color]="frameItem.frameBgTop" />
+      <stop offset="1" [attr.stop-color]="frameItem.frameBgBottom" />
+    </linearGradient>
+    <radialGradient [attr.id]="'wardrobe-frame-gem-' + instanceId" cx=".35" cy=".3" r=".8">
+      <stop offset="0" [attr.stop-color]="frameItem.gemLight" />
+      <stop offset=".5" [attr.stop-color]="frameItem.gemMid" />
+      <stop offset="1" [attr.stop-color]="frameItem.gemDark" />
+    </radialGradient>
+    <g
+      [attr.id]="'wardrobe-frame-wing-' + instanceId"
+      [attr.fill]="'url(#wardrobe-frame-metal-' + instanceId + ')'"
+      [attr.transform]="wingScaleTransform(frameItem.tier)"
+      [attr.stroke]="frameItem.frameDark"
+      stroke-width="1"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <!-- Bậc thấp: một lớp cánh gọn, bậc cao dần mở thêm lông và đường khắc. -->
+      <path
+        d="M150 40C132 40 112 34 88 20C100 19 108 21 116 24C108 17 100 13 90 11C112 11 130 20 142 31Z"
+      />
+      <path d="M142 38C126 38 108 36 92 30C104 31 112 32 120 34Z" opacity=".8" />
+      @if (frameItem.tier >= 2) {
+        <path d="M143 34Q125 23 108 17Q124 19 138 30Z" opacity=".92" />
+        <path d="M132 36Q113 29 99 25Q115 26 132 32Z" opacity=".82" />
+        <path d="M137 31Q124 19 111 14Q127 18 141 28Z" opacity=".88" />
+        <path d="M123 28Q110 17 96 14Q111 20 129 32Z" opacity=".76" />
+        <path d="M116 34Q103 29 91 27Q103 34 123 37Z" opacity=".9" />
+      }
+      @if (frameItem.tier >= 3) {
+        <path d="M143 31Q133 16 122 9Q138 15 147 27Z" opacity=".96" />
+        <path d="M130 31Q117 17 105 12Q123 15 138 28Z" opacity=".9" />
+        <path d="M133 27Q126 12 116 6Q132 13 141 25Z" opacity=".94" />
+        <path d="M120 25Q112 12 101 8Q117 14 130 27Z" opacity=".86" />
+        <path d="M108 27Q99 17 88 17Q103 21 119 31Z" opacity=".9" />
+        <path d="M139 37Q124 34 112 31Q126 39 143 40Z" opacity=".88" />
+      }
+      @if (frameItem.tier >= 4) {
+        <path
+          d="M145 34Q129 24 111 18M137 31Q124 21 117 14M130 34Q115 29 101 26M141 27Q132 16 122 10M124 28Q112 17 99 13M139 38Q125 35 112 31M116 34Q103 29 93 27"
+          fill="none"
+          [attr.stroke]="frameItem.frameLight"
+          stroke-width="1.15"
+          opacity=".9"
+        />
+        <path
+          d="M146 29Q139 17 128 10"
+          fill="none"
+          [attr.stroke]="frameItem.frameLight"
+          stroke-width=".9"
+          opacity=".9"
+        />
+        <path
+          d="M143 36Q130 30 119 27M134 33Q123 25 115 21M126 31Q112 25 104 23M138 29Q131 21 126 17"
+          fill="none"
+          [attr.stroke]="frameItem.frameDark"
+          stroke-width=".75"
+          opacity=".82"
+        />
+      }
+      @if (frameItem.tier >= 5) {
+        <path
+          d="M141 38Q119 38 96 31"
+          fill="none"
+          [attr.stroke]="frameItem.frameLight"
+          stroke-width="1.5"
+          opacity=".95"
+        />
+        <path
+          d="M147 34Q138 25 132 19M139 38Q124 33 115 30M129 34Q115 25 108 22M118 29Q106 23 99 21"
+          fill="none"
+          [attr.stroke]="frameItem.frameLight"
+          stroke-width=".7"
+          stroke-dasharray="1.4 2"
+          opacity=".9"
+        />
+        <circle
+          cx="112"
+          cy="22"
+          r="1.7"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          [attr.stroke]="frameItem.frameDark"
+          stroke-width=".6"
+        />
+        <circle
+          cx="132"
+          cy="25"
+          r="1.35"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          [attr.stroke]="frameItem.frameDark"
+          stroke-width=".6"
+        />
+      }
+      @if (frameItem.tier >= 6) {
+        <path d="M147 32Q148 20 140 8Q153 17 151 31Z" />
+        <path d="M144 28Q145 14 137 3Q151 11 154 26Z" opacity=".94" />
+        <path d="M137 35Q128 26 117 22Q128 29 140 38Z" opacity=".9" />
+        <path
+          d="M140 35Q127 28 119 24M144 29Q140 19 134 15M148 27Q146 15 141 9M136 31Q124 20 115 17M129 35Q114 29 104 27"
+          fill="none"
+          [attr.stroke]="frameItem.frameLight"
+          stroke-width="1.35"
+        />
+        <path
+          d="M124 33Q112 31 105 28"
+          fill="none"
+          [attr.stroke]="frameItem.frameLight"
+          stroke-width=".9"
+        />
+        <circle
+          cx="143"
+          cy="17"
+          r="2.1"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          [attr.stroke]="frameItem.frameDark"
+          stroke-width=".65"
+        />
+        <circle
+          cx="126"
+          cy="27"
+          r="1.2"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          stroke="none"
+        />
+        <circle
+          cx="100"
+          cy="18"
+          r="1"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          stroke="none"
+        />
+        <circle
+          cx="119"
+          cy="11"
+          r=".9"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          stroke="none"
+        />
+        <path
+          d="M144 36l-2-3 2-3 2 3zM130 31l-1.5-2.5 1.5-2.5 1.5 2.5zM111 24l-1.5-2 1.5-2 1.5 2z"
+          [attr.fill]="'url(#wardrobe-frame-metal-' + instanceId + ')'"
+          [attr.stroke]="frameItem.frameDark"
+          stroke-width=".45"
+        />
+      }
+    </g>
+  </defs>
+  <g [style.filter]="'drop-shadow(0 0 6px ' + frameItem.glowColor + ')'">
+    <g [attr.display]="frameItem.tier === 0 ? 'none' : null">
+      <use [attr.href]="'#wardrobe-frame-wing-' + instanceId" />
+      <use
+        [attr.href]="'#wardrobe-frame-wing-' + instanceId"
+        transform="translate(300,0) scale(-1,1)"
+      />
+    </g>
+    <polygon
+      points="18,36 282,36 290,44 290,92 282,100 18,100 10,92 10,44"
+      [attr.fill]="'url(#wardrobe-frame-metal-' + instanceId + ')'"
+      [attr.stroke]="frameItem.accentColor"
+      stroke-width="1"
+    />
+    <polygon points="23,41 277,41 285,48 285,88 277,95 23,95 15,88 15,48" fill="#1a1008" />
+    <polygon
+      points="26,44 274,44 281,50 281,86 274,92 26,92 19,86 19,50"
+      [attr.fill]="'url(#wardrobe-frame-background-' + instanceId + ')'"
+      [attr.stroke]="frameItem.frameMid"
+      stroke-width="1"
+    />
+    <polygon
+      points="10,68 3,64 3,72"
+      [attr.fill]="'url(#wardrobe-frame-metal-' + instanceId + ')'"
+    />
+    <polygon
+      points="290,68 297,64 297,72"
+      [attr.fill]="'url(#wardrobe-frame-metal-' + instanceId + ')'"
+    />
+    @if (frameItem.tier >= 5) {
+      <g
+        class="wing-crown"
+        [class.wing-crown--emperor]="frameItem.tier >= 6"
+        [attr.stroke]="frameItem.frameDark"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+      >
+        @if (frameItem.tier === 5) {
+          <!-- Vương miện Huyền thoại gọn, nằm đúng giữa hai cánh. -->
+          <path
+            d="M137 31L139 22L146 28L150 18L155 28L162 22L164 31L161 38Q150 41 140 38Z"
+            [attr.fill]="'url(#wardrobe-frame-metal-' + instanceId + ')'"
+            stroke-width="1.3"
+          />
+          <path
+            d="M140 34Q150 36 161 34L160 38Q150 41 141 38Z"
+            [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+            stroke-width=".8"
+          />
+          <circle
+            cx="150"
+            cy="25"
+            r="1.8"
+            [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+            stroke-width=".6"
+          />
+          <circle cx="140" cy="22" r="1" [attr.fill]="frameItem.gemLight" stroke="none" />
+          <circle cx="162" cy="22" r="1" [attr.fill]="frameItem.gemLight" stroke="none" />
+        } @else {
+          <!-- Hoàng đế có vương miện lớn, nhiều tầng và ngọc trung tâm. -->
+          <path
+            d="M132 31L135 16L143 24L150 9L157 24L165 16L168 31L164 40Q150 44 136 40Z"
+            [attr.fill]="'url(#wardrobe-frame-metal-' + instanceId + ')'"
+            stroke-width="1.7"
+          />
+          <path
+            d="M136 33Q150 37 164 33L163 40Q150 44 137 40Z"
+            [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+            stroke-width="1"
+          />
+          <path
+            d="M142 24L150 31L158 24M136 29L143 32M164 29L157 32"
+            fill="none"
+            [attr.stroke]="frameItem.frameLight"
+            stroke-width="1.1"
+          />
+          <path
+            d="M150 13L152 17L150 21L148 17Z"
+            [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+            stroke-width=".65"
+          />
+          <circle
+            cx="137"
+            cy="18"
+            r="1.3"
+            [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+            stroke-width=".5"
+          />
+          <circle
+            cx="163"
+            cy="18"
+            r="1.3"
+            [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+            stroke-width=".5"
+          />
+          <path
+            d="M132 31L128 35L134 36M168 31L172 35L166 36"
+            fill="none"
+            [attr.stroke]="frameItem.frameLight"
+            stroke-width="1.2"
+          />
+        }
+      </g>
+    } @else {
+      <g [attr.display]="frameItem.tier === 0 ? 'none' : null">
+        <circle
+          cx="150"
+          cy="40"
+          r="6.5"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          [attr.stroke]="frameItem.frameDark"
+        />
+        <path
+          d="M150 47l3 5-3 5-3-5z"
+          [attr.fill]="'url(#wardrobe-frame-gem-' + instanceId + ')'"
+          [attr.stroke]="frameItem.frameDark"
+          stroke-width=".8"
+        />
+      </g>
+    }
+  </g>
+  <text
+    x="150"
+    y="72"
+    text-anchor="middle"
+    font-size="14"
+    font-weight="600"
+    font-family="system-ui,sans-serif"
+    [attr.fill]="frameItem.frameText"
+  >
+    {{ message }}
+  </text>
+</svg>

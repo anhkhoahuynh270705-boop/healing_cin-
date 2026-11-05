@@ -1,0 +1,46 @@
+<form [formGroup]="form" (submit)="submit()" class="auth-form-body">
+  @if (error) {
+    <div class="auth-error-banner" role="alert">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <span>{{ error }}</span>
+    </div>
+  }
+  <div class="auth-input-group">
+    <label>Tên đăng nhập</label>
+    <div class="input-with-icon">
+      <span class="input-prefix"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
+      <input
+        type="text"
+        formControlName="username"
+        placeholder="Nhập tên đăng nhập của bạn…"
+        autocomplete="username"
+        required
+      />
+    </div>
+  </div>
+  <div class="auth-input-group">
+    <label>Mật khẩu</label>
+    <div class="input-with-icon">
+      <span class="input-prefix"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+      <input
+        type="password"
+        formControlName="password"
+        placeholder="Nhập mật khẩu…"
+        autocomplete="current-password"
+        required
+      />
+    </div>
+  </div>
+  <button type="submit" class="auth-btn-primary" [disabled]="busy">
+    @if (!busy) {
+      <span><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Đăng nhập vào rạp</span>
+    }
+    @if (busy) {
+      <span>Đang xác thực thông tin…</span>
+    }
+  </button>
+  <div class="auth-or-divider"><span>hoặc trải nghiệm ngay</span></div>
+  <button type="button" class="auth-btn-secondary" (click)="guestLogin.emit()">
+    Vào nhanh với tư cách Khách
+  </button>
+</form>

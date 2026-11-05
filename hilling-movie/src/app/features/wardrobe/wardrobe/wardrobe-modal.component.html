@@ -1,0 +1,279 @@
+<div class="wardrobe-overlay" (click)="close()">
+  <section
+    class="wardrobe-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="wardrobe-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button class="wardrobe-close" type="button" aria-label="Đóng" (click)="close()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12" /></svg>
+    </button>
+
+    <header class="wardrobe-header">
+      <h1 id="wardrobe-title">Một chút cá tính cho hàng ghế.</h1>
+      <p>Chọn áo và khung chat riêng. Mỗi bậc mở cả bộ, và giữ luôn các bậc thấp hơn.</p>
+    </header>
+
+    <section class="wardrobe-preview" aria-label="Xem trước nhân vật và vật phẩm">
+      @if (frame(); as frameItem) {
+        <app-wardrobe-chat-frame
+          [frameItem]="frameItem"
+          [message]="'Bài này hay quá, cả rạp ơi!'"
+        />
+      } @else {
+        <div class="frame-skeleton"></div>
+      }
+
+      @if (shirt(); as shirtItem) {
+        <div class="wardrobe-avatar-model">
+          <app-avatar-preview
+            [displayName]="displayName()"
+            [gender]="gender()"
+            [shirtColor]="shirtItem.shirtColor"
+            [shirtTier]="shirtItem.tier"
+          />
+        </div>
+      }
+      <div class="preview-caption">
+        <strong
+          >Khung {{ frame()?.name ?? '…' }} <span>·</span> Áo {{ shirt()?.name ?? '…' }}</strong
+        >
+        <small [class.not-owned]="!frame()?.owned || !shirt()?.owned">
+          Xem trước · {{ frame()?.owned && shirt()?.owned ? 'đã sở hữu' : 'chưa sở hữu' }}
+        </small>
+      </div>
+    </section>
+
+    <nav class="wardrobe-tabs" aria-label="Danh mục vật phẩm">
+      <button
+        type="button"
+        [class.active]="activeTab() === 'frames'"
+        (click)="activeTab.set('frames')"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"
+          />
+        </svg>
+        Khung chat
+      </button>
+      <button
+        type="button"
+        [class.active]="activeTab() === 'shirts'"
+        (click)="activeTab.set('shirts')"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m16 4 4 2 2 4-4 2v8H6v-8l-4-2 2-4 4-2c1 2 2 3 4 3s3-1 4-3z" />
+          <path d="M9 4c.5 1.8 1.5 3 3 3s2.5-1.2 3-3" />
+        </svg>
+        Áo nhân vật
+      </button>
+    </nav>
+
+    @if (loading()) {
+      <div class="loading-line"><span></span><span></span><span></span></div>
+    } @else {
+      <section
+        class="item-grid"
+        [attr.aria-label]="activeTab() === 'frames' ? 'Các khung chat' : 'Các áo nhân vật'"
+      >
+        @for (item of visibleItems(); track item.tier) {
+          <button
+            class="item-card"
+            type="button"
+            [class.selected]="isSelected(item)"
+            [class.owned]="item.owned"
+            [style.--tier-color]="item.accentColor"
+            [style.--tier-soft]="item.softColor"
+            [style.--tier-glow]="item.glowColor"
+            (click)="choose(item)"
+            [attr.aria-pressed]="isSelected(item)"
+          >
+            @if (activeTab() === 'frames') {
+              <span class="mini-frame" [attr.data-tier]="item.tier">
+                @if (item.tier > 0) {
+                  <span class="mini-wing mini-wing-left"></span
+                  ><span class="mini-wing mini-wing-right"></span>
+                }
+                @if (item.tier >= 5) {
+                  <svg
+                    class="mini-crown"
+                    [class.mini-crown--emperor]="item.tier >= 6"
+                    viewBox="0 0 24 20"
+                    aria-hidden="true"
+                  >
+                    <path d="M2 6l5 4 5-8 5 8 5-4-2 11H4z" />
+                    <path class="mini-crown-band" d="M4 14h16l-.5 3h-15z" />
+                    <circle cx="12" cy="6" r="1.2" />
+                  </svg>
+                }
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"
+                  />
+                </svg>
+              </span>
+            } @else {
+              <span
+                class="mini-shirt"
+                [style.--shirt-color]="item.shirtColor"
+                [style.--shirt-accent]="item.ornamentColor"
+                [style.--mini-cape]="item.tier === 6 ? '#8E1620' : '#237965'"
+                [attr.data-tier]="item.tier"
+              >
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                  @if (item.tier >= 5) {
+                    <path class="mini-cape" d="M33 14 37 15l7-2 8 35-4 4-15-4z" />
+                    <path class="mini-cape" d="M31 14 27 15l-7-2-8 35 4 4 15-4z" />
+                    <path
+                      class="mini-cape-hem"
+                      d="m36 48 12 4 4-4 2 4-6 5-12-4z"
+                    />
+                    <path
+                      class="mini-cape-hem"
+                      d="m28 48-12 4-4-4-2 4 6 5 12-4z"
+                    />
+                  }
+                  <path
+                    class="mini-shirt-body"
+                    d="m22 9 10 5 10-5 10 6 7 14-9 5-4-7v28H18V27l-4 7-9-5 7-14z"
+                  />
+                  <path class="mini-ermine-collar" d="M24 16q8 8 16 0l-2 5q-6 5-12 0z" />
+                  <g class="mini-ermine-dots">
+                    <circle cx="27" cy="18" r="1" />
+                    <circle cx="32" cy="20" r="1" />
+                    <circle cx="37" cy="18" r="1" />
+                  </g>
+                  <rect class="mini-name-frame" x="21" y="25" width="22" height="20" rx="3" />
+                  <rect class="mini-placket" x="30" y="31" width="4" height="11" rx="1" />
+                  <g class="mini-buttons">
+                    <circle cx="32" cy="32" r=".8" />
+                    <circle cx="32" cy="35" r=".8" />
+                    <circle cx="32" cy="38" r=".8" />
+                    <circle cx="32" cy="41" r=".8" />
+                  </g>
+                </svg>
+              </span>
+            }
+            <strong class="item-name" [style.color]="item.accentColor">{{ item.name }}</strong>
+            <span class="item-price">{{
+              item.price === 0 ? 'Tặng khi vào rạp' : formatAmount(item.price)
+            }}</span>
+            <span class="item-status" [class.status-owned]="item.owned">
+              @if (isEquipped(item)) {
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                Đang dùng
+              } @else if (item.owned) {
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg> Đã mở
+                khóa
+              } @else {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                Chưa sở hữu
+              }
+            </span>
+          </button>
+        }
+      </section>
+    }
+
+    @if (selectedItem(); as selected) {
+      <p class="item-description">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-2-5.8L4 11l6-2.2L12 3z" />
+          <path d="m19 14 1.2 2.8L23 18l-2.8 1.2L19 22l-1.2-2.8L15 18l2.8-1.2L19 14z" /></svg
+        >{{ activeTab() === 'frames' ? selected.frameDescription : selected.shirtDescription }}
+      </p>
+      <section class="purchase-strip">
+        <div class="purchase-copy">
+          <strong>{{
+            selected.owned
+              ? 'Bộ vật phẩm đã có trong tủ'
+              : selected.tier === 0
+                ? 'Bộ mặc định'
+                : 'Mở khóa trọn bộ ' + selected.name
+          }}</strong>
+          <small
+            >Số dư có thể sử dụng: <b>{{ formatAmount(usableBalance()) }}</b></small
+          >
+        </div>
+        @if (selected.owned) {
+          <span class="purchase-owned"
+            ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg> Đã sở
+            hữu</span
+          >
+        } @else if (!isLoggedIn()) {
+          <button class="purchase-button" type="button" (click)="loginRequested.emit()">
+            Đăng nhập để mua
+          </button>
+        } @else {
+          <button
+            class="purchase-button"
+            type="button"
+            [disabled]="loading() || buyingTier() !== null || selectedShortfall() > 0"
+            (click)="purchaseSelected()"
+          >
+            @if (buyingTier() === selected.tier) {
+              <span class="button-loader"></span> Đang xử lý…
+            } @else {
+              Mua bộ · {{ formatAmount(selected.price) }}
+            }
+          </button>
+        }
+      </section>
+    }
+
+    @if (selectedItem(); as selected) {
+      @if (
+        isLoggedIn() &&
+        !selected.owned &&
+        selected.tier > 0 &&
+        selectedShortfall() > 0 &&
+        !loading()
+      ) {
+        <p class="balance-hint">
+          Còn thiếu {{ formatAmount(selectedShortfall()) }} để mua bộ {{ selected.name }}.
+        </p>
+      }
+    }
+    @if (errorMessage()) {
+      <div class="wardrobe-alert" role="alert">
+        <span>{{ errorMessage() }}</span
+        ><button type="button" (click)="load()">Thử lại</button>
+      </div>
+    }
+    @if (successMessage()) {
+      <p class="wardrobe-success" role="status">{{ successMessage() }}</p>
+    }
+
+    <section class="wardrobe-progress" aria-label="Tiến độ ủng hộ">
+      @if (isLoggedIn()) {
+        <div class="progress-copy">
+          <span
+            >Tổng ủng hộ đã duyệt <strong>{{ formatAmount(totalConfirmed()) }}</strong></span
+          >
+          @if (remaining() !== null) {
+            <span
+              >Bậc hiện tại <strong>{{ currentTier()?.name ?? 'Chưa có' }}</strong> · Còn
+              <strong>{{ formatAmount(remaining() ?? 0) }}</strong> để lên
+              {{ nextTier()?.name }}</span
+            >
+          } @else {
+            <span>Bạn đã đạt mốc ủng hộ cao nhất</span>
+          }
+        </div>
+        <div class="progress-track"><span [style.width.%]="progress()"></span></div>
+        <p class="balance-note">
+          Mua bộ sẽ trừ số dư có thể sử dụng; tổng ủng hộ đã duyệt không thay đổi.
+        </p>
+      } @else {
+        <div class="progress-copy">
+          <span>Đăng nhập để xem tổng ủng hộ và số dư có thể sử dụng.</span>
+        </div>
+      }
+    </section>
+  </section>
+</div>
