@@ -65,6 +65,9 @@ public class PaymentController {
         if (!auth.isValidSession(userId, token)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of(
                 "status", payments.status(userId),
+                "vipPaymentStatus", payments.vipPaymentStatus(userId),
+                "privateRoomStatus", payments.privateRoomStatus(userId),
+                "donationStatus", payments.donationStatus(userId),
                 "tier", payments.approvedTier(userId),
                 "tiers", payments.approvedTiers(userId),
                 "privateRooms", payments.privateRooms(userId),

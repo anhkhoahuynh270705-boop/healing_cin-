@@ -34,6 +34,8 @@ export class DonationModalComponent implements OnInit, AfterViewInit, OnDestroy 
   @Output() closed = new EventEmitter<void>();
   @Output() loginRequested = new EventEmitter<void>();
   @Output() wardrobeRequested = new EventEmitter<void>();
+  @Output() transactionPending = new EventEmitter<void>();
+  @Output() transactionFailed = new EventEmitter<string>();
   @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
 
   private readonly donationApi = inject(DonationUiService);
@@ -133,9 +135,12 @@ export class DonationModalComponent implements OnInit, AfterViewInit, OnDestroy 
       this.hadPendingRequest = true;
       this.transactionStatus.set('pending');
       this.showToast('Đã gửi yêu cầu đến admin duyệt.');
+      this.transactionPending.emit();
       this.startPolling();
     } catch (error) {
-      this.loadError.set(error instanceof Error ? error.message : 'Không gửi được yêu cầu duyệt.');
+      const message = error instanceof Error ? error.message : 'Không gửi được yêu cầu duyệt.';
+      this.loadError.set(message);
+      this.transactionFailed.emit(message);
     } finally {
       this.submitting.set(false);
     }

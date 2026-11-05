@@ -173,9 +173,23 @@ public class PaymentApprovalService {
     }
 
     @Transactional(readOnly = true)
+    public String vipPaymentStatus(String userId) {
+        if (userId == null) return "NONE";
+        return requests.findFirstByUserIdAndTypeOrderByCreatedAtDesc(userId, VIP)
+                .map(PaymentRequestEntity::getStatus).orElse("NONE");
+    }
+
+    @Transactional(readOnly = true)
     public String donationStatus(String userId) {
         if (userId == null) return "NONE";
         return requests.findFirstByUserIdAndTypeOrderByCreatedAtDesc(userId, DONATION)
+                .map(PaymentRequestEntity::getStatus).orElse("NONE");
+    }
+
+    @Transactional(readOnly = true)
+    public String privateRoomStatus(String userId) {
+        if (userId == null) return "NONE";
+        return requests.findFirstByUserIdAndTypeOrderByCreatedAtDesc(userId, PRIVATE_ROOM)
                 .map(PaymentRequestEntity::getStatus).orElse("NONE");
     }
 
