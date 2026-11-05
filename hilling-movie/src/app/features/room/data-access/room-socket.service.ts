@@ -1,5 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
+import { backendWebSocketUrl } from '../../../api-endpoints';
 import { ChatMessage } from '../../chat/models/chat-message.model';
 import { Reaction } from '../../chat/models/reaction.model';
 import { Movement, Playback, RoomState } from '../models';
@@ -215,10 +216,8 @@ export class RoomSocketService {
     if (this.intentionallyClosed) return;
     if (typeof window === 'undefined' || typeof location === 'undefined') return;
     const generation = ++this.socketGeneration;
-    const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-    const hostname = location.hostname || 'localhost';
     const host = location.host || 'localhost:4200';
-    const socket = new WebSocket(`${scheme}://${hostname}:8080/ws`);
+    const socket = new WebSocket(backendWebSocketUrl());
     this.socket = socket;
     this.incomingBuffer = '';
     socket.onopen = () => {

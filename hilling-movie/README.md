@@ -9,4 +9,4 @@ npm ci
 npm start
 ```
 
-The development server is available at `http://localhost:4200` and expects the backend at `http://https://healing-cin.onrender.com`.
+The development server is available at `http://localhost:4200` and expects the backend at `http://localhost:8080`. In production, API requests use the Vercel `/api` rewrite to reach Render.

@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
+import { apiBaseUrl } from '../../../api-endpoints';
 import { DonationAccount, DonationSubmission, DonationUiConfig } from '../models/donation.model';
 
 /** API config, số dư và yêu cầu ủng hộ của người dùng. */
 @Injectable({ providedIn: 'root' })
 export class DonationUiService {
   private get baseUrl(): string {
-    if (typeof window === 'undefined') return 'http://https://healing-cin.onrender.com';
-    return `${location.protocol}//${location.hostname || 'localhost'}:8080`;
+    return apiBaseUrl();
   }
 
   async getConfig(): Promise<DonationUiConfig> {

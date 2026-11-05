@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { apiBaseUrl } from '../../../api-endpoints';
 import { ThreeCinemaComponent } from '../../room/components/three-cinema/three-cinema.component';
 import { GymRoomComponent } from '../../room/components/gym-room/gym-room.component';
 import { DonationModalComponent } from '../../donations/donation-modal/donation-modal.component';
@@ -1285,7 +1286,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
     try {
-      const backendUrl = `${location.protocol}//${location.hostname || 'localhost'}:8080`;
+      const backendUrl = apiBaseUrl();
       const response = await fetch(
         `${backendUrl}/api/youtube/video-title?videoId=${encodeURIComponent(videoId)}`,
         { signal: controller.signal },

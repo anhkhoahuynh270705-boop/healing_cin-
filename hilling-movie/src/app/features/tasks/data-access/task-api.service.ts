@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
+import { apiBaseUrl } from '../../../api-endpoints';
 import { TaskProgress } from '../models/task.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaskApiService {
   private get baseUrl(): string {
-    if (typeof window === 'undefined') return 'http://https://healing-cin.onrender.com';
-    return `${location.protocol}//${location.hostname || 'localhost'}:8080`;
+    return apiBaseUrl();
   }
 
   async getProgress(userId: string, token: string): Promise<TaskProgress> {

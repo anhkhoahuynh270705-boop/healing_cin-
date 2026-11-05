@@ -1,5 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
+import { backendWebSocketUrl } from '../../../api-endpoints';
 import { PaymentRequestView } from '../../payment/models/vip-tier.model';
 
 @Injectable({ providedIn: 'root' })
@@ -47,8 +48,7 @@ export class AdminRealtimeService {
 
   private open(): void {
     if (this.intentionallyClosed || !this.token) return;
-    const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-    const socket = new WebSocket(`${scheme}://${location.hostname || 'localhost'}:8080/ws`);
+    const socket = new WebSocket(backendWebSocketUrl());
     this.socket = socket;
     this.incoming = '';
 

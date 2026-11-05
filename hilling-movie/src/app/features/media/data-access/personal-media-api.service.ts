@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
+import { apiBaseUrl } from '../../../api-endpoints';
 import { PersonalMediaUploadResult } from '../models/personal-media.model';
 
 @Injectable({ providedIn: 'root' })
 export class PersonalMediaApiService {
   private get baseUrl(): string {
-    if (typeof window === 'undefined') return 'http://https://healing-cin.onrender.com';
-    return `${location.protocol}//${location.hostname || 'localhost'}:8080`;
+    return apiBaseUrl();
   }
 
   async upload(

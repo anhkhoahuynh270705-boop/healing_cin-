@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
+import { apiBaseUrl } from '../../../api-endpoints';
 
 @Injectable({ providedIn: 'root' })
 export class AdminUserApiService {
   private get baseUrl(): string {
-    if (typeof window === 'undefined') return 'http://https://healing-cin.onrender.com';
-    return `${location.protocol}//${location.hostname || 'localhost'}:8080`;
+    return apiBaseUrl();
   }
 
   list(token: string, query: string, page: number, size = 20): Promise<Response> {
