@@ -737,6 +737,23 @@ app-cinema-page {
   min-width: 0;
   min-height: 0;
 }
+.room-mode-hidden {
+  display: none !important;
+}
+.scene-area.gym-active {
+  background: #151c20;
+}
+.scene-area > app-gym-room {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.scene-area > app-three-cinema.room-mode-hidden {
+  display: none !important;
+}
 /* Make the Three.js host fill the container */
 .scene-area.outdoor-scene {
   position: absolute;
@@ -2288,105 +2305,13 @@ app-cinema-page {
   color: #081a10;
 }
 
-/* ═══════════════════════════════════════
-   GAME & COMPONENT EXTRA STYLES
-═══════════════════════════════════════ */
-.game-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 12px;
+/* ─── 3D gym floor and equipment directory ─── */
+.gym-active .left-sidebar {
+  display: none;
 }
-.game-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-}
-.game-subtitle {
-  font-size: 11px;
-  color: var(--muted);
-}
-.game-arena {
-  width: 100%;
-  height: 180px;
-  border-radius: 12px;
-  border: 2px dashed var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
-}
-.game-arena-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
-}
-.game-big-icon {
-  font-size: 36px;
-  line-height: 1;
-}
-.game-light-red {
-  color: #f87171;
-}
-.game-light-green {
-  color: #4ade80;
-}
-.game-time {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--amber);
-}
-.game-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.game-stats {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-.game-stat {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(30, 24, 49, 0.6);
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid var(--line);
-}
-.gs-label {
-  font-size: 11px;
-  color: var(--muted);
-}
-.gs-val {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--amber);
-}
-.game-actions {
-  width: 100%;
-}
-.game-btn {
-  width: 100%;
-  padding: 10px;
-  background: var(--amber);
-  color: #1a1020;
-  font-weight: 700;
-  font-size: 13px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.game-btn--cancel {
-  background: rgba(220, 50, 50, 0.2);
-  color: #ff6b6b;
-  border: 1px solid rgba(220, 50, 50, 0.4);
+.gym-active .room-switch-btn.rs-btn--active {
+  color: #a7d5a7;
+  background: rgba(115, 161, 120, 0.13);
 }
 
 /* ── Seat Map styles ── */

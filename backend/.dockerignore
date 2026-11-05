@@ -1,0 +1,14 @@
+.git
+.idea
+.vscode
+target
+data
+storage
+*.log
+*.dump
+*.backup
+*.sql.gz
+.env
+.env.*
+secrets
+credentials

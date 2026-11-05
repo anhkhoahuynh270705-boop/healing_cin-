@@ -13,28 +13,31 @@
   </div>
 }
 
-<div class="cinema-layout">
+<div class="cinema-layout" [class.gym-active]="currentRoom === 'gym'">
   <!-- ═══════ TOP BAR ═══════ -->
   <header class="cinema-topbar">
     <div class="topbar-left">
       <div class="brand-logo">
-        <span class="brand-icon"><i class="fa-solid fa-film" aria-hidden="true"></i></span>
+        <span class="brand-icon"><i class="fa-solid" [class.fa-film]="currentRoom === 'cinema'" [class.fa-dumbbell]="currentRoom === 'gym'" aria-hidden="true"></i></span>
         <div class="brand-text">
-          <span class="brand-name">Healing_ciné</span>
-          <span class="brand-sub">FILM · MUSIC · BEATS</span>
+          <span class="brand-name">{{ currentRoom === 'gym' ? 'Healing Fitness' : 'Healing_ciné' }}</span>
+          <span class="brand-sub">{{ currentRoom === 'gym' ? 'MOVEMENT · STRENGTH · WELLNESS' : 'FILM · MUSIC · BEATS' }}</span>
         </div>
       </div>
     </div>
     <div class="topbar-center">
       <div class="status-badge">
         <span class="status-dot" [class.offline]="!connected"></span>
-        <span>{{ connected ? 'Đang chiếu' : 'Đang kết nối…' }}</span>
+        <span>{{ currentRoom === 'gym' ? 'Đang tập luyện' : connected ? 'Đang chiếu' : 'Đang kết nối…' }}</span>
       </div>
-      @if (state?.roomName) {
+      @if (currentRoom === 'gym') {
+        <div class="room-title-badge"><i class="fa-solid fa-dumbbell" aria-hidden="true"></i> Healing Fitness Club</div>
+      } @else if (state?.roomName) {
         <div class="room-title-badge">
           <i class="fa-solid fa-film" aria-hidden="true"></i> {{ state?.roomName }}
         </div>
       }
+      @if (currentRoom === 'cinema') {
       <div class="online-count">
         <span class="online-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
         <div class="online-info">
@@ -44,6 +47,7 @@
           >
         </div>
       </div>
+      }
     </div>
     <div class="topbar-right">
       @if (isInPrivateRoom) {
@@ -105,7 +109,7 @@
   <!-- ═══════ BODY ═══════ -->
   <div class="cinema-body">
     <!-- LEFT SIDEBAR -->
-    <aside class="left-sidebar">
+    <aside class="left-sidebar" [class.room-mode-hidden]="currentRoom === 'gym'">
       <div class="sidebar-section">
         <p class="sidebar-eyebrow">TRÊN MÀN ẢNH</p>
         @if (state?.playback?.videoId) {
@@ -162,9 +166,9 @@
     </aside>
 
     <!-- 3D SCENE + YOUTUBE CINEMA SCREEN -->
-    <div class="scene-area" [class.outdoor-scene]="outdoorCinemaMode">
+    <div class="scene-area" [class.outdoor-scene]="outdoorCinemaMode" [class.gym-active]="currentRoom === 'gym'">
       <!-- YouTube Screen đặt phía sau (z-index: 1, không box shadow) -->
-      <div class="cinema-screen-overlay">
+      <div class="cinema-screen-overlay" [class.room-mode-hidden]="currentRoom === 'gym'">
         <div #playerHost id="youtube-embed-screen"></div>
         @if (showOutdoorScreenLoading) {
           <div class="outdoor-screen-loading" role="status" aria-live="polite">
@@ -176,6 +180,7 @@
 
       <!-- Three.js Visualizer / 3D Auditorium Room đặt phía trên (z-index: 2) để ánh đèn, quả cầu disco và loa nằm trên màn hình -->
       <app-three-cinema
+        [class.room-mode-hidden]="currentRoom === 'gym'"
         [state]="state"
         [sessionId]="sessionId"
         [discoEnabled]="discoEnabled"
@@ -183,8 +188,16 @@
         (environmentChanged)="onCinemaEnvironmentChanged($event)"
       ></app-three-cinema>
 
+      <app-gym-room
+        [class.room-mode-hidden]="currentRoom !== 'gym'"
+        [active]="currentRoom === 'gym'"
+        [guest]="myGuest"
+        [displayName]="guestName"
+        (exitGym)="switchRoom('cinema')"
+      ></app-gym-room>
+
       <!-- Nút nổi bật để bật âm thanh khi trình duyệt autoplay ở chế độ tắt tiếng -->
-      @if (isMuted) {
+      @if (isMuted && currentRoom === 'cinema') {
         <button class="unmute-banner" (click)="unmuteAudio()">
           <span class="unmute-icon"
             ><i class="fa-solid fa-volume-high" aria-hidden="true"></i
@@ -196,17 +209,25 @@
 
     <!-- RIGHT SIDEBAR -->
     <aside class="right-sidebar">
-      <!-- 1. Phòng game -->
       <button
-        class="rs-btn"
-        [class.rs-btn--active]="activePanelId === 'game'"
-        title="Phòng game"
-        (click)="togglePanel('game')"
+        class="rs-btn room-switch-btn"
+        [class.rs-btn--active]="currentRoom === 'cinema'"
+        title="Chuyển đến phòng xem phim"
+        (click)="switchRoom('cinema')"
       >
-        <i class="fa-solid fa-gamepad" aria-hidden="true"></i>
-        <span>Phòng game</span>
+        <i class="fa-solid fa-film" aria-hidden="true"></i><span>Rạp phim</span>
+      </button>
+      <button
+        class="rs-btn room-switch-btn"
+        [class.rs-btn--active]="currentRoom === 'gym'"
+        title="Chuyển đến phòng gym"
+        (click)="switchRoom('gym')"
+      >
+        <i class="fa-solid fa-dumbbell" aria-hidden="true"></i>
+        <span>Phòng gym</span>
       </button>
 
+      @if (currentRoom === 'cinema') {
       <!-- 2. Chọn ghế -->
       <button
         class="rs-btn"
@@ -313,6 +334,7 @@
         <i class="fa-solid fa-heart" aria-hidden="true"></i>
         <span>ủng hộ</span>
       </button>
+      }
     </aside>
   </div>
 
@@ -341,8 +363,8 @@
         [placeholder]="
           !chatApproved
             ? 'Chat cần admin duyệt'
-            : connected
-              ? 'Nói gì với cả rạp đi...'
+          : connected
+              ? currentRoom === 'gym' ? 'Nói gì với mọi người...' : 'Nói gì với cả rạp đi...'
               : 'Đang kết nối lại…'
         "
         maxlength="100"
@@ -377,6 +399,7 @@
       }
     </div>
 
+    @if (currentRoom === 'cinema') {
     <div class="bottom-right">
       <button class="br-btn" title="Cài đặt" (click)="togglePanel('wardrobe')">
         <i class="fa-solid fa-gear" aria-hidden="true"></i>
@@ -416,6 +439,7 @@
       </div>
       <span class="volume-value">{{ isMuted ? 0 : volumeLevel }}%</span>
     </div>
+    }
   </footer>
 </div>
 
@@ -553,91 +577,6 @@
     (progressChanged)="applyTaskProgress($event)"
   />
 }
-
-<!-- ── PANEL: Phòng Game ── -->
-<div class="side-panel" [class.open]="activePanelId === 'game'">
-  <div class="sp-header">
-    <span class="sp-title"><i class="fa-solid fa-gamepad" aria-hidden="true"></i> Phòng Game</span>
-    <button class="sp-close" (click)="closePanel()" aria-label="Đóng">
-      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-    </button>
-  </div>
-  <div class="sp-body game-panel">
-    <div class="game-title">
-      <i class="fa-solid fa-bolt" aria-hidden="true"></i> Kiểm tra phản xạ
-    </div>
-    <div class="game-subtitle">Bấm khi ô chuyển xanh!</div>
-
-    <div class="game-arena" [style.background]="gameColor" (click)="tapGame()">
-      @if (game.phase === 'idle') {
-        <div class="game-arena-inner">
-          <span class="game-big-icon"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></span>
-          <p>Nhấn <strong>Bắt đầu</strong> bên dưới</p>
-        </div>
-      }
-      @if (game.phase === 'waiting') {
-        <div class="game-arena-inner">
-          <span class="game-big-icon game-light-red"
-            ><i class="fa-solid fa-circle" aria-hidden="true"></i
-          ></span>
-          <p>Đợi…</p>
-        </div>
-      }
-      @if (game.phase === 'ready') {
-        <div class="game-arena-inner">
-          <span class="game-big-icon game-light-green"
-            ><i class="fa-solid fa-circle" aria-hidden="true"></i
-          ></span>
-          <p><strong>BẤM NGAY!</strong></p>
-        </div>
-      }
-      @if (game.phase === 'result') {
-        <div class="game-arena-inner">
-          @if (game.reactionTime >= 0) {
-            <span class="game-big-icon"
-              ><i class="fa-solid fa-stopwatch" aria-hidden="true"></i
-            ></span>
-          }
-          @if (game.reactionTime < 0) {
-            <span class="game-big-icon"
-              ><i class="fa-solid fa-face-frown" aria-hidden="true"></i
-            ></span>
-          }
-          @if (game.reactionTime >= 0) {
-            <p class="game-time">{{ game.reactionTime }} ms</p>
-          }
-          <p class="game-label">{{ getGameResultLabel() }}</p>
-        </div>
-      }
-    </div>
-
-    <div class="game-stats">
-      <div class="game-stat">
-        <span class="gs-label">Kỷ lục</span>
-        <span class="gs-val">{{ game.bestTime === 9999 ? '—' : game.bestTime + ' ms' }}</span>
-      </div>
-    </div>
-
-    <div class="game-actions">
-      @if (game.phase === 'idle' || game.phase === 'result') {
-        <button class="game-btn" (click)="startGame()">
-          <i
-            class="fa-solid"
-            [class.fa-rotate-right]="game.phase === 'result'"
-            [class.fa-play]="game.phase !== 'result'"
-            aria-hidden="true"
-          ></i>
-          {{ game.phase === 'result' ? 'Chơi lại' : 'Bắt đầu' }}
-        </button>
-      }
-      @if (game.phase === 'waiting' || game.phase === 'ready') {
-        <button class="game-btn game-btn--cancel" (click)="resetGame()">
-          <i class="fa-solid fa-xmark" aria-hidden="true"></i> Huỷ
-        </button>
-      }
-    </div>
-  </div>
-</div>
 
 <!-- ── PANEL: Chọn Ghế ── -->
 <div class="side-panel side-panel--wide" [class.open]="activePanelId === 'seats'">
@@ -823,7 +762,7 @@
           [attr.aria-pressed]="myDanceAction === action.id"
           (click)="chooseDanceAction(action.id)"
         >
-          <span class="dance-action-icon"><i class="fa-solid" [class.fa-music]="action.id === 'sway'" [class.fa-arrow-up]="action.id === 'bounce'" [class.fa-rotate]="action.id === 'spin'" [class.fa-star]="action.id === 'groove'" aria-hidden="true"></i></span>
+          <span class="dance-action-icon"><i class="fa-solid" [class.fa-fan]="action.id === 'sway'" [class.fa-arrow-up]="action.id === 'bounce'" [class.fa-rotate]="action.id === 'spin'" [class.fa-star]="action.id === 'groove'" aria-hidden="true"></i></span>
           <span class="dance-action-copy"><strong>{{ action.name }}</strong><small>{{ action.description }}</small></span>
           @if (myDanceAction === action.id) {
             <i class="fa-solid fa-check dance-action-check" aria-hidden="true"></i>

@@ -11,6 +11,7 @@ import {
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ThreeCinemaComponent } from '../../room/components/three-cinema/three-cinema.component';
+import { GymRoomComponent } from '../../room/components/gym-room/gym-room.component';
 import { DonationModalComponent } from '../../donations/donation-modal/donation-modal.component';
 import { DonationUiService } from '../../donations/data-access/donation-ui.service';
 import { PersonalMediaApiService } from '../../media/data-access/personal-media-api.service';
@@ -28,7 +29,7 @@ import { TaskModalComponent } from '../../tasks/task-modal/task-modal.component'
 import { ClientLoginPageComponent } from '../../auth/client_login-page/client-login-page.component';
 import { ClientRegisterPageComponent } from '../../auth/client_register-page/client-register-page.component';
 import { YouTubePlayer } from '../../playback/models/youtube.model';
-import { GameState, PrivateRoomView } from '../model/cinema-page.model';
+import { PrivateRoomView } from '../model/cinema-page.model';
 import {
   ACCESSORIES,
   AVATARS,
@@ -49,6 +50,7 @@ import {
   imports: [
     ReactiveFormsModule,
     ThreeCinemaComponent,
+    GymRoomComponent,
     DonationModalComponent,
     TaskModalComponent,
     WardrobeModalComponent,
@@ -100,6 +102,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Panel ──
   activePanelId: string | null = null;
+  currentRoom: 'cinema' | 'gym' = 'cinema';
   donationModalOpen = false;
   tasksModalOpen = false;
   walletBalance = 0;
@@ -181,20 +184,31 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── Reaction bar ──
   readonly reactionEmojis = REACTIONS;
   readonly danceActions = [
-    { id: 'sway' as const, name: 'Lắc lư', icon: 'fa-music', description: 'Đung đưa nhẹ theo nhạc' },
-    { id: 'bounce' as const, name: 'Nhún nhảy', icon: 'fa-arrow-up', description: 'Nhún chân vui vẻ' },
-    { id: 'spin' as const, name: 'Xoay vòng', icon: 'fa-rotate', description: 'Xoay người trên sàn' },
-    { id: 'groove' as const, name: 'Quẩy hết mình', icon: 'fa-star', description: 'Lắc vai và vung tay' },
+    {
+      id: 'sway' as const,
+      name: 'Múa quạt',
+      icon: 'fa-fan',
+      description: 'Quạt tay luân phiên, lượn cổ tay theo nhịp',
+    },
+    {
+      id: 'bounce' as const,
+      name: 'Nhún nhảy',
+      icon: 'fa-arrow-up',
+      description: 'Nhún chân vui vẻ',
+    },
+    {
+      id: 'spin' as const,
+      name: 'Xoay vòng',
+      icon: 'fa-rotate',
+      description: 'Xoay người trên sàn',
+    },
+    {
+      id: 'groove' as const,
+      name: 'Quẩy hết mình',
+      icon: 'fa-star',
+      description: 'Lắc vai và vung tay',
+    },
   ];
-
-  // ── Game ──
-  game: GameState = {
-    phase: 'idle',
-    reactionTime: 0,
-    bestTime: 9999,
-    fakeStart: false,
-  };
-  gameColor = '#2a2042';
 
   // ── YouTube Player state ──
   private player?: YouTubePlayer;
@@ -233,6 +247,16 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     return !!this.sessionId && this.state?.hostId === this.sessionId;
   }
 
+  get myGuest(): Guest | null {
+    return this.state?.guests.find((guest) => guest.id === this.sessionId) ?? null;
+  }
+
+  switchRoom(room: 'cinema' | 'gym'): void {
+    this.currentRoom = room;
+    this.activePanelId = null;
+    this.cdr.markForCheck();
+  }
+
   onCinemaEnvironmentChanged(environment: 'indoor' | 'outdoor'): void {
     this.outdoorCinemaMode = environment === 'outdoor';
     this.roomSocket.setEnvironment(environment);
@@ -264,7 +288,10 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get personalMediaCost(): number {
-    const seconds = Math.max(1, Math.min(10, Number(this.personalMediaForm.controls.durationSeconds.value) || 1));
+    const seconds = Math.max(
+      1,
+      Math.min(10, Number(this.personalMediaForm.controls.durationSeconds.value) || 1),
+    );
     return seconds * 5_000;
   }
 
@@ -355,9 +382,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
           void this.refreshWalletAndExperience();
           this.startWalletRefresh();
         }
-
-        const best = localStorage.getItem('healing_best_time');
-        if (best) this.game.bestTime = Number(best);
 
         const savedVol = localStorage.getItem('healing_volume');
         if (savedVol !== null) {
@@ -579,7 +603,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       if ((this.player && this.playerReady) || hasPersonalVideo) {
         try {
           this.audioUnlocked = true;
-          if (this.player && this.playerReady && this.state?.playback?.playing) this.player.playVideo();
+          if (this.player && this.playerReady && this.state?.playback?.playing)
+            this.player.playVideo();
           if (this.player && this.playerReady && this.autoMuted && this.volumeLevel > 0) {
             this.isMuted = false;
             this.autoMuted = false;
@@ -615,7 +640,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.unsubscribe();
     this.roomSocket.disconnect();
     clearTimeout(this.toastTimer);
-    clearTimeout(this.game.waitTimeout);
     this.player = undefined;
   }
 
@@ -942,12 +966,18 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         image.style.width = '100%';
         image.style.height = '100%';
         image.style.objectFit = 'cover';
-        image.addEventListener('load', () => {
-          this.playerReady = true;
-          this.videoScreenReady = true;
-          this.cdr.markForCheck();
-        }, { once: true });
-        image.addEventListener('error', () => this.toast('Không tải được ảnh đang chiếu.'), { once: true });
+        image.addEventListener(
+          'load',
+          () => {
+            this.playerReady = true;
+            this.videoScreenReady = true;
+            this.cdr.markForCheck();
+          },
+          { once: true },
+        );
+        image.addEventListener('error', () => this.toast('Không tải được ảnh đang chiếu.'), {
+          once: true,
+        });
         host.appendChild(image);
         this.playerReady = true;
         this.videoScreenReady = true;
@@ -962,16 +992,19 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         video.style.width = '100%';
         video.style.height = '100%';
         video.style.objectFit = 'cover';
-        video.addEventListener('loadedmetadata', () => {
-          video.currentTime = Number.isFinite(video.duration) && video.duration > 0
-            ? elapsed % video.duration
-            : 0;
-          if (playback.playing) void video.play().catch(() => undefined);
-          this.updatePersonalVideoAudio();
-          this.playerReady = true;
-          this.videoScreenReady = true;
-          this.cdr.markForCheck();
-        }, { once: true });
+        video.addEventListener(
+          'loadedmetadata',
+          () => {
+            video.currentTime =
+              Number.isFinite(video.duration) && video.duration > 0 ? elapsed % video.duration : 0;
+            if (playback.playing) void video.play().catch(() => undefined);
+            this.updatePersonalVideoAudio();
+            this.playerReady = true;
+            this.videoScreenReady = true;
+            this.cdr.markForCheck();
+          },
+          { once: true },
+        );
         video.addEventListener('timeupdate', () => {
           if (this.isHost && (Date.now() - playback.updatedAt) / 1000 >= duration) {
             this.finishPersonalPlayback(mediaId);
@@ -983,16 +1016,19 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     } else if (playback.source === 'personal-video') {
       const video = host.querySelector('video');
       if (video && video.readyState >= HTMLMediaElement.HAVE_METADATA) {
-        const target = Number.isFinite(video.duration) && video.duration > 0
-          ? elapsed % video.duration
-          : 0;
+        const target =
+          Number.isFinite(video.duration) && video.duration > 0 ? elapsed % video.duration : 0;
         if (Math.abs(video.currentTime - target) > 1.5) video.currentTime = target;
         if (playback.playing && video.paused) void video.play().catch(() => undefined);
         if (!playback.playing && !video.paused) video.pause();
       }
     }
 
-    if (playback.source === 'personal-image' && this.isHost && this.endedPersonalMediaId !== mediaId) {
+    if (
+      playback.source === 'personal-image' &&
+      this.isHost &&
+      this.endedPersonalMediaId !== mediaId
+    ) {
       clearTimeout(this.personalMediaEndTimer);
       this.personalMediaEndTimer = setTimeout(
         () => this.finishPersonalPlayback(mediaId),
@@ -1176,7 +1212,10 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.sessionId,
         this.activeRoomId,
         this.outdoorCinemaMode ? 'outdoor' : 'indoor',
-        Math.max(1, Math.min(10, Number(this.personalMediaForm.controls.durationSeconds.value) || 1)),
+        Math.max(
+          1,
+          Math.min(10, Number(this.personalMediaForm.controls.durationSeconds.value) || 1),
+        ),
       );
       this.walletBalance = result.usableBalance;
       this.selectedPersonalMedia = null;
@@ -2010,82 +2049,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private triggerLikeAnim(): void {
     this.likeAnimating = true;
     setTimeout(() => (this.likeAnimating = false), 600);
-  }
-
-  // ══════════════════════════════════════
-  //   REACTION SPEED GAME (Panel: 'game')
-  // ══════════════════════════════════════
-  startGame(): void {
-    if (this.game.phase !== 'idle' && this.game.phase !== 'result') return;
-    this.game.phase = 'waiting';
-    this.game.fakeStart = false;
-    this.gameColor = '#1a1228';
-    const delay = 2000 + Math.random() * 4000;
-    this.game.waitTimeout = setTimeout(() => {
-      if (Math.random() < 0.2) {
-        this.game.fakeStart = true;
-        this.gameColor = '#3a1128';
-        setTimeout(() => {
-          this.game.fakeStart = false;
-          this.game.phase = 'waiting';
-          this.gameColor = '#1a1228';
-          const delay2 = 1500 + Math.random() * 3000;
-          this.game.waitTimeout = setTimeout(() => this.triggerGreen(), delay2);
-        }, 800);
-      } else {
-        this.triggerGreen();
-      }
-    }, delay);
-  }
-
-  private triggerGreen(): void {
-    this.game.phase = 'ready';
-    this.game.startAt = performance.now();
-    this.gameColor = '#1a4a2a';
-  }
-
-  tapGame(): void {
-    if (this.game.phase === 'waiting') {
-      clearTimeout(this.game.waitTimeout);
-      this.game.phase = 'result';
-      this.game.reactionTime = -1;
-      this.gameColor = '#4a1a1a';
-      return;
-    }
-    if (this.game.phase === 'ready' && this.game.startAt) {
-      const ms = Math.round(performance.now() - this.game.startAt);
-      this.game.reactionTime = ms;
-      if (ms < this.game.bestTime) {
-        this.game.bestTime = ms;
-        localStorage.setItem('healing_best_time', String(ms));
-      }
-      this.game.phase = 'result';
-      this.gameColor = this.getGameResultColor(ms);
-    }
-  }
-
-  resetGame(): void {
-    clearTimeout(this.game.waitTimeout);
-    this.game.phase = 'idle';
-    this.game.reactionTime = 0;
-    this.gameColor = '#2a2042';
-  }
-
-  getGameResultLabel(): string {
-    const ms = this.game.reactionTime;
-    if (ms === -1) return 'Bấm sớm quá!';
-    if (ms < 180) return 'Siêu phản xạ!';
-    if (ms < 250) return 'Rất nhanh!';
-    if (ms < 350) return 'Khá tốt!';
-    if (ms < 500) return 'Bình thường';
-    return 'Hơi chậm...';
-  }
-
-  private getGameResultColor(ms: number): string {
-    if (ms < 200) return '#1a4a1a';
-    if (ms < 350) return '#2a3a1a';
-    if (ms < 500) return '#3a3a1a';
-    return '#3a2a1a';
   }
 
   // ── Vote skip – xử lý qua Backend (yêu cầu ≥ 90% số người) ──

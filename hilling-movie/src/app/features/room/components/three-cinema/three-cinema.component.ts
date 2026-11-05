@@ -1826,15 +1826,34 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
       grp.position.set(baseX, baseY, baseZ);
       grp.rotation.set(0, baseRotation, 0);
       if (action === 'sway') {
-        grp.rotation.z = Math.sin(beat * 0.55) * 0.09;
-        grp.rotation.y = baseRotation + Math.sin(beat * 0.55) * 0.2;
-        grp.position.y = baseY + Math.abs(Math.sin(beat * 0.55)) * 0.055;
-        if (leftArm) leftArm.rotation.z = Math.sin(beat * 0.55) * 0.12;
-        if (rightArm) rightArm.rotation.z = -Math.sin(beat * 0.55) * 0.12;
+        const leftFan = Math.max(0, Math.sin(beat * 0.48));
+        const rightFan = Math.max(0, Math.sin(beat * 0.48 + Math.PI));
+        const leftFlick = Math.sin(beat * 1.9);
+        const rightFlick = Math.sin(beat * 1.9 + Math.PI * 0.65);
+
+        // Hai tay quạt luân phiên thành vòng cung, cổ tay lượn nhẹ ở cuối mỗi nhịp.
+        grp.rotation.z = (leftFan - rightFan) * 0.07;
+        grp.rotation.y = baseRotation + Math.sin(beat * 0.48) * 0.15;
+        grp.position.y = baseY + Math.abs(Math.sin(beat * 0.48)) * 0.035;
+        if (leftArm) leftArm.rotation.z = -0.18 - leftFan * 1.85 + Math.sin(beat * 0.48 + 0.4) * 0.12;
+        if (rightArm) rightArm.rotation.z = 0.18 + rightFan * 1.85 - Math.sin(beat * 0.48 + 0.4) * 0.12;
+        if (leftHand) leftHand.rotation.z = leftFlick * 0.38;
+        if (rightHand) rightHand.rotation.z = rightFlick * 0.38;
       } else if (action === 'bounce') {
-        grp.position.y = baseY + Math.max(0, Math.sin(beat)) * 0.18;
-        if (leftArm) leftArm.rotation.z = 0.35 + Math.sin(beat) * 0.12;
-        if (rightArm) rightArm.rotation.z = -0.35 - Math.sin(beat) * 0.12;
+        const jumpBeat = Math.sin(beat);
+        const lift = Math.max(0, jumpBeat);
+        const armWave = Math.sin(beat * 2.1);
+        const leftHandWave = Math.sin(beat * 4.2 + 0.35);
+        const rightHandWave = Math.sin(beat * 4.2 + 1.2);
+
+        // Nén nhẹ lúc tiếp đất rồi bật lên; hai tay vươn cao và cổ tay vẫy theo nhịp.
+        grp.position.y = baseY + lift * 0.3 - Math.max(0, -jumpBeat) * 0.025;
+        grp.rotation.z = Math.sin(beat * 0.5) * 0.055;
+        grp.rotation.y = baseRotation + Math.sin(beat * 0.5) * 0.11;
+        if (leftArm) leftArm.rotation.z = -0.2 - lift * 2.15 + armWave * 0.16;
+        if (rightArm) rightArm.rotation.z = 0.2 + lift * 2.15 - armWave * 0.16;
+        if (leftHand) leftHand.rotation.z = leftHandWave * 0.42;
+        if (rightHand) rightHand.rotation.z = rightHandWave * 0.42;
       } else if (action === 'spin') {
         grp.rotation.y = baseRotation + t * 1.65;
         grp.position.y = baseY + Math.abs(Math.sin(beat * 0.5)) * 0.07;

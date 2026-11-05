@@ -6,11 +6,39 @@ services:
     environment:
       POSTGRES_DB: healing_cinema
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - healing-cinema-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d healing_cinema"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: healing-cinema-backend:local
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/healing_cinema
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      CINEMA_ADMIN_USERNAME: ${CINEMA_ADMIN_USERNAME:-admin}
+      CINEMA_ADMIN_PASSWORD: ${CINEMA_ADMIN_PASSWORD:-admin}
+      CINEMA_ADMIN_KEY: ${CINEMA_ADMIN_KEY:-khoa123}
+      MEDIA_STORAGE_DIR: /app/storage/media
+    ports:
+      - "8080:8080"
+    volumes:
+      - healing-cinema-media:/app/storage/media
 
 volumes:
   healing-cinema-postgres-data:
+  healing-cinema-media:

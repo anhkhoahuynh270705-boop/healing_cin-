@@ -56,32 +56,40 @@ export function createCinemaCharacter(options: CinemaCharacterOptions): THREE.Gr
   const pantsHex = emperorShirt ? 0x4a5048 : 0x3b4238;
   const shoeHex = emperorShirt ? 0xd9dbd0 : 0xd9d6c6;
   for (const side of [-1, 1]) {
-    // Tay áo vuông, đặt rộng hơn vai và hơi xòe ra ngoài.
+    // Tay áo và bàn tay cùng nằm dưới một khớp vai để có thể giơ tay khi nhảy.
+    const arm = new THREE.Group();
+    arm.name = side < 0 ? 'dance-arm-left' : 'dance-arm-right';
+    arm.position.set(side * (safeGender === 'female' ? 0.48 : 0.5), 0.65, 0.025);
+    arm.rotation.z = -side * 0.08;
+
     const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.5, 0.34), material(shirtHex));
-    sleeve.name = side < 0 ? 'dance-arm-left' : 'dance-arm-right';
     // Để một khe nhỏ giữa thân và tay áo; hai bên vẫn cân đối như nhân vật khối vuông.
-    sleeve.position.set(side * (safeGender === 'female' ? 0.585 : 0.62), 0.38, 0.025);
-    sleeve.rotation.z = side * 0.08;
+    sleeve.position.set(side * (safeGender === 'female' ? 0.145 : 0.12), -0.27, 0);
     sleeve.castShadow = true;
-    group.add(sleeve);
+    arm.add(sleeve);
 
     const hand = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.28), material(skin));
     hand.name = side < 0 ? 'dance-hand-left' : 'dance-hand-right';
-    hand.position.set(side * (safeGender === 'female' ? 0.625 : 0.66), 0.08, 0.13);
+    hand.position.set(side * (safeGender === 'female' ? 0.15 : 0.125), -0.57, 0.105);
     hand.castShadow = true;
-    group.add(hand);
+    arm.add(hand);
+    group.add(arm);
 
+    const legGroup = new THREE.Group();
+    legGroup.name = side < 0 ? 'gym-leg-left' : 'gym-leg-right';
+    legGroup.position.set(side * 0.12, 0.14, 0.02);
     const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.22, 3, 8), material(pantsHex));
-    leg.position.set(side * 0.12, 0.035, 0.02);
+    leg.position.set(0, -0.105, 0);
     leg.rotation.x = Math.PI / 2.2;
     leg.castShadow = true;
-    group.add(leg);
+    legGroup.add(leg);
 
     const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), material(shoeHex));
     shoe.scale.set(1.15, 0.55, 1.3);
-    shoe.position.set(side * 0.12, -0.07, 0.055);
+    shoe.position.set(0, -0.21, 0.055);
     shoe.castShadow = true;
-    group.add(shoe);
+    legGroup.add(shoe);
+    group.add(legGroup);
   }
 
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.12, 0.16, 12), material(skin));
