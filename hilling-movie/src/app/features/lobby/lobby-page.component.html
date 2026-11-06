@@ -24,64 +24,113 @@
   <section class="lobby-welcome" aria-labelledby="lobby-title">
     <p class="lobby-overline"><span></span> MỘT NƠI ĐỂ CÙNG NHAU THƯ GIÃN</p>
     <h1 id="lobby-title">Chào mừng đến <em>Healing Ciné</em></h1>
-    <p class="lobby-subtitle">Chọn cánh cửa phù hợp. Bộ phim tiếp theo đang chờ bạn bên trong.</p>
+    <p class="lobby-subtitle">Chọn một cánh cửa, rồi dẫn nhân vật bước tới đó để vào rạp.</p>
   </section>
 
-  <section class="lobby-doors" aria-label="Chọn phòng chiếu">
+  <section class="lobby-stage" aria-label="Nhân vật đang đứng trong sảnh">
+    <app-lobby-scene
+      [displayName]="displayName()"
+      [vipLevel]="vipLevel()"
+      [gender]="gender()"
+      [shirtColorIndex]="shirtColorIndex()"
+      [shirtColor]="shirtColor()"
+      [shirtTier]="shirtTier()"
+      [accessoryIndex]="accessoryIndex()"
+      [hairColorIndex]="hairColorIndex()"
+      [selectedDoor]="selectedDoor()"
+      (doorReached)="enterCinema.emit($event)"
+    />
+    <div class="lobby-stage-hint" role="status" aria-live="polite">
+      @if (selectedDoor()) {
+        <i class="fa-solid fa-location-arrow" aria-hidden="true"></i>
+        <span>Đang hướng tới {{ selectedDoor() === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · dùng W A S D hoặc phím mũi tên</span>
+      } @else {
+        <i class="fa-solid fa-person-walking" aria-hidden="true"></i>
+        <span>Nhân vật đang ở sảnh · chọn cửa bên dưới để bắt đầu</span>
+      }
+    </div>
+    <div class="lobby-movement-pad" role="group" aria-label="Điều khiển nhân vật trong sảnh">
+      <button
+        type="button"
+        aria-label="Đi lên"
+        title="Đi lên (W hoặc mũi tên lên)"
+        (pointerdown)="startMovement('up', $event)"
+        (pointerup)="stopMovement()"
+        (pointercancel)="stopMovement()"
+        (pointerleave)="stopMovement()"
+        (click)="onMovementClick('up')"
+      >
+        <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        aria-label="Đi trái"
+        title="Đi trái (A hoặc mũi tên trái)"
+        (pointerdown)="startMovement('left', $event)"
+        (pointerup)="stopMovement()"
+        (pointercancel)="stopMovement()"
+        (pointerleave)="stopMovement()"
+        (click)="onMovementClick('left')"
+      >
+        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        aria-label="Đi xuống"
+        title="Đi xuống (S hoặc mũi tên xuống)"
+        (pointerdown)="startMovement('down', $event)"
+        (pointerup)="stopMovement()"
+        (pointercancel)="stopMovement()"
+        (pointerleave)="stopMovement()"
+        (click)="onMovementClick('down')"
+      >
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        aria-label="Đi phải"
+        title="Đi phải (D hoặc mũi tên phải)"
+        (pointerdown)="startMovement('right', $event)"
+        (pointerup)="stopMovement()"
+        (pointercancel)="stopMovement()"
+        (pointerleave)="stopMovement()"
+        (click)="onMovementClick('right')"
+      >
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  </section>
+
+  <section class="lobby-doors" aria-label="Chọn cánh cửa muốn đi tới">
     <button
       type="button"
       class="lobby-door lobby-door--outdoor"
-      (click)="enterCinema.emit('outdoor')"
-      aria-label="Đi vào rạp chiếu ngoài trời"
+      [class.selected]="selectedDoor() === 'outdoor'"
+      [attr.aria-pressed]="selectedDoor() === 'outdoor'"
+      (click)="doorSelected.emit('outdoor')"
+      aria-label="Chọn cửa rạp chiếu ngoài trời"
     >
-      <span class="door-sconce door-sconce--left" aria-hidden="true"></span>
-      <span class="door-sconce door-sconce--right" aria-hidden="true"></span>
-      <span class="door-arch">
-        <span class="door-view door-view--outdoor">
-          <span class="door-sky"></span><span class="door-moon"></span>
-          <span class="door-hill door-hill--back"></span><span class="door-hill door-hill--front"></span>
-          <span class="door-string-lights"></span>
-        </span>
-        <span class="door-frame"></span>
-        <span class="door-handle" aria-hidden="true"></span>
-      </span>
-      <span class="door-copy">
-        <span class="door-eyebrow"><i class="fa-solid fa-cloud-moon" aria-hidden="true"></i> OPEN AIR · UNDER THE STARS</span>
-        <strong>Rạp ngoài trời</strong>
-        <small>Gió đêm dịu nhẹ, bầu trời rộng và màn phim giữa thiên nhiên.</small>
-        <span class="door-cta">Bước vào rạp <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
-      </span>
+      <i class="fa-solid fa-cloud-moon" aria-hidden="true"></i>
+      <span><strong>Rạp ngoài trời</strong><small>Đi tới cửa bên trái</small></span>
+      <span class="door-cta">{{ selectedDoor() === 'outdoor' ? 'Đang chọn' : 'Chọn cửa' }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
     </button>
 
     <button
       type="button"
       class="lobby-door lobby-door--indoor"
-      (click)="enterCinema.emit('indoor')"
-      aria-label="Đi vào rạp chiếu kín"
+      [class.selected]="selectedDoor() === 'indoor'"
+      [attr.aria-pressed]="selectedDoor() === 'indoor'"
+      (click)="doorSelected.emit('indoor')"
+      aria-label="Chọn cửa rạp chiếu kín"
     >
-      <span class="door-sconce door-sconce--left" aria-hidden="true"></span>
-      <span class="door-sconce door-sconce--right" aria-hidden="true"></span>
-      <span class="door-arch">
-        <span class="door-view door-view--indoor">
-          <span class="indoor-screen"></span>
-          <span class="indoor-seat indoor-seat--one"></span>
-          <span class="indoor-seat indoor-seat--two"></span>
-          <span class="indoor-aisle"></span>
-        </span>
-        <span class="door-frame"></span>
-        <span class="door-handle" aria-hidden="true"></span>
-      </span>
-      <span class="door-copy">
-        <span class="door-eyebrow"><i class="fa-solid fa-door-closed" aria-hidden="true"></i> PRIVATE HALL · IMMERSIVE SOUND</span>
-        <strong>Rạp kín</strong>
-        <small>Ánh đèn ấm, âm thanh bao trùm và không gian xem phim riêng tư.</small>
-        <span class="door-cta">Bước vào rạp <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
-      </span>
+      <i class="fa-solid fa-door-closed" aria-hidden="true"></i>
+      <span><strong>Rạp kín</strong><small>Đi tới cửa bên phải</small></span>
+      <span class="door-cta">{{ selectedDoor() === 'indoor' ? 'Đang chọn' : 'Chọn cửa' }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
     </button>
   </section>
 
   <footer class="lobby-footer">
-    <span><i class="fa-solid fa-volume-low" aria-hidden="true"></i> Hãy đeo tai nghe để tận hưởng trọn vẹn</span>
+    <span><i class="fa-solid fa-keyboard" aria-hidden="true"></i> Di chuyển: W A S D / ↑ ↓ ← →</span>
     <span class="lobby-footer-center"><i class="fa-solid fa-sparkles" aria-hidden="true"></i> YOUR QUIET PLACE, TOGETHER</span>
     <span class="lobby-status"><i></i> SẢNH ĐANG MỞ CỬA</span>
   </footer>

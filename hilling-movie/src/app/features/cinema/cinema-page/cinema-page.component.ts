@@ -80,6 +80,7 @@ import { LobbyPageComponent } from '../../lobby/lobby-page.component';
 export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('playerHost') playerHost!: ElementRef<HTMLDivElement>;
   @ViewChild(ThreeCinemaComponent) threeCinema?: ThreeCinemaComponent;
+  @ViewChild(LobbyPageComponent) lobbyPage?: LobbyPageComponent;
 
   // ── Core state ──
   state: RoomState | null = null;
@@ -128,6 +129,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   infoPanelOpen = false;
   orientationNoticeDismissed = false;
   currentRoom: 'lobby' | 'cinema' | 'gym' = 'lobby';
+  selectedLobbyDoor: 'indoor' | 'outdoor' | null = null;
   donationModalOpen = false;
   tasksModalOpen = false;
   walletBalance = 0;
@@ -280,7 +282,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   onMovementKeydown(event: KeyboardEvent): void {
-    if (this.currentRoom !== 'cinema' || !this.connected) return;
+    if (this.currentRoom === 'gym' || (this.currentRoom === 'cinema' && !this.connected)) return;
     const directionByKey: Record<string, 'up' | 'down' | 'left' | 'right'> = {
       w: 'up',
       arrowup: 'up',
@@ -297,7 +299,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     const target = event.target;
     if (
       target instanceof HTMLElement &&
-      (target.isContentEditable || !!target.closest('input, textarea, select, [contenteditable="true"]'))
+      (target.isContentEditable ||
+        !!target.closest('input, textarea, select, [contenteditable="true"]'))
     ) {
       return;
     }
@@ -307,6 +310,11 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   moveCharacterBy(direction: 'up' | 'down' | 'left' | 'right'): void {
+    if (this.currentRoom === 'lobby') {
+      if (this.authModalOpen || this.donationModalOpen) return;
+      this.lobbyPage?.moveCharacterBy(direction);
+      return;
+    }
     if (
       this.currentRoom !== 'cinema' ||
       !this.connected ||
@@ -338,10 +346,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       ),
       y: Math.max(
         0.18,
-        Math.min(
-          0.9,
-          position.y + (direction === 'up' ? -step : direction === 'down' ? step : 0),
-        ),
+        Math.min(0.9, position.y + (direction === 'up' ? -step : direction === 'down' ? step : 0)),
       ),
     };
     if (next.x === position.x && next.y === position.y) return;
@@ -375,6 +380,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   enterLobbyCinema(environment: 'indoor' | 'outdoor'): void {
+    this.selectedLobbyDoor = null;
     this.currentRoom = 'cinema';
     this.outdoorCinemaMode = environment === 'outdoor';
     this.activePanelId = null;
@@ -394,6 +400,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     clearTimeout(this.roomStartupTimer);
     this.finishRoomStartup();
     this.currentRoom = 'lobby';
+    this.selectedLobbyDoor = null;
     this.connected = false;
     this.state = null;
     this.sessionId = null;
