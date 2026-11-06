@@ -5938,30 +5938,52 @@ app-cinema-page {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-width: 1024px) and (pointer: coarse) {
   /* Keep the movie readable and directly tappable on phone screens. */
   .scene-area > .cinema-screen-overlay:not(.room-mode-hidden) {
     position: absolute !important;
     top: 50% !important;
     left: 50% !important;
+    display: block !important;
+    width: min(94vw, 88vh) !important;
+    height: min(52.875vw, 49.5vh, calc(100vh - var(--topbar-h) - var(--bottom-h) - 32px)) !important;
     width: min(94vw, 88dvh) !important;
-    height: auto !important;
+    height: min(52.875vw, 49.5dvh, calc(100dvh - var(--topbar-h) - var(--bottom-h) - 32px)) !important;
     max-width: calc(100vw - 16px) !important;
     max-height: calc(100dvh - var(--topbar-h) - var(--bottom-h) - 32px) !important;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 16 / 9 !important;
     transform: translate(-50%, -50%) !important;
     transform-origin: center !important;
     z-index: 8;
     pointer-events: auto !important;
+    opacity: 1 !important;
+    visibility: visible !important;
     border: 1px solid rgba(240, 187, 119, 0.5) !important;
     border-radius: 10px;
     background: #000;
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48) !important;
   }
 
-  #youtube-embed-screen,
+  #youtube-embed-screen {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+  }
+
   #youtube-embed-screen iframe,
   #youtube-embed-screen video {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100%;
+    min-height: 100%;
+    border: 0;
+    background: #000;
     pointer-events: auto;
   }
 }
