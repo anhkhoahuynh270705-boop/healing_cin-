@@ -12,7 +12,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "personal_media_uploads", indexes = @Index(name = "idx_personal_media_room", columnList = "room_id, uploaded_at"))
+@Table(name = "personal_media_uploads", indexes = {
+        @Index(name = "idx_personal_media_room", columnList = "room_id, uploaded_at"),
+        @Index(name = "idx_personal_media_free_image", columnList = "uploaded_by, content_type, charged_amount, uploaded_at")
+})
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

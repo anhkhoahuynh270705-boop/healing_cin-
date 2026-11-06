@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.healingcinema.auth.entity.UserEntity;
 import com.healingcinema.auth.repository.UserRepository;
+import com.healingcinema.auth.service.VipLevelPolicy;
 import com.healingcinema.media.dto.MediaDtos.UploadResponse;
 import com.healingcinema.media.entity.PersonalMediaEntity;
 import com.healingcinema.media.repository.PersonalMediaRepository;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class PersonalMediaService {
     private static final long PRICE_PER_SECOND = 5_000L;
     private static final long MAX_FILE_BYTES = 20L * 1024 * 1024;
+    private static final long VIP_FREE_IMAGE_COOLDOWN_MS = 2 * 60 * 1000L;
 
     private final PersonalMediaRepository media;
     private final UserRepository users;
@@ -60,7 +62,22 @@ public class PersonalMediaService {
 
         UserEntity user = users.findByIdForUpdate(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản."));
-        long amount = PRICE_PER_SECOND * durationSeconds;
+        int vipLevel = Math.max(user.getVipTier(), VipLevelPolicy.forConfirmedAmount(user.getDonationTotalConfirmed()));
+        boolean freeVipImage = image && vipLevel >= 9;
+        if (freeVipImage) {
+            long now = System.currentTimeMillis();
+            long lastFreeImageAt = media
+                    .findFirstByUploadedByAndContentTypeStartingWithAndChargedAmountOrderByUploadedAtDesc(
+                            userId, "image/", 0L)
+                    .map(PersonalMediaEntity::getUploadedAt).orElse(0L);
+            long remainingMs = VIP_FREE_IMAGE_COOLDOWN_MS - (now - lastFreeImageAt);
+            if (remainingMs > 0) {
+                long remainingSeconds = (remainingMs + 999) / 1000;
+                throw new IllegalArgumentException(
+                        "VIP 9+ được tải ảnh miễn phí mỗi 2 phút. Vui lòng chờ " + remainingSeconds + " giây.");
+            }
+        }
+        long amount = freeVipImage ? 0L : PRICE_PER_SECOND * durationSeconds;
         if (user.getDonationUsableBalance() < amount) {
             throw new IllegalArgumentException("Số dư không đủ. Nội dung này cần " + amount + "đ.");
         }
@@ -82,12 +99,14 @@ public class PersonalMediaService {
                     .originalName(title).contentType(contentType).storageName(storageName)
                     .durationSeconds(durationSeconds).chargedAmount(amount)
                     .uploadedAt(System.currentTimeMillis()).build());
-            user.setDonationUsableBalance(user.getDonationUsableBalance() - amount);
-            users.save(user);
+            if (amount > 0) {
+                user.setDonationUsableBalance(user.getDonationUsableBalance() - amount);
+                users.save(user);
+            }
             rooms.startPersonalPlayback(roomId, guestSessionId, record.getId(), title,
                     image ? "personal-image" : "personal-video", durationSeconds, targetEnvironment);
             return new UploadResponse(id, title, contentType, durationSeconds, amount,
-                    user.getDonationUsableBalance());
+                    user.getDonationUsableBalance(), freeVipImage);
         } catch (IOException | RuntimeException error) {
             try { Files.deleteIfExists(target); } catch (IOException ignored) {}
             throw error instanceof RuntimeException runtime ? runtime

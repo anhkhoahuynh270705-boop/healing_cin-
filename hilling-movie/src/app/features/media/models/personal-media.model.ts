@@ -5,4 +5,5 @@ export interface PersonalMediaUploadResult {
   durationSeconds: number;
   chargedAmount: number;
   usableBalance: number;
+  freeVipImage: boolean;
 }

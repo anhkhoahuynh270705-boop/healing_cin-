@@ -12,9 +12,11 @@ export class PersonalMediaPanelComponent {
   @Input() open = false;
   @Input() authenticated = false;
   @Input() selectedFileName: string | null = null;
+  @Input() selectedFileIsImage = false;
   @Input() durationControl!: FormControl<number>;
   @Input() costLabel = '';
   @Input() balanceLabel = '';
+  @Input() freeVipImage = false;
   @Input() uploading = false;
 
   @Output() close = new EventEmitter<void>();

@@ -38,6 +38,7 @@ import {
   CharacterEntrySelection,
   CharacterGender,
 } from '../../character-entry/character-entry-modal.component';
+import { VIP_LEVELS } from '../../character-entry/vip-levels';
 import { YouTubePlayer } from '../../playback/models/youtube.model';
 import { PaymentApiService } from '../../payment/data-access/payment-api.service';
 import { ChatService } from '../../chat/data-access/chat.service';
@@ -128,6 +129,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   tasksModalOpen = false;
   walletBalance = 0;
   experiencePoints = 0;
+  donationTotalConfirmed = 0;
 
   // ── Queue / Video ──
   readonly queueForm = new FormGroup({
@@ -317,6 +319,39 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       Math.min(10, Number(this.personalMediaForm.controls.durationSeconds.value) || 1),
     );
     return seconds * 5_000;
+  }
+
+  get vipProgressPercent(): number {
+    if (this.myVipLevel >= 10) return 100;
+    const currentThreshold = VIP_LEVELS[this.myVipLevel]?.minimumTopUp ?? 0;
+    const nextThreshold = VIP_LEVELS[this.myVipLevel + 1]?.minimumTopUp ?? currentThreshold;
+    const progress = Math.max(
+      0,
+      Math.min(nextThreshold - currentThreshold, this.donationTotalConfirmed - currentThreshold),
+    );
+    return nextThreshold === currentThreshold
+      ? 0
+      : (progress / (nextThreshold - currentThreshold)) * 100;
+  }
+
+  get nextVipAmountRemaining(): number {
+    if (this.myVipLevel >= 10) return 0;
+    return Math.max(
+      0,
+      (VIP_LEVELS[this.myVipLevel + 1]?.minimumTopUp ?? 0) - this.donationTotalConfirmed,
+    );
+  }
+
+  get vipHeaderAriaLabel(): string {
+    return this.myVipLevel >= 10
+      ? 'VIP 10, cấp tối đa'
+      : `VIP ${this.myVipLevel}, còn ${this.formatWalletAmount(this.nextVipAmountRemaining)} để lên cấp`;
+  }
+
+  get vipHeaderTitle(): string {
+    return this.myVipLevel >= 10
+      ? 'Bạn đã đạt VIP tối đa'
+      : `Còn ${this.formatWalletAmount(this.nextVipAmountRemaining)} tổng nạp đã duyệt để lên VIP ${this.myVipLevel + 1}`;
   }
 
   get guestCount(): number {
@@ -1096,7 +1131,11 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   openCurrentVideoOnYouTube(): void {
     const videoId = this.state?.playback?.videoId;
     if (!videoId || typeof window === 'undefined') return;
-    window.open(`https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`, '_blank', 'noopener');
+    window.open(
+      `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      '_blank',
+      'noopener',
+    );
   }
 
   //   PANEL MANAGEMENT
@@ -1177,6 +1216,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         true,
       );
       this.walletBalance = account.usableBalance;
+      this.donationTotalConfirmed = account.totalConfirmed;
       this.cdr.markForCheck();
     } catch {
       // Giữ nguyên số dư đã tải gần nhất nếu kết nối tạm thời bị lỗi.
@@ -1251,7 +1291,9 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.toast('Đang kết nối phòng, vui lòng thử lại sau giây lát.');
       return;
     }
-    if (this.walletBalance < this.personalMediaCost) {
+    const freeVipImage =
+      !!this.selectedPersonalMedia?.type.startsWith('image/') && this.myVipLevel >= 9;
+    if (!freeVipImage && this.walletBalance < this.personalMediaCost) {
       this.toast(`Số dư chưa đủ ${this.formatWalletAmount(this.personalMediaCost)}.`);
       this.toggleDonationModal();
       return;
@@ -1275,7 +1317,11 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.walletBalance = result.usableBalance;
       this.selectedPersonalMedia = null;
       this.activePanelId = null;
-      this.toast(`Đã chiếu “${result.title}” · ${this.formatWalletAmount(result.chargedAmount)}.`);
+      this.toast(
+        result.freeVipImage
+          ? `Đã chiếu “${result.title}” miễn phí theo quyền VIP.`
+          : `Đã chiếu “${result.title}” · ${this.formatWalletAmount(result.chargedAmount)}.`,
+      );
     } catch (error) {
       this.toast(error instanceof Error ? error.message : 'Không tải được nội dung lên màn ảnh.');
     } finally {
@@ -1864,6 +1910,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.paymentStatusesInitialized = false;
     this.activateNotificationFeed();
     this.walletBalance = 0;
+    this.donationTotalConfirmed = 0;
     this.experiencePoints = 0;
     void this.refreshWalletAndExperience();
     this.startWalletRefresh();
@@ -1890,6 +1937,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.walletRefreshTimer) clearInterval(this.walletRefreshTimer);
     this.walletRefreshTimer = undefined;
     this.walletBalance = 0;
+    this.donationTotalConfirmed = 0;
     this.experiencePoints = 0;
     const guestId = Math.floor(10 + Math.random() * 90);
     const name = 'Guest';
@@ -2077,6 +2125,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.walletRefreshTimer) clearInterval(this.walletRefreshTimer);
     this.walletRefreshTimer = undefined;
     this.walletBalance = 0;
+    this.donationTotalConfirmed = 0;
     this.experiencePoints = 0;
     this.currentUser = null;
     this.paymentStatusesInitialized = false;
@@ -2116,6 +2165,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.walletRefreshTimer) clearInterval(this.walletRefreshTimer);
     this.walletRefreshTimer = undefined;
     this.walletBalance = 0;
+    this.donationTotalConfirmed = 0;
     this.experiencePoints = 0;
     this.currentUser = null;
     this.paymentStatusesInitialized = false;
@@ -2136,9 +2186,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  // ══════════════════════════════════════
-  //   LIKE / HEART
-  // ══════════════════════════════════════
+  // LIKE / HEART
   sendLike(): void {
     this.chatService.sendReaction('❤️');
     this.likeCount++;
@@ -2161,7 +2209,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.toast('Đã gửi vote bỏ qua tới rạp');
   }
 
-  // ── Volume & Mute (Điều khiển âm lượng CÁ NHÂN của từng người dùng) ──
+  // ── Volume & Mute ──
   onVolumeInput(): void {
     const val = Math.max(0, Math.min(100, Math.round(this.volumeControl.value || 0)));
     this.volumeLevel = val;

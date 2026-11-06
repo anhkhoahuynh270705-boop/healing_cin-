@@ -197,6 +197,19 @@
       </button>
       <button
         type="button"
+        class="topbar-vip"
+        (click)="openCharacterEntry()"
+        [attr.aria-label]="vipHeaderAriaLabel"
+        [title]="vipHeaderTitle"
+      >
+        <i class="fa-solid fa-crown" aria-hidden="true"></i>
+        <span class="topbar-vip-label">VIP {{ myVipLevel }}</span>
+        <span class="topbar-vip-track" aria-hidden="true">
+          <span [style.width.%]="vipProgressPercent"></span>
+        </span>
+      </button>
+      <button
+        type="button"
         class="user-profile-badge"
         (click)="openCharacterEntry()"
         aria-label="Tùy chỉnh nhân vật trước khi vào rạp"
@@ -848,9 +861,11 @@
   [open]="activePanelId === 'personal-media'"
   [authenticated]="isAuthenticatedUser"
   [selectedFileName]="selectedPersonalMedia?.name ?? null"
+  [selectedFileIsImage]="!!selectedPersonalMedia?.type.startsWith('image/')"
   [durationControl]="personalMediaForm.controls.durationSeconds"
   [costLabel]="formatWalletAmount(personalMediaCost)"
   [balanceLabel]="formatWalletAmount(walletBalance)"
+  [freeVipImage]="myVipLevel >= 9"
   [uploading]="uploadingPersonalMedia"
   (close)="closePanel()"
   (fileSelected)="onPersonalMediaSelected($event)"

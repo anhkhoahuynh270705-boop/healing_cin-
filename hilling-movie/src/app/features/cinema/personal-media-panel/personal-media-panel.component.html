@@ -36,8 +36,13 @@
     />
     <div class="personal-media-price">
       <span>Phí chiếu</span>
-      <strong>{{ costLabel }}</strong>
-      <small>5.000đ / giây · trừ vào ví sử dụng được</small>
+      @if (freeVipImage && (selectedFileIsImage || !selectedFileName)) {
+        <strong class="personal-media-free">Ảnh miễn phí</strong>
+        <small>VIP 9–10: ảnh miễn phí 1 lần mỗi 2 phút; video vẫn 5.000đ / giây.</small>
+      } @else {
+        <strong>{{ costLabel }}</strong>
+        <small>5.000đ / giây · trừ vào ví sử dụng được</small>
+      }
     </div>
     @if (authenticated) {
       <p class="personal-media-balance">

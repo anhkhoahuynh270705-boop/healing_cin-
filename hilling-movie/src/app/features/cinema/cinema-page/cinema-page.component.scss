@@ -495,6 +495,57 @@ app-cinema-page {
   color: #f1d6a8;
   border-color: rgba(241, 214, 168, 0.24);
 }
+.topbar-vip {
+  display: grid;
+  grid-template-columns: 14px auto;
+  grid-template-rows: auto 3px;
+  align-items: center;
+  justify-items: start;
+  column-gap: 5px;
+  row-gap: 3px;
+  min-width: 82px;
+  padding: 4px 8px;
+  border: 1px solid rgba(240, 202, 113, 0.36);
+  border-radius: 9px;
+  color: #f0ca71;
+  background: linear-gradient(135deg, rgba(74, 54, 25, 0.84), rgba(38, 29, 48, 0.92));
+  cursor: pointer;
+}
+.topbar-vip > i {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 11px;
+  filter: drop-shadow(0 0 4px rgba(240, 202, 113, 0.45));
+}
+.topbar-vip-label {
+  grid-column: 2;
+  grid-row: 1;
+  color: #ffe9b0;
+  font-size: 9px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.topbar-vip-track {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.topbar-vip-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c78735, #fff0ac);
+  box-shadow: 0 0 6px rgba(255, 221, 134, 0.5);
+  transition: width 250ms ease;
+}
+.topbar-vip:hover {
+  border-color: rgba(255, 226, 146, 0.72);
+  background: linear-gradient(135deg, rgba(91, 66, 28, 0.96), rgba(48, 35, 60, 0.98));
+}
 .admin-entry {
   color: var(--muted);
   text-decoration: none;
@@ -5486,6 +5537,20 @@ app-cinema-page {
     padding-inline: 0;
   }
 
+  .topbar-vip {
+    min-width: 32px;
+    width: 32px;
+    padding-inline: 6px;
+  }
+
+  .topbar-vip-label {
+    display: none;
+  }
+
+  .topbar-vip-track {
+    width: 18px;
+  }
+
   .left-sidebar {
     padding: 12px 9px;
   }
@@ -5545,6 +5610,7 @@ app-cinema-page {
 
   .topbar-action,
   .topbar-wallet,
+  .topbar-vip,
   .user-profile-badge,
   .room-exit-btn {
     width: 32px;
@@ -5557,6 +5623,23 @@ app-cinema-page {
   .topbar-action,
   .topbar-wallet {
     font-size: 12px;
+  }
+
+  .topbar-vip {
+    min-width: 29px;
+    width: 29px;
+    height: 30px;
+    grid-template-columns: 1fr;
+    padding: 3px 5px;
+    justify-items: center;
+  }
+
+  .topbar-vip > i {
+    grid-column: 1;
+  }
+
+  .topbar-vip-track {
+    width: 17px;
   }
 
   .topbar-right .tb-btn {
