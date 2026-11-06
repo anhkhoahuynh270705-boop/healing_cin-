@@ -129,10 +129,9 @@ public class PaymentApprovalService {
 
     @Transactional
     public synchronized PaymentRequest submitDonation(String userId, int amount) {
-        boolean validAmount = amount == 10_000 || amount == 20_000 || amount == 50_000
-                || amount == 100_000 || amount == 200_000 || amount == 500_000 || amount == 1_000_000;
+        boolean validAmount = amount > 0 && amount <= 100_000_000;
         if (userId == null || userId.isBlank() || userId.startsWith("guest-") || !validAmount) {
-            throw new IllegalArgumentException("Vui lòng đăng nhập và chọn mức ủng hộ hợp lệ.");
+            throw new IllegalArgumentException("Vui lòng đăng nhập và nhập số tiền từ 1đ đến 100.000.000đ.");
         }
         UserEntity user = users.findById(userId).orElseThrow(
                 () -> new IllegalArgumentException("Không tìm thấy tài khoản người dùng."));
@@ -190,7 +189,8 @@ public class PaymentApprovalService {
                 UserEntity user = users.findByIdForUpdate(request.getUserId()).orElseThrow(
                         () -> new IllegalStateException("Không tìm thấy tài khoản nhận tiền ủng hộ."));
                 user.setDonationTotalConfirmed(Math.addExact(user.getDonationTotalConfirmed(), request.getAmount()));
-                user.setDonationUsableBalance(Math.addExact(user.getDonationUsableBalance(), request.getAmount()));
+                long promoCredit = Math.multiplyExact((long) request.getAmount(), 2L);
+                user.setDonationUsableBalance(Math.addExact(user.getDonationUsableBalance(), promoCredit));
                 user.setVipTier(Math.max(user.getVipTier(), VipLevelPolicy.forConfirmedAmount(user.getDonationTotalConfirmed())));
             }
             request.setStatus(APPROVED);

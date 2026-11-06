@@ -59,9 +59,10 @@ export class RoomSocketService {
     gender: 'male' | 'female' = 'male',
     shirtColor = '#9FADD9',
     shirtTier = 0,
+    environment: RoomEnvironment = 'indoor',
   ): void {
     this.roomId = roomId || DEFAULT_ROOM_ID;
-    this.currentEnvironment = 'indoor';
+    this.currentEnvironment = environment === 'outdoor' ? 'outdoor' : 'indoor';
     this.statesByEnvironment.clear();
     this.clientId = clientId;
     this.currentSeat = seat !== undefined ? seat : null;

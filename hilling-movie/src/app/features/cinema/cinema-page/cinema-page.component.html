@@ -1,3 +1,12 @@
+@if (currentRoom === 'lobby') {
+  <app-lobby-page
+    [displayName]="guestName"
+    [vipLevel]="myVipLevel"
+    (enterCinema)="enterLobbyCinema($event)"
+    (loginRequested)="openAuthModal('login')"
+    (donationRequested)="toggleDonationModal()"
+  />
+} @else {
 @if (isBootingRoom) {
   <div class="room-startup-overlay" role="status" aria-live="polite">
     <div class="room-startup-content">
@@ -95,6 +104,9 @@
         (markRead)="markNotificationsRead()"
         (clearAll)="clearNotifications()"
       />
+      <button type="button" class="tb-btn lobby-return-btn" title="Quay về sảnh" (click)="returnToLobby()">
+        <i class="fa-solid fa-door-open" aria-hidden="true"></i>
+      </button>
       <button class="tb-btn" title="Chia sẻ phòng" (click)="copyRoomLink()">
         <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
       </button>
@@ -157,6 +169,10 @@
                 <li>
                   <i class="fa-solid fa-chair" aria-hidden="true"></i> Chọn ghế để nhân vật vào chỗ;
                   bấm ghế khác để di chuyển.
+                </li>
+                <li>
+                  <i class="fa-solid fa-gamepad movement-help-icon" aria-hidden="true"></i> Điều
+                  khiển nhân vật bằng W A S D, phím mũi tên hoặc cụm nút di chuyển trong rạp.
                 </li>
                 <li>
                   <i class="fa-solid fa-list" aria-hidden="true"></i> Mở các tab bên phải để xem
@@ -310,6 +326,7 @@
         [state]="state"
         [sessionId]="sessionId"
         [discoEnabled]="discoEnabled"
+        [environment]="outdoorCinemaMode ? 'outdoor' : 'indoor'"
         (seatSelected)="claimSeat($event)"
         (environmentChanged)="onCinemaEnvironmentChanged($event)"
       ></app-three-cinema>
@@ -321,6 +338,47 @@
         [displayName]="guestName"
         (exitGym)="switchRoom('cinema')"
       ></app-gym-room>
+
+      @if (currentRoom === 'cinema') {
+        <section class="character-movement-controls" aria-label="Điều khiển di chuyển nhân vật">
+          <span class="movement-control-label">DI CHUYỂN</span>
+          <div class="movement-control-pad">
+            <button
+              type="button"
+              title="Đi lên (W hoặc mũi tên lên)"
+              aria-label="Đi lên"
+              (click)="moveCharacterBy('up')"
+            >
+              <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              title="Đi sang trái (A hoặc mũi tên trái)"
+              aria-label="Đi sang trái"
+              (click)="moveCharacterBy('left')"
+            >
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              title="Đi xuống (S hoặc mũi tên xuống)"
+              aria-label="Đi xuống"
+              (click)="moveCharacterBy('down')"
+            >
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              title="Đi sang phải (D hoặc mũi tên phải)"
+              aria-label="Đi sang phải"
+              (click)="moveCharacterBy('right')"
+            >
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+          <small>W A S D · ↑ ↓ ← →</small>
+        </section>
+      }
 
       <!-- Nút nổi bật để bật âm thanh khi trình duyệt autoplay ở chế độ tắt tiếng -->
       @if (videoPlaybackError !== null && currentRoom === 'cinema') {
@@ -589,6 +647,7 @@
     }
   </footer>
 </div>
+}
 
 @if (privateRoomModalOpen) {
   <app-private-room-modal

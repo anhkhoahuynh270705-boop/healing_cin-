@@ -19,6 +19,10 @@
           Sự ủng hộ của bạn giúp duy trì rạp. Áo + khung là quà theo tổng ủng hộ đã được xác nhận;
           phần còn lại có thể dùng để chiếu ảnh, chèn video và tạo phòng riêng.
         </p>
+        <div class="donation-promo-banner">
+          <i class="fa-solid fa-gift" aria-hidden="true"></i>
+          <span><strong>Khuyến mãi x2</strong> · nạp bao nhiêu, ví nhận gấp đôi sau khi admin duyệt.</span>
+        </div>
       </header>
 
       @if (loadError() && !config()) {
@@ -73,7 +77,39 @@
               <small>Áo + khung chat</small>
             </button>
           }
+          <button
+            type="button"
+            class="tier-card custom-tier-card"
+            [class.selected]="selectedId() === 'custom'"
+            [attr.aria-pressed]="selectedId() === 'custom'"
+            [disabled]="accountData?.pending ?? false"
+            (click)="selectTier('custom')"
+          >
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+            <strong class="tier-name">Số tiền khác</strong>
+            <strong class="tier-amount">Tự chọn</strong>
+            <small>Ví nhận x2</small>
+          </button>
         </section>
+
+        @if (selectedId() === 'custom') {
+          <label class="custom-amount-field">
+            <span>Số tiền muốn nạp (1đ–100.000.000đ)</span>
+            <div>
+              <input
+                type="number"
+                min="1"
+                max="100000000"
+                step="1"
+                [value]="customAmount()"
+                (input)="updateCustomAmount($event)"
+                [disabled]="accountData?.pending ?? false"
+              />
+              <strong>đ</strong>
+            </div>
+            <small>Chuyển {{ formatAmount(selectedAmount) }} · sau duyệt nhận {{ formatAmount(selectedWalletCredit) }} vào ví</small>
+          </label>
+        }
 
         <section class="donation-payment" aria-label="Thông tin thanh toán">
           <div class="qr-card">
@@ -160,7 +196,7 @@
               <button
                 type="button"
                 class="submit-donation-button"
-                [disabled]="submitting() || userDonation.pending"
+                [disabled]="submitting() || userDonation.pending || !selectedAmountValid"
                 (click)="submitDonation()"
               >
                 @if (submitting()) {
@@ -217,8 +253,8 @@
           <section class="transaction-banner approved" role="status">
             <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
             <div>
-              <strong>Đã cộng tiền ủng hộ!</strong>
-              <p>Số dư và tổng ủng hộ đã được cập nhật.</p>
+              <strong>Đã cộng tiền khuyến mãi x2!</strong>
+              <p>Ví nhận gấp đôi; tổng nạp và tiến độ VIP tính theo số tiền thực chuyển.</p>
             </div>
           </section>
         } @else if (transactionStatus() === 'rejected') {
@@ -238,8 +274,8 @@
             formatAmount(userAccount?.usableBalance ?? 0)
           }}</strong>
           <p>
-            Ủng hộ {{ formatAmount(configData.tiers[0].amount) }} được nhận thêm bộ
-            {{ configData.tiers[0].name }}. Nhận quà không làm giảm phần ủng hộ có thể sử dụng.
+            Ví được cộng gấp đôi số tiền chuyển khoản sau khi admin duyệt. Tổng ủng hộ, VIP và quà
+            vẫn tính trên số tiền thực chuyển.
           </p>
         </section>
 

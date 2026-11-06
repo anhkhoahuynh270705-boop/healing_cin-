@@ -121,6 +121,27 @@
   line-height: 1.65;
 }
 
+.donation-promo-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 15px;
+  padding: 11px 13px;
+  border: 1px solid rgba(112, 192, 137, 0.28);
+  border-radius: 10px;
+  color: #c8ebd2;
+  background: linear-gradient(100deg, rgba(42, 109, 69, 0.24), rgba(41, 61, 51, 0.18));
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.donation-promo-banner > i {
+  color: #a2e6b3;
+  font-size: 16px;
+}
+
+.donation-promo-banner strong { color: #b5f0c3; }
+
 .donation-light {
   display: flex;
   min-height: 42px;
@@ -232,6 +253,53 @@
   border-color: var(--tier-color);
   background: color-mix(in srgb, var(--tier-color) 9%, var(--donation-card));
 }
+
+.custom-tier-card {
+  --tier-color: #a8e3b5;
+  border-style: dashed;
+}
+
+.custom-amount-field {
+  display: grid;
+  gap: 7px;
+  margin-top: 11px;
+  padding: 12px 14px;
+  border: 1px solid rgba(168, 227, 181, 0.24);
+  border-radius: 11px;
+  background: rgba(35, 54, 42, 0.35);
+}
+
+.custom-amount-field > span {
+  color: #d5ead9;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.custom-amount-field > div {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid rgba(220, 207, 244, 0.16);
+  border-radius: 8px;
+  background: rgba(10, 9, 15, 0.5);
+}
+
+.custom-amount-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--donation-text);
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.custom-amount-field > div > strong { color: var(--donation-muted); }
+.custom-amount-field > small { color: var(--donation-muted); font-size: 10px; }
 
 .donation-payment {
   display: grid;

@@ -7,6 +7,7 @@ import {
   ChangeDetectorRef,
   ViewChild,
   ElementRef,
+  HostListener,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -21,7 +22,7 @@ import { WardrobeModalComponent } from '../../wardrobe/wardrobe/wardrobe-modal.c
 import { ClientLoginPageComponent } from '../../auth/client_login-page/client-login-page.component';
 import { ClientRegisterPageComponent } from '../../auth/client_register-page/client-register-page.component';
 
-import { Guest, Playback, RoomState, WardrobeConfig } from '../../room/models';
+import { Guest, Movement, Playback, RoomState, WardrobeConfig } from '../../room/models';
 import { PrivateRoomView, UserNotification } from '../model/cinema-page.model';
 import {
   ACCESSORIES,
@@ -52,6 +53,7 @@ import { NotificationStoreService } from '../services/notification-store.service
 import { PrivateRoomModalComponent } from '../private-room-modal/private-room-modal.component';
 import { PersonalMediaPanelComponent } from '../personal-media-panel/personal-media-panel.component';
 import { NotificationCenterComponent } from '../notification-center/notification-center.component';
+import { LobbyPageComponent } from '../../lobby/lobby-page.component';
 
 @Component({
   selector: 'app-cinema-page',
@@ -69,6 +71,7 @@ import { NotificationCenterComponent } from '../notification-center/notification
     NotificationCenterComponent,
     PrivateRoomModalComponent,
     PersonalMediaPanelComponent,
+    LobbyPageComponent,
   ],
   templateUrl: './cinema-page.component.html',
   styleUrl: './cinema-page.component.scss',
@@ -124,7 +127,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   mobileActionMenuOpen = false;
   infoPanelOpen = false;
   orientationNoticeDismissed = false;
-  currentRoom: 'cinema' | 'gym' = 'cinema';
+  currentRoom: 'lobby' | 'cinema' | 'gym' = 'lobby';
   donationModalOpen = false;
   tasksModalOpen = false;
   walletBalance = 0;
@@ -249,6 +252,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private chatStatusTimer?: ReturnType<typeof setInterval>;
   private walletRefreshTimer?: ReturnType<typeof setInterval>;
   private roomStartupTimer?: ReturnType<typeof setTimeout>;
+  private keyboardPosition: { x: number; y: number } | null = null;
+  private lastKeyboardMoveAt = 0;
   private isRefreshingAccount = false;
   private isRefreshingChatStatus = false;
   private readonly subscriptions = new Subscription();
@@ -273,6 +278,86 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.state?.guests.find((guest) => guest.id === this.sessionId) ?? null;
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onMovementKeydown(event: KeyboardEvent): void {
+    if (this.currentRoom !== 'cinema' || !this.connected) return;
+    const directionByKey: Record<string, 'up' | 'down' | 'left' | 'right'> = {
+      w: 'up',
+      arrowup: 'up',
+      s: 'down',
+      arrowdown: 'down',
+      a: 'left',
+      arrowleft: 'left',
+      d: 'right',
+      arrowright: 'right',
+    };
+    const direction = directionByKey[event.key.toLowerCase()];
+    if (!direction || event.altKey || event.ctrlKey || event.metaKey) return;
+
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      (target.isContentEditable || !!target.closest('input, textarea, select, [contenteditable="true"]'))
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    this.moveCharacterBy(direction);
+  }
+
+  moveCharacterBy(direction: 'up' | 'down' | 'left' | 'right'): void {
+    if (
+      this.currentRoom !== 'cinema' ||
+      !this.connected ||
+      !this.sessionId ||
+      this.authModalOpen ||
+      this.characterEntryOpen ||
+      this.donationModalOpen ||
+      this.tasksModalOpen ||
+      this.privateRoomModalOpen
+    ) {
+      return;
+    }
+    const guest = this.myGuest;
+    if (!guest) return;
+
+    const now = performance.now();
+    if (now - this.lastKeyboardMoveAt < 55) return;
+    this.lastKeyboardMoveAt = now;
+
+    const position = this.keyboardPosition ?? { x: guest.x, y: guest.y };
+    const step = 0.025;
+    const next = {
+      x: Math.max(
+        0.08,
+        Math.min(
+          0.92,
+          position.x + (direction === 'left' ? -step : direction === 'right' ? step : 0),
+        ),
+      ),
+      y: Math.max(
+        0.18,
+        Math.min(
+          0.9,
+          position.y + (direction === 'up' ? -step : direction === 'down' ? step : 0),
+        ),
+      ),
+    };
+    if (next.x === position.x && next.y === position.y) return;
+
+    this.keyboardPosition = next;
+    this.danceReturnSeat = null;
+    const face = direction === 'left' ? -1 : direction === 'right' ? 1 : guest.face;
+    if (this.mySeat !== null) {
+      this.mySeat = null;
+      try {
+        localStorage.removeItem('healing_my_seat');
+      } catch {}
+    }
+    this.roomSocket.sendMove(next.x, next.y, face);
+  }
+
   switchRoom(room: 'cinema' | 'gym'): void {
     this.mobileActionMenuOpen = false;
     this.currentRoom = room;
@@ -286,6 +371,38 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   onCinemaEnvironmentChanged(environment: 'indoor' | 'outdoor'): void {
     this.outdoorCinemaMode = environment === 'outdoor';
     this.roomSocket.setEnvironment(environment);
+    this.cdr.markForCheck();
+  }
+
+  enterLobbyCinema(environment: 'indoor' | 'outdoor'): void {
+    this.currentRoom = 'cinema';
+    this.outdoorCinemaMode = environment === 'outdoor';
+    this.activePanelId = null;
+    this.mobileActionMenuOpen = false;
+    this.beginRoomStartup();
+    this.connectToCinema();
+    this.cdr.markForCheck();
+  }
+
+  returnToLobby(): void {
+    this.roomSocket.disconnect();
+    if (typeof location !== 'undefined' && typeof history !== 'undefined') {
+      const url = new URL(location.href);
+      url.searchParams.delete('room');
+      history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+    clearTimeout(this.roomStartupTimer);
+    this.finishRoomStartup();
+    this.currentRoom = 'lobby';
+    this.connected = false;
+    this.state = null;
+    this.sessionId = null;
+    this.keyboardPosition = null;
+    this.mySeat = null;
+    this.activePanelId = null;
+    this.mobileActionMenuOpen = false;
+    this.privateRoomModalOpen = false;
+    this.donationModalOpen = false;
     this.cdr.markForCheck();
   }
 
@@ -409,7 +526,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         if (savedToken && savedUserStr) {
           try {
             const u = JSON.parse(savedUserStr) as UserProfile;
-            if (!u.id.startsWith('guest-')) this.beginRoomStartup();
             this.currentUser = u;
             this.myVipLevel = Math.max(0, Math.min(10, u.vipTier ?? 0));
             this.activateNotificationFeed();
@@ -432,12 +548,11 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
             this.authModalOpen = false;
           } catch {
             this.finishRoomStartup();
-            this.authModalOpen = true;
+            this.authModalOpen = false;
             this.authStep = 'login';
           }
         } else {
-          this.authModalOpen = true;
-          this.authStep = 'login';
+          this.authModalOpen = false;
         }
         this.loadWardrobeEquipment();
         if (this.isAuthenticatedUser) {
@@ -471,6 +586,10 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         const prevVideoId = this.state?.playback?.videoId;
         this.state = state;
         if (state) {
+          const me = this.sessionId
+            ? state.guests.find((guest) => guest.id === this.sessionId)
+            : undefined;
+          if (me) this.keyboardPosition = { x: me.x, y: me.y };
           this.finishRoomStartupIfReady();
           this.refreshMissingVideoTitles(state);
           if (
@@ -505,6 +624,11 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
         this.cdr.markForCheck();
+      }),
+    );
+    this.subscriptions.add(
+      this.roomSocket.movement$.subscribe((movement) => {
+        this.threeCinema?.applyMovement(movement);
       }),
     );
     this.subscriptions.add(
@@ -582,9 +706,13 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       }),
     );
     if (typeof window !== 'undefined') {
-      if (!this.authModalOpen) {
-        this.connectToCinema();
+      const linkedRoom = new URLSearchParams(location.search).get('room');
+      if (linkedRoom) {
+        this.currentRoom = 'cinema';
+        this.beginRoomStartup();
+        this.connectToCinema(linkedRoom);
       } else {
+        this.currentRoom = 'lobby';
         this.setupAudioUnlock();
       }
     }
@@ -615,6 +743,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.characterGender,
       this.characterShirtColor,
       this.equippedShirtTier,
+      this.outdoorCinemaMode ? 'outdoor' : 'indoor',
     );
     this.setupAudioUnlock();
   }
@@ -1932,7 +2061,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadWardrobeEquipment();
     this.authModalOpen = false;
     this.authError = '';
-    this.connectToCinema();
+    if (this.currentRoom !== 'lobby') this.connectToCinema();
     this.cdr.markForCheck();
   }
 
@@ -1965,7 +2094,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.setWardrobeDisplayName(name);
     this.loadWardrobeEquipment();
     this.authModalOpen = false;
-    this.connectToCinema();
+    if (this.currentRoom !== 'lobby') this.connectToCinema();
     this.cdr.markForCheck();
   }
 

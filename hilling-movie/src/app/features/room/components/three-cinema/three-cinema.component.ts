@@ -18,7 +18,7 @@ import {
   Output,
 } from '@angular/core';
 import * as THREE from 'three';
-import { Guest, RoomState } from '../../models';
+import { Guest, Movement, RoomState } from '../../models';
 import { WardrobeApiService } from '../../../wardrobe/data-access/wardrobe-api.service';
 import { WardrobeCatalogItem } from '../../../wardrobe/models/wardrobe.model';
 import { createCinemaCharacter } from '../../character/cinema-character.factory';
@@ -400,6 +400,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() state: RoomState | null = null;
   @Input() sessionId: string | null = null;
   @Input() discoEnabled = true;
+  @Input() environment: 'indoor' | 'outdoor' = 'indoor';
   @Output() seatSelected = new EventEmitter<number>();
   @Output() environmentChanged = new EventEmitter<'indoor' | 'outdoor'>();
 
@@ -433,6 +434,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   private discoStem?: THREE.Mesh;
   private discoBallCore?: THREE.PointLight;
   private characters: Map<string, THREE.Group> = new Map();
+  private readonly movementTargets = new Map<string, { position: THREE.Vector3; step: number }>();
   private readonly danceAnimations = new Map<string, { action: string; phase: number }>();
   private seats: CinemaSeatPosition[] = [];
   private seatMeshes: THREE.Group[] = [];
@@ -513,6 +515,9 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   ngOnChanges(c: SimpleChanges): void {
+    if (c['environment'] && this.scene && c['environment'].currentValue !== this.environmentMode) {
+      this.setEnvironment(this.environment);
+    }
     if (c['state'] && this.scene) {
       this.syncGuests();
       if (this.cameraView === 'seat') this.setCameraView('seat');
@@ -528,6 +533,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     }
     for (const order of this.servedOrders) this.disposeCharacter(order.object);
     this.walkers.clear();
+    this.movementTargets.clear();
     this.danceAnimations.clear();
     this.servedOrders = [];
     if (typeof cancelAnimationFrame !== 'undefined' && this.frameId) {
@@ -540,6 +546,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
 
   private init(): void {
     if (typeof window === 'undefined') return;
+    this.environmentMode = this.environment;
     this.startTime = performance.now();
     const canvas = this.canvasRef.nativeElement;
     const wrap = this.wrapRef.nativeElement;
@@ -584,8 +591,8 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     this.outdoorStalls = stalls.stalls;
     this.outdoorStallTargets = stalls.targets;
 
-    this.indoorEnvironment.visible = true;
-    this.outdoorEnvironment.visible = false;
+    this.indoorEnvironment.visible = this.environmentMode === 'indoor';
+    this.outdoorEnvironment.visible = this.environmentMode === 'outdoor';
     this.scene.add(this.indoorEnvironment, this.outdoorEnvironment);
 
     this.addScreen();
@@ -1283,6 +1290,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
         if (walker.order) this.disposeCharacter(walker.order.carryObject);
       }
       this.walkers.clear();
+      this.movementTargets.clear();
       for (const group of this.characters.values()) {
         this.scene.remove(group);
         this.disposeCharacter(group);
@@ -1298,10 +1306,11 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
         this.scene.remove(grp);
         this.characters.delete(id);
         this.danceAnimations.delete(id);
+        this.movementTargets.delete(id);
       }
     }
     for (const guest of this.state.guests) {
-      if (this.walkers.has(guest.id)) continue; // Đang đi bộ thì không gián đoạn
+      if (this.walkers.has(guest.id) || this.movementTargets.has(guest.id)) continue;
       const action = guest.action ?? 'idle';
       const dancing = action !== 'idle';
       const seat =
@@ -1413,6 +1422,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   private walkToDanceFloor(id: string, target: THREE.Vector3): void {
+    this.movementTargets.delete(id);
     const group = this.characters.get(id);
     if (!group || this.walkers.has(id)) return;
     const start = group.position.clone();
@@ -1466,6 +1476,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     shirtColor = '#9FADD9',
     shirtTier = 0,
   ): void {
+    this.movementTargets.delete(id);
     const targetSd = this.seats[targetSeatIndex];
     if (!targetSd) return;
 
@@ -1559,6 +1570,28 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
       walkStep: 0,
       speed: 5.2,
     });
+  }
+
+  public applyMovement(movement: Movement): void {
+    const character = this.characters.get(movement.id);
+    if (!character) return;
+
+    const activeWalker = this.walkers.get(movement.id);
+    if (activeWalker?.order) {
+      activeWalker.group.remove(activeWalker.order.carryObject);
+      this.disposeCharacter(activeWalker.order.carryObject);
+    }
+    this.walkers.delete(movement.id);
+    this.danceAnimations.delete(movement.id);
+
+    const normalizedX = THREE.MathUtils.clamp(Number(movement.x) || 0.5, 0.08, 0.92);
+    const normalizedY = THREE.MathUtils.clamp(Number(movement.y) || 0.5, 0.18, 0.9);
+    const target = new THREE.Vector3(
+      (normalizedX - 0.5) * 13,
+      -0.46,
+      -1.3 + normalizedY * 7.5,
+    );
+    this.movementTargets.set(movement.id, { position: target, step: 0 });
   }
 
   /** Dùng chung SVG với preview tủ đồ để khung chat phía trên avatar khớp hoàn toàn. */
@@ -1698,6 +1731,26 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     const delta = this.lastFrameTime > 0 ? Math.min(0.1, (now - this.lastFrameTime) / 1000) : 0.016;
     this.lastFrameTime = now;
     this.updateCameraTransition(now);
+
+    for (const [id, target] of this.movementTargets) {
+      const character = this.characters.get(id);
+      if (!character) {
+        this.movementTargets.delete(id);
+        continue;
+      }
+      const offset = target.position.clone().sub(character.position);
+      const distance = offset.length();
+      if (distance < 0.035) {
+        character.position.copy(target.position);
+        this.movementTargets.delete(id);
+        continue;
+      }
+      const direction = offset.normalize();
+      character.position.addScaledVector(direction, Math.min(distance, 5.2 * delta));
+      target.step += delta * 14;
+      character.position.y = target.position.y + Math.abs(Math.sin(target.step)) * 0.07;
+      character.rotation.y = Math.atan2(direction.x, direction.z);
+    }
 
     // ── Xử lý chuyển động nhân vật đi bộ tới ghế ──
     for (const [id, w] of this.walkers) {

@@ -42,6 +42,7 @@ export class DonationModalComponent implements OnInit, AfterViewInit, OnDestroy 
   readonly config = signal<DonationUiConfig | null>(null);
   readonly account = signal<DonationAccount | null>(null);
   readonly selectedId = signal('vip');
+  readonly customAmount = signal(10_000);
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly loadError = signal('');
@@ -75,7 +76,16 @@ export class DonationModalComponent implements OnInit, AfterViewInit, OnDestroy 
     const config = this.config();
     if (!config) return 0;
     if (this.selectedId() === 'light') return config.lightAmount;
+    if (this.selectedId() === 'custom') return this.customAmount();
     return this.selectedTier?.amount ?? config.tiers[0]?.amount ?? 0;
+  }
+
+  get selectedWalletCredit(): number {
+    return this.selectedAmount * 2;
+  }
+
+  get selectedAmountValid(): boolean {
+    return this.selectedAmount >= 1 && this.selectedAmount <= 100_000_000;
   }
 
   get selectedTier(): DonationTier | undefined {
@@ -149,6 +159,14 @@ export class DonationModalComponent implements OnInit, AfterViewInit, OnDestroy 
   selectTier(id: string): void {
     if (this.account()?.pending) return;
     this.selectedId.set(id);
+    this.qrLoading.set(true);
+    this.qrFailed.set(false);
+  }
+
+  updateCustomAmount(event: Event): void {
+    const field = event.target as HTMLInputElement;
+    const amount = Math.floor(Number(field.value));
+    this.customAmount.set(Number.isFinite(amount) ? Math.max(0, amount) : 0);
     this.qrLoading.set(true);
     this.qrFailed.set(false);
   }

@@ -886,6 +886,71 @@ app-cinema-page {
   min-width: 0;
   min-height: 0;
 }
+
+.character-movement-controls {
+  position: absolute;
+  z-index: 8;
+  bottom: 62px;
+  left: 16px;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 9px 10px 7px;
+  border: 1px solid rgba(211, 191, 255, 0.2);
+  border-radius: 13px;
+  color: #e9e1f7;
+  background: rgba(17, 13, 27, 0.76);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32), inset 0 1px rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.movement-control-label {
+  color: #b9a6df;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.movement-control-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-template-rows: repeat(2, 31px);
+  gap: 4px;
+}
+
+.movement-control-pad button {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(211, 191, 255, 0.22);
+  border-radius: 8px;
+  color: #eee7ff;
+  background: rgba(98, 74, 139, 0.48);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.movement-control-pad button:first-child { grid-column: 2; grid-row: 1; }
+.movement-control-pad button:nth-child(2) { grid-column: 1; grid-row: 2; }
+.movement-control-pad button:nth-child(3) { grid-column: 2; grid-row: 2; }
+.movement-control-pad button:nth-child(4) { grid-column: 3; grid-row: 2; }
+.movement-control-pad button:hover,
+.movement-control-pad button:active,
+.movement-control-pad button:focus-visible {
+  border-color: rgba(218, 195, 255, 0.76);
+  background: rgba(127, 94, 177, 0.75);
+}
+
+.character-movement-controls > small {
+  color: #bcb2ca;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+}
+
+.header-info-panel li > i.movement-help-icon { color: #bba4ec; }
+
 .room-mode-hidden {
   display: none !important;
 }
@@ -939,6 +1004,12 @@ app-cinema-page {
     max-width: 112px;
     padding: 4px 7px;
     font-size: 9px;
+  }
+  .character-movement-controls {
+    bottom: 58px;
+    left: 9px;
+    transform: scale(0.9);
+    transform-origin: bottom left;
   }
   .topbar-action span {
     display: none;
