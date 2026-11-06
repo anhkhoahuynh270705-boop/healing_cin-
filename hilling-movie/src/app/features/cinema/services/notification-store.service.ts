@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { UserNotification } from '../../model/cinema-page.model';
+import { UserNotification } from '../model/cinema-page.model';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationStoreService {
@@ -31,7 +31,10 @@ export class NotificationStoreService {
   }
 
   markAllRead(): void {
-    this.notifications = this.notifications.map((notification) => ({ ...notification, read: true }));
+    this.notifications = this.notifications.map((notification) => ({
+      ...notification,
+      read: true,
+    }));
     this.save();
   }
 

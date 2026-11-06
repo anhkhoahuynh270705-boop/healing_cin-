@@ -23,11 +23,21 @@ import { ClientRegisterPageComponent } from '../../auth/client_register-page/cli
 
 import { Guest, Playback, RoomState, WardrobeConfig } from '../../room/models';
 import { PrivateRoomView, UserNotification } from '../model/cinema-page.model';
-import { ACCESSORIES, AVATARS, REACTIONS, SHIRT_COLORS, WARDROBE_KEY } from '../helper/cinema-page.helper';
+import {
+  ACCESSORIES,
+  AVATARS,
+  REACTIONS,
+  SHIRT_COLORS,
+  WARDROBE_KEY,
+} from '../helper/cinema-page.helper';
 import { AuthResponse, UserProfile } from '../../auth/models/user-profile.model';
 import { ChatMessage } from '../../chat/models/chat-message.model';
 import { WardrobeCatalogItem } from '../../wardrobe/models/wardrobe.model';
-import { CharacterEntryModalComponent, CharacterEntrySelection, CharacterGender } from '../../character-entry/character-entry-modal.component';
+import {
+  CharacterEntryModalComponent,
+  CharacterEntrySelection,
+  CharacterGender,
+} from '../../character-entry/character-entry-modal.component';
 import { YouTubePlayer } from '../../playback/models/youtube.model';
 import { PaymentApiService } from '../../payment/data-access/payment-api.service';
 import { ChatService } from '../../chat/data-access/chat.service';
@@ -38,11 +48,9 @@ import { PersonalMediaApiService } from '../../media/data-access/personal-media-
 import { TaskProgress } from '../../tasks/models/task.model';
 import { apiBaseUrl } from '../../../api-endpoints';
 import { NotificationStoreService } from '../services/notification-store.service';
-import { NotificationCenterComponent } from '../components/notification-center/notification-center.component';
 import { PrivateRoomModalComponent } from '../private-room-modal/private-room-modal.component';
 import { PersonalMediaPanelComponent } from '../personal-media-panel/personal-media-panel.component';
-
-
+import { NotificationCenterComponent } from '../notification-center/notification-center.component';
 
 @Component({
   selector: 'app-cinema-page',

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { UserNotification } from '../../../model/cinema-page.model';
+import { UserNotification } from '../model/cinema-page.model';
 
 @Component({
   selector: 'app-notification-center',
