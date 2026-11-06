@@ -94,6 +94,81 @@
   line-height: 1.55;
 }
 
+.vip-card {
+  margin: 18px 0 4px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--vip-color) 38%, transparent);
+  border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vip-color) 12%, #211b2d), #211b2d 72%);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+.vip-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.vip-crown {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--vip-color);
+  background: color-mix(in srgb, var(--vip-color) 15%, transparent);
+}
+.vip-eyebrow {
+  color: var(--entry-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+.vip-card-heading h2 {
+  margin: 3px 0 0;
+  color: var(--vip-color);
+  font-size: 15px;
+  font-weight: 850;
+}
+.vip-level-pill {
+  margin-left: auto;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--vip-color) 45%, transparent);
+  border-radius: 999px;
+  color: var(--vip-color);
+  background: color-mix(in srgb, var(--vip-color) 10%, transparent);
+  font-size: 10px;
+  font-weight: 850;
+}
+.vip-privilege {
+  margin: 12px 0 0;
+  color: var(--entry-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+.vip-next-level {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 5px 12px;
+  margin-top: 10px;
+  color: var(--entry-muted);
+  font-size: 10px;
+}
+.vip-next-level strong { color: var(--entry-text); }
+.vip-level-list { margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.vip-level-list summary {
+  padding-top: 11px;
+  color: var(--entry-highlight);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.vip-level-list ul { display: grid; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
+.vip-level-list li { display: flex; justify-content: space-between; gap: 10px; color: var(--entry-muted); font-size: 10px; }
+.vip-level-list li span:first-child { flex: 0 0 auto; font-weight: 800; }
+.vip-level-list li span:last-child { text-align: right; }
+.vip-level-current { color: var(--entry-text) !important; }
+
 .character-stage {
   position: relative;
   display: grid;

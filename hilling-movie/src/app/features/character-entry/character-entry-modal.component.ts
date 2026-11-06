@@ -10,6 +10,7 @@ import {
   OnInit,
   SimpleChanges,
   ViewChild,
+  computed,
   input,
   output,
   signal,
@@ -17,6 +18,7 @@ import {
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import * as THREE from 'three';
 import { createCinemaCharacter } from '../room/character/cinema-character.factory';
+import { formatVipAmount, getNextVipLevel, getVipLevelInfo, VIP_LEVELS } from './vip-levels';
 
 export type CharacterGender = 'male' | 'female';
 
@@ -440,6 +442,11 @@ export class CharacterEntryModalComponent implements OnInit {
   readonly initialColorIndex = input(2);
   readonly initialShirtTier = input(0);
   readonly experience = input(0);
+  readonly vipLevel = input(0);
+  readonly vipLevelInfo = computed(() => getVipLevelInfo(this.vipLevel()));
+  readonly nextVipLevel = computed(() => getNextVipLevel(this.vipLevel()));
+  readonly vipLevels = VIP_LEVELS;
+  readonly formatVipAmount = formatVipAmount;
   readonly closed = output<void>();
   readonly confirmed = output<CharacterEntrySelection>();
 

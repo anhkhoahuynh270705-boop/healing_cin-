@@ -86,6 +86,7 @@ public class PaymentController {
                 "donationStatus", payments.donationStatus(userId),
                 "tier", payments.approvedTier(userId),
                 "tiers", payments.approvedTiers(userId),
+                "vipLevel", payments.vipLevel(userId),
                 "privateRooms", payments.privateRooms(userId),
                 "privateRoomPending", payments.hasPendingPrivateRoom(userId)));
     }

@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final int MAX_VIP_TIER = 6;
+    private static final int MAX_VIP_TIER = 10;
 
     private final UserRepository users;
     private final UserSessionRepository sessions;

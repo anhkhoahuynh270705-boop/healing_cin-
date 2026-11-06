@@ -20,6 +20,41 @@
 
     <app-exp-card [experience]="experience()" />
 
+    <section
+      class="vip-card"
+      [style.--vip-color]="vipLevelInfo().color"
+      aria-label="Hạng thành viên VIP"
+    >
+      <div class="vip-card-heading">
+        <span class="vip-crown"><i class="fa-solid fa-crown" aria-hidden="true"></i></span>
+        <div>
+          <span class="vip-eyebrow">HẠNG THÀNH VIÊN</span>
+          <h2>VIP {{ vipLevel() }} · {{ vipLevelInfo().title }}</h2>
+        </div>
+        <span class="vip-level-pill">VIP {{ vipLevel() }}</span>
+      </div>
+      <p class="vip-privilege">{{ vipLevelInfo().privilege }}</p>
+      @if (nextVipLevel(); as nextLevel) {
+        <div class="vip-next-level">
+          <span>Hạng tiếp theo: VIP {{ nextLevel.level }} · {{ nextLevel.title }}</span>
+          <strong>{{ formatVipAmount(nextLevel.minimumTopUp) }} tổng nạp đã duyệt</strong>
+        </div>
+      } @else {
+        <div class="vip-next-level"><strong>Bạn đã đạt cấp VIP cao nhất.</strong></div>
+      }
+      <details class="vip-level-list">
+        <summary>Xem đặc quyền các cấp VIP</summary>
+        <ul>
+          @for (level of vipLevels; track level.level) {
+            <li [class.vip-level-current]="level.level === vipLevel()">
+              <span [style.color]="level.color">VIP {{ level.level }} · {{ level.title }}</span>
+              <span>{{ level.privilege }}</span>
+            </li>
+          }
+        </ul>
+      </details>
+    </section>
+
     <section class="character-stage" aria-label="Xem trước nhân vật">
       <app-avatar-preview
         [displayName]="avatarName()"

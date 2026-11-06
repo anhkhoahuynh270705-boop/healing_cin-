@@ -120,6 +120,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Panel ──
   activePanelId: string | null = null;
+  mobileActionMenuOpen = false;
   infoPanelOpen = false;
   orientationNoticeDismissed = false;
   currentRoom: 'cinema' | 'gym' = 'cinema';
@@ -171,6 +172,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   cinemaChatOpen = false;
   cinemaChatMinimized = false;
   myVipTier = 0;
+  myVipLevel = 0;
   activeChatFrameTier = 0;
   equippedFrameTier = 0;
   equippedShirtTier = 0;
@@ -270,6 +272,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   switchRoom(room: 'cinema' | 'gym'): void {
+    this.mobileActionMenuOpen = false;
     this.currentRoom = room;
     this.roomSocket.setEnvironment(
       room === 'gym' ? 'gym' : this.outdoorCinemaMode ? 'outdoor' : 'indoor',
@@ -373,6 +376,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
             const u = JSON.parse(savedUserStr) as UserProfile;
             if (!u.id.startsWith('guest-')) this.beginRoomStartup();
             this.currentUser = u;
+            this.myVipLevel = Math.max(0, Math.min(10, u.vipTier ?? 0));
             this.activateNotificationFeed();
             this.guestName = u.displayName || this.guestName;
             this.selectedAvatar = u.avatar || this.selectedAvatar;
@@ -1105,6 +1109,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   togglePanel(id: string): void {
+    this.mobileActionMenuOpen = false;
     if (id === 'chat' && (!this.connected || !this.sessionId)) {
       this.toast('Đang kết nối lại với phòng, vui lòng thử sau giây lát.');
       return;
@@ -1116,7 +1121,16 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.activePanelId = null;
   }
 
+  toggleMobileActionMenu(): void {
+    this.mobileActionMenuOpen = !this.mobileActionMenuOpen;
+  }
+
+  closeMobileActionMenu(): void {
+    this.mobileActionMenuOpen = false;
+  }
+
   toggleDonationModal(): void {
+    this.mobileActionMenuOpen = false;
     this.activePanelId = null;
     this.donationModalOpen = !this.donationModalOpen;
   }
@@ -1846,6 +1860,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     localStorage.setItem('healing_token', data.token);
     localStorage.setItem('healing_user', JSON.stringify(data.user));
     this.currentUser = data.user;
+    this.myVipLevel = Math.max(0, Math.min(10, data.user.vipTier ?? 0));
     this.paymentStatusesInitialized = false;
     this.activateNotificationFeed();
     this.walletBalance = 0;
@@ -1890,6 +1905,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     localStorage.setItem('healing_token', token);
     localStorage.setItem('healing_user', JSON.stringify(guestUser));
     this.currentUser = guestUser;
+    this.myVipLevel = 0;
     this.activateNotificationFeed();
     this.guestName = name;
     this.selectedAvatar = guestUser.avatar;
@@ -2003,6 +2019,11 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       this.paymentStatusesInitialized = true;
       this.myVipTier = Number(data.tier) || 0;
+      this.myVipLevel = Math.max(0, Math.min(10, Number(data.vipLevel) || 0));
+      if (this.currentUser && this.currentUser.vipTier !== this.myVipLevel) {
+        this.currentUser = { ...this.currentUser, vipTier: this.myVipLevel };
+        localStorage.setItem('healing_user', JSON.stringify(this.currentUser));
+      }
       const ownedTiers = Array.isArray(data.tiers)
         ? data.tiers.map((tier: unknown) => Number(tier)).filter(Number.isInteger)
         : [];
@@ -2061,6 +2082,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.paymentStatusesInitialized = false;
     this.activateNotificationFeed();
     this.myVipTier = 0;
+    this.myVipLevel = 0;
     this.equippedFrameTier = 0;
     this.equippedShirtTier = 0;
     this.activeChatFrameTier = 0;
@@ -2099,6 +2121,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.paymentStatusesInitialized = false;
     this.activateNotificationFeed();
     this.myVipTier = 0;
+    this.myVipLevel = 0;
     this.equippedFrameTier = 0;
     this.equippedShirtTier = 0;
     this.activeChatFrameTier = 0;
@@ -2277,6 +2300,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openPrivateRoom(): void {
+    this.mobileActionMenuOpen = false;
     this.privateRoomModalOpen = true;
     if (this.currentUser) {
       void this.refreshChatAccess();

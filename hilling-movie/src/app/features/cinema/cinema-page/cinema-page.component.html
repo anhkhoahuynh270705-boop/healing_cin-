@@ -101,6 +101,17 @@
       <button class="tb-btn" title="Toàn màn hình" (click)="toggleFullscreen()">
         <i class="fa-solid fa-expand" aria-hidden="true"></i>
       </button>
+      <button
+        type="button"
+        class="tb-btn mobile-action-trigger"
+        title="Mở bảng điều khiển"
+        aria-label="Mở bảng điều khiển phòng"
+        aria-controls="right-sidebar"
+        [attr.aria-expanded]="mobileActionMenuOpen"
+        (click)="toggleMobileActionMenu()"
+      >
+        <i class="fa-solid fa-bars-staggered" aria-hidden="true"></i>
+      </button>
       <div class="header-info-control">
         <button
           type="button"
@@ -317,7 +328,19 @@
     </div>
 
     <!-- RIGHT SIDEBAR -->
-    <aside class="right-sidebar">
+    @if (mobileActionMenuOpen) {
+      <button
+        type="button"
+        class="mobile-menu-backdrop"
+        aria-label="Đóng bảng điều khiển"
+        (click)="closeMobileActionMenu()"
+      ></button>
+    }
+    <aside
+      id="right-sidebar"
+      class="right-sidebar"
+      [class.mobile-dropdown-open]="mobileActionMenuOpen"
+    >
       <button
         class="rs-btn room-switch-btn"
         [class.rs-btn--active]="currentRoom === 'cinema'"
@@ -986,6 +1009,7 @@
     [initialColorIndex]="characterColorIndex"
     [initialShirtTier]="equippedShirtTier"
     [experience]="experiencePoints"
+    [vipLevel]="myVipLevel"
     (closed)="characterEntryOpen = false"
     (confirmed)="confirmCharacterEntry($event)"
   />

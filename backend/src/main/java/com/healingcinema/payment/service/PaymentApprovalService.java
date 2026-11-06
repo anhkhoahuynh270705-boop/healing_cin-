@@ -1,5 +1,6 @@
 package com.healingcinema.payment.service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,6 +29,10 @@ public class PaymentApprovalService {
     private static final String PRIVATE_ROOM = "PRIVATE_ROOM";
     private static final String DONATION = "DONATION";
     private static final int LOFI_TRACK_COUNT = 5;
+    private static final long[] VIP_THRESHOLDS = {
+            0L, 10_000L, 20_000L, 50_000L, 100_000L, 200_000L,
+            500_000L, 1_000_000L, 2_000_000L, 5_000_000L, 10_000_000L
+    };
     private static final Map<Integer, Integer> VIP_TIER_PRICES = Map.of(
             1, 20000,
             2, 50000,
@@ -190,6 +195,7 @@ public class PaymentApprovalService {
                         () -> new IllegalStateException("Không tìm thấy tài khoản nhận tiền ủng hộ."));
                 user.setDonationTotalConfirmed(Math.addExact(user.getDonationTotalConfirmed(), request.getAmount()));
                 user.setDonationUsableBalance(Math.addExact(user.getDonationUsableBalance(), request.getAmount()));
+                user.setVipTier(Math.max(user.getVipTier(), vipLevelFor(user.getDonationTotalConfirmed())));
             }
             request.setStatus(APPROVED);
         } else {
@@ -246,7 +252,15 @@ public class PaymentApprovalService {
 
     @Transactional(readOnly = true)
     public boolean canChat(String userId) {
-        return !approvedTiers(userId).isEmpty();
+        return userId != null && users.existsById(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public int vipLevel(String userId) {
+        if (userId == null) return 0;
+        return users.findById(userId)
+                .map(user -> Math.max(user.getVipTier(), vipLevelFor(user.getDonationTotalConfirmed())))
+                .orElse(0);
     }
 
     @Transactional(readOnly = true)
@@ -262,11 +276,17 @@ public class PaymentApprovalService {
         java.util.Set<Integer> tiers = new java.util.TreeSet<>(requests
                 .findByUserIdAndTypeAndStatusOrderByCreatedAtAsc(userId, VIP, APPROVED).stream()
                 .map(PaymentRequestEntity::getTier).toList());
-        users.findById(userId).map(UserEntity::getVipTier).filter(tier -> tier > 0).ifPresent(tiers::add);
+        users.findById(userId).map(UserEntity::getVipTier)
+                .map(tier -> Math.min(6, tier)).filter(tier -> tier > 0).ifPresent(tiers::add);
         int wardrobeTier = wardrobePurchases.findFirstByUserIdOrderByTierDesc(userId)
                 .map(com.healingcinema.wardrobe.entity.WardrobePurchaseEntity::getTier).orElse(0);
         for (int tier = 1; tier <= wardrobeTier; tier++) tiers.add(tier);
         return List.copyOf(tiers);
+    }
+
+    private static int vipLevelFor(long confirmedAmount) {
+        int level = Arrays.binarySearch(VIP_THRESHOLDS, confirmedAmount);
+        return level >= 0 ? Math.min(level, 10) : Math.max(0, Math.min(10, -level - 2));
     }
 
     @Transactional(readOnly = true)
