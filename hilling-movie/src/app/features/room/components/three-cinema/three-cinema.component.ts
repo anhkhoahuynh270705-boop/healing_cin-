@@ -1994,6 +1994,30 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
       x: ((point.x + 1) / 2) * viewportWidth,
       y: ((1 - point.y) / 2) * viewportHeight,
     }));
+
+    // Mobile Safari/Android WebView may paint cross-origin iframe content white under matrix3d.
+    // Keep the player axis-aligned and clip it to the projected screen quadrilateral instead.
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      const left = Math.min(...target.map((point) => point.x));
+      const top = Math.min(...target.map((point) => point.y));
+      const width = Math.max(...target.map((point) => point.x)) - left;
+      const height = Math.max(...target.map((point) => point.y)) - top;
+      if (width <= 0 || height <= 0) return;
+
+      const clipPoints = target.map((point) =>
+        `${(((point.x - left) / width) * 100).toFixed(3)}% ${(((point.y - top) / height) * 100).toFixed(3)}%`,
+      );
+      overlay.style.left = `${left}px`;
+      overlay.style.top = `${top}px`;
+      overlay.style.width = `${width}px`;
+      overlay.style.height = `${height}px`;
+      overlay.style.transformOrigin = '0 0';
+      overlay.style.transform = 'none';
+      overlay.style.clipPath = `polygon(${clipPoints.join(', ')})`;
+      overlay.style.pointerEvents = 'none';
+      return;
+    }
+
     const [p0, p1, p2, p3] = target;
 
     // Tính homography để nội dung video cũng được uốn theo phối cảnh,

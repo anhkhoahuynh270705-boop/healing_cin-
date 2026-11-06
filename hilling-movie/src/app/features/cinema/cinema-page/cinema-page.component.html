@@ -266,7 +266,7 @@
       <div class="vote-section">
         <button class="vote-btn" (click)="voteSkip()" [class.voted]="hasVotedSkip">
           <span class="vote-icon"><i class="fa-solid fa-forward-step" aria-hidden="true"></i></span>
-          Vote bỏ qua (≥90%)
+          <span class="vote-label">Vote bỏ qua <small>(≥90%)</small></span>
           <strong>{{ skipVotes }}/{{ minSkipVotes }}</strong>
         </button>
         <div class="vote-bar-wrap">

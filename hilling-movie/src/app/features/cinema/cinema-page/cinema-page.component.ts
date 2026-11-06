@@ -1127,7 +1127,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private get isMobilePlayback(): boolean {
     return (
       typeof window !== 'undefined' &&
-      window.matchMedia('(max-width: 760px), (max-width: 1024px) and (pointer: coarse)').matches
+      window.matchMedia('(max-width: 760px), (pointer: coarse)').matches
     );
   }
 

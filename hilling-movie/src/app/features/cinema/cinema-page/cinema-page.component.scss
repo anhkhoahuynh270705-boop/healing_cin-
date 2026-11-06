@@ -5938,52 +5938,18 @@ app-cinema-page {
   }
 }
 
-@media (max-width: 760px), (max-width: 1024px) and (pointer: coarse) {
-  /* Keep the movie readable and directly tappable on phone screens. */
+@media (max-width: 760px), (pointer: coarse) {
+  /* Keep the video mapped to the auditorium screen; do not float it over the seats. */
   .scene-area > .cinema-screen-overlay:not(.room-mode-hidden) {
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    display: block !important;
-    width: min(94vw, 88vh) !important;
-    height: min(52.875vw, 49.5vh, calc(100vh - var(--topbar-h) - var(--bottom-h) - 32px)) !important;
-    width: min(94vw, 88dvh) !important;
-    height: min(52.875vw, 49.5dvh, calc(100dvh - var(--topbar-h) - var(--bottom-h) - 32px)) !important;
-    max-width: calc(100vw - 16px) !important;
-    max-height: calc(100dvh - var(--topbar-h) - var(--bottom-h) - 32px) !important;
-    aspect-ratio: 16 / 9 !important;
-    transform: translate(-50%, -50%) !important;
-    transform-origin: center !important;
-    z-index: 8;
-    pointer-events: auto !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    border: 1px solid rgba(240, 187, 119, 0.5) !important;
-    border-radius: 10px;
-    background: #000;
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48) !important;
-  }
-
-  #youtube-embed-screen {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    pointer-events: auto;
+    pointer-events: none !important;
   }
 
   #youtube-embed-screen iframe,
   #youtube-embed-screen video {
-    position: absolute;
-    inset: 0;
     display: block;
     width: 100% !important;
     height: 100% !important;
-    min-width: 100%;
-    min-height: 100%;
     border: 0;
-    background: #000;
     pointer-events: auto;
   }
 }
@@ -5991,7 +5957,60 @@ app-cinema-page {
 /* Mobile and tablet room actions stay reachable from a compact dropdown. */
 @media (max-width: 1024px) {
   .left-sidebar {
+    position: absolute;
+    inset: calc(var(--topbar-h) + 8px) auto auto 7px;
+    display: flex !important;
+    width: min(172px, 44vw);
+    max-height: 42dvh;
+    gap: 0;
+    padding: 6px;
+    overflow: visible;
+    border: 1px solid rgba(232, 211, 177, 0.22);
+    border-radius: 10px;
+    background: rgba(13, 10, 18, 0.86);
+    z-index: 40;
+  }
+
+  .left-sidebar.room-mode-hidden {
     display: none !important;
+  }
+
+  .left-sidebar > .sidebar-section {
+    display: none !important;
+  }
+
+  .left-sidebar .vote-section {
+    width: 100%;
+    gap: 5px;
+  }
+
+  .left-sidebar .vote-btn {
+    display: grid;
+    width: 100%;
+    min-height: 36px;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 5px 6px;
+    font-size: 9px;
+  }
+
+  .left-sidebar .vote-label {
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  .left-sidebar .vote-label small {
+    display: block;
+    color: var(--muted);
+    font-size: 8px;
+  }
+
+  .left-sidebar .vote-btn strong {
+    font-size: 8px;
+  }
+
+  .left-sidebar .vote-bar-wrap {
+    height: 3px;
   }
 
   .cinema-topbar {
@@ -6097,5 +6116,26 @@ app-cinema-page {
 
   .cinema-body {
     --left-w: 0px;
+  }
+}
+
+@media (pointer: coarse) {
+  .left-sidebar:not(.room-mode-hidden) {
+    position: absolute;
+    inset: calc(var(--topbar-h) + 8px) auto auto 7px;
+    display: flex !important;
+    width: min(172px, 44vw);
+    max-height: 42dvh;
+    gap: 0;
+    padding: 6px;
+    overflow: visible;
+    border: 1px solid rgba(232, 211, 177, 0.22);
+    border-radius: 10px;
+    background: rgba(13, 10, 18, 0.86);
+    z-index: 40;
+  }
+
+  .left-sidebar:not(.room-mode-hidden) > .sidebar-section {
+    display: none !important;
   }
 }
