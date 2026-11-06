@@ -1,8 +1,9 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { UserProfile } from '../../../../../auth/models/user-profile.model';
-import { PaymentApiService } from '../../../../../payment/data-access/payment-api.service';
-import { PrivateRoomView } from '../../../../model/cinema-page.model';
+import { PaymentApiService } from '../../../../payment/data-access/payment-api.service';
+import { UserProfile } from '../../../../auth/models/user-profile.model';
+import { PrivateRoomView } from '../../../model/cinema-page.model';
+
 
 interface PrivateRoomNotice {
   message: string;

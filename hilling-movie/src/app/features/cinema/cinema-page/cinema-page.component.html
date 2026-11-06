@@ -116,11 +116,7 @@
           <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
         </button>
         @if (infoPanelOpen) {
-          <section
-            id="cinema-info-panel"
-            class="header-info-panel"
-            aria-label="Hướng dẫn sử dụng"
-          >
+          <section id="cinema-info-panel" class="header-info-panel" aria-label="Hướng dẫn sử dụng">
             <header>
               <div>
                 <span>HƯỚNG DẪN</span>
@@ -133,23 +129,23 @@
             @if (currentRoom === 'gym') {
               <ul>
                 <li>
-                  <i class="fa-solid fa-dumbbell" aria-hidden="true"></i> Chọn máy tập trong
-                  phòng để đưa nhân vật đến vị trí đó.
+                  <i class="fa-solid fa-dumbbell" aria-hidden="true"></i> Chọn máy tập trong phòng
+                  để đưa nhân vật đến vị trí đó.
                 </li>
                 <li>
-                  <i class="fa-solid fa-person-running" aria-hidden="true"></i> Dùng bảng điều
-                  khiển của máy để bắt đầu hoặc kết thúc bài tập.
+                  <i class="fa-solid fa-person-running" aria-hidden="true"></i> Dùng bảng điều khiển
+                  của máy để bắt đầu hoặc kết thúc bài tập.
                 </li>
                 <li>
-                  <i class="fa-solid fa-film" aria-hidden="true"></i> Chuyển sang phòng chiếu
-                  phim từ nút đổi phòng.
+                  <i class="fa-solid fa-film" aria-hidden="true"></i> Chuyển sang phòng chiếu phim
+                  từ nút đổi phòng.
                 </li>
               </ul>
             } @else {
               <ul>
                 <li>
-                  <i class="fa-solid fa-chair" aria-hidden="true"></i> Chọn ghế để nhân vật vào
-                  chỗ; bấm ghế khác để di chuyển.
+                  <i class="fa-solid fa-chair" aria-hidden="true"></i> Chọn ghế để nhân vật vào chỗ;
+                  bấm ghế khác để di chuyển.
                 </li>
                 <li>
                   <i class="fa-solid fa-list" aria-hidden="true"></i> Mở các tab bên phải để xem
@@ -160,8 +156,8 @@
                   phép tải ảnh hoặc video ngắn lên màn chiếu.
                 </li>
                 <li>
-                  <i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Chia sẻ liên kết để
-                  mời bạn bè vào cùng phòng.
+                  <i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Chia sẻ liên kết để mời
+                  bạn bè vào cùng phòng.
                 </li>
               </ul>
             }
@@ -570,9 +566,9 @@
   />
 }
 
-<!-- ═══════════════════════════════════════════════
+<!-- 
     SIDE PANELS OVERLAY
-    ═══════════════════════════════════════════════ -->
+     -->
 
 <!-- BACKDROP -->
 @if (activePanelId) {

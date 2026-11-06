@@ -11,34 +11,36 @@ import {
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
-import { RoomSocketService } from '../../../room/data-access/room-socket.service';
-import { AuthApiService } from '../../../auth/data-access/auth-api.service';
-import { ThreeCinemaComponent } from '../../../room/components/three-cinema/three-cinema.component';
-import { GymRoomComponent } from '../../../room/components/gym-room/gym-room.component';
-import { DonationModalComponent } from '../../../donations/donation-modal/donation-modal.component';
-import { TaskModalComponent } from '../../../tasks/task-modal/task-modal.component';
-import { WardrobeModalComponent } from '../../../wardrobe/wardrobe/wardrobe-modal.component';
-import { ClientLoginPageComponent } from '../../../auth/client_login-page/client-login-page.component';
-import { ClientRegisterPageComponent } from '../../../auth/client_register-page/client-register-page.component';
-import { NotificationCenterComponent } from '../components/notification-center/notification-center.component';
-import { PrivateRoomModalComponent } from '../components/modals/private-room-modal/private-room-modal.component';
-import { PersonalMediaPanelComponent } from '../components/panels/personal-media-panel/personal-media-panel.component';
-import { Guest, Playback, RoomState, WardrobeConfig } from '../../../room/models';
-import { PrivateRoomView, UserNotification } from '../../model/cinema-page.model';
-import { ACCESSORIES, AVATARS, REACTIONS, SHIRT_COLORS, WARDROBE_KEY } from '../../helper/cinema-page.helper';
-import { AuthResponse, UserProfile } from '../../../auth/models/user-profile.model';
-import { ChatMessage } from '../../../chat/models/chat-message.model';
-import { WardrobeCatalogItem } from '../../../wardrobe/models/wardrobe.model';
-import { CharacterEntryModalComponent, CharacterEntrySelection, CharacterGender } from '../../../character-entry/character-entry-modal.component';
-import { YouTubePlayer } from '../../../playback/models/youtube.model';
-import { PaymentApiService } from '../../../payment/data-access/payment-api.service';
-import { ChatService } from '../../../chat/data-access/chat.service';
-import { DonationUiService } from '../../../donations/data-access/donation-ui.service';
-import { TaskApiService } from '../../../tasks/data-access/task-api.service';
-import { PersonalMediaApiService } from '../../../media/data-access/personal-media-api.service';
+import { RoomSocketService } from '../../room/data-access/room-socket.service';
+import { AuthApiService } from '../../auth/data-access/auth-api.service';
+import { ThreeCinemaComponent } from '../../room/components/three-cinema/three-cinema.component';
+import { GymRoomComponent } from '../../room/components/gym-room/gym-room.component';
+import { DonationModalComponent } from '../../donations/donation-modal/donation-modal.component';
+import { TaskModalComponent } from '../../tasks/task-modal/task-modal.component';
+import { WardrobeModalComponent } from '../../wardrobe/wardrobe/wardrobe-modal.component';
+import { ClientLoginPageComponent } from '../../auth/client_login-page/client-login-page.component';
+import { ClientRegisterPageComponent } from '../../auth/client_register-page/client-register-page.component';
+
+import { Guest, Playback, RoomState, WardrobeConfig } from '../../room/models';
+import { PrivateRoomView, UserNotification } from '../model/cinema-page.model';
+import { ACCESSORIES, AVATARS, REACTIONS, SHIRT_COLORS, WARDROBE_KEY } from '../helper/cinema-page.helper';
+import { AuthResponse, UserProfile } from '../../auth/models/user-profile.model';
+import { ChatMessage } from '../../chat/models/chat-message.model';
+import { WardrobeCatalogItem } from '../../wardrobe/models/wardrobe.model';
+import { CharacterEntryModalComponent, CharacterEntrySelection, CharacterGender } from '../../character-entry/character-entry-modal.component';
+import { YouTubePlayer } from '../../playback/models/youtube.model';
+import { PaymentApiService } from '../../payment/data-access/payment-api.service';
+import { ChatService } from '../../chat/data-access/chat.service';
+import { DonationUiService } from '../../donations/data-access/donation-ui.service';
+import { TaskApiService } from '../../tasks/data-access/task-api.service';
+import { PersonalMediaApiService } from '../../media/data-access/personal-media-api.service';
+
+import { TaskProgress } from '../../tasks/models/task.model';
+import { apiBaseUrl } from '../../../api-endpoints';
 import { NotificationStoreService } from '../services/notification-store.service';
-import { TaskProgress } from '../../../tasks/models/task.model';
-import { apiBaseUrl } from '../../../../api-endpoints';
+import { NotificationCenterComponent } from '../components/notification-center/notification-center.component';
+import { PrivateRoomModalComponent } from '../private-room-modal/private-room-modal.component';
+import { PersonalMediaPanelComponent } from '../personal-media-panel/personal-media-panel.component';
 
 
 
