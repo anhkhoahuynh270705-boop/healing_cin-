@@ -32,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PaymentController {
     public record SubmitPayment(String userId, String authToken, String username, int tier, int amount, String memo, String type, String roomName) {}
+    public record WalletPrivateRoomRequest(String userId, String authToken, String username, String roomName) {}
     public record AdminLoginRequest(String username, String password, String key) {}
     public record AdminRegisterRequest(String username, String password, String key) {}
     private final PaymentApprovalService payments;
@@ -54,6 +55,21 @@ public class PaymentController {
             PaymentRequest created = payments.submit(request.userId(), request.username(), request.tier(), request.amount(), request.memo());
             notifier.notifyAdmins(created);
             return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(created);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/payments/private-room/wallet")
+    public ResponseEntity<?> createPrivateRoomFromWallet(@RequestBody WalletPrivateRoomRequest request) {
+        if (!auth.isValidSession(request.userId(), request.authToken())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Vui lòng đăng nhập lại."));
+        }
+        try {
+            return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(
+                    payments.createPrivateRoomFromWallet(
+                            request.userId(), request.username(), request.roomName()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

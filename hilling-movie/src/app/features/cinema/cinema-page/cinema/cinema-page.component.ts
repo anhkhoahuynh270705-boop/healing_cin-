@@ -22,6 +22,10 @@ import { Guest, Playback, RoomState, WardrobeConfig } from '../../room/models';
 import { ChatMessage } from '../../chat/models/chat-message.model';
 import { ChatService } from '../../chat/data-access/chat.service';
 import { UserProfile, AuthResponse } from '../../auth/models/user-profile.model';
+import { NotificationCenterComponent } from './components/notification-center/notification-center.component';
+import { PrivateRoomModalComponent } from './components/modals/private-room-modal/private-room-modal.component';
+import { PersonalMediaPanelComponent } from './components/panels/personal-media-panel/personal-media-panel.component';
+import { NotificationStoreService } from './services/notification-store.service';
 import { PaymentApiService } from '../../payment/data-access/payment-api.service';
 import { AuthApiService } from '../../auth/data-access/auth-api.service';
 import { TaskApiService } from '../../tasks/data-access/task-api.service';
@@ -60,6 +64,9 @@ import {
     ClientLoginPageComponent,
     ClientRegisterPageComponent,
     CharacterEntryModalComponent,
+    NotificationCenterComponent,
+    PrivateRoomModalComponent,
+    PersonalMediaPanelComponent,
   ],
   templateUrl: './cinema-page.component.html',
   styleUrl: './cinema-page.component.scss',
@@ -85,11 +92,9 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   connected = false;
   toastMessage = '';
   isBootingRoom = false;
-  notifications: UserNotification[] = [];
-  notificationsOpen = false;
-  notificationLeft = 0;
-  notificationTop = 0;
-  private notificationStorageKey = '';
+  get notifications(): UserNotification[] {
+    return this.notificationStore.notifications;
+  }
   private paymentStatusesInitialized = false;
   private vipPaymentStatus = 'NONE';
   private privateRoomPaymentStatus = 'NONE';
@@ -114,6 +119,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Panel ──
   activePanelId: string | null = null;
+  infoPanelOpen = false;
+  orientationNoticeDismissed = false;
   currentRoom: 'cinema' | 'gym' = 'cinema';
   donationModalOpen = false;
   tasksModalOpen = false;
@@ -172,11 +179,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   privateRoomModalOpen = false;
   privateRoomPending = false;
   privateRoomCodes: PrivateRoomView[] = [];
-  readonly privateRoomForm = new FormGroup({
-    name: new FormControl('', { nonNullable: true }),
-  });
-  readonly privateRoomInviteControl = new FormControl('', { nonNullable: true });
-  privateRoomQrUrl = '';
 
   // ── Like ──
   likeCount = 0;
@@ -253,6 +255,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly donationApi: DonationUiService,
     private readonly taskApi: TaskApiService,
     private readonly personalMediaApi: PersonalMediaApiService,
+    private readonly notificationStore: NotificationStoreService,
   ) {}
 
   get isHost(): boolean {
@@ -1076,6 +1079,14 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   //   PANEL MANAGEMENT
+  toggleInfoPanel(): void {
+    this.infoPanelOpen = !this.infoPanelOpen;
+  }
+
+  dismissOrientationNotice(): void {
+    this.orientationNoticeDismissed = true;
+  }
+
   togglePanel(id: string): void {
     if (id === 'chat' && (!this.connected || !this.sessionId)) {
       this.toast('Đang kết nối lại với phòng, vui lòng thử sau giây lát.');
@@ -1904,21 +1915,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.toast(copied ? `Đã copy ${label}: ${text} ` : `Không thể copy ${label}.`);
   }
 
-  copyPrivateRoomCode(roomCode: string): void {
-    this.copyText(roomCode, 'mã phòng');
-  }
-
-  copyPrivateRoomLink(roomCode: string): void {
-    const inviteUrl = new URL(location.href);
-    inviteUrl.searchParams.set('room', roomCode);
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(inviteUrl.toString()).then(
-        () => this.toast(`Đã copy link mời phòng ${roomCode}`),
-        () => this.copyTextFallback(inviteUrl.toString(), 'link mời'),
-      );
-    } else this.copyTextFallback(inviteUrl.toString(), 'link mời');
-  }
-
   get chatApproved(): boolean {
     return true;
   }
@@ -2263,9 +2259,10 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   openPrivateRoom(): void {
     this.privateRoomModalOpen = true;
-    const memo = `HEALING PHONG RIENG ${this.currentUser?.username || 'KHACH'}`;
-    this.privateRoomQrUrl = `https://img.vietqr.io/image/TCB-1221868856-compact2.png?amount=10000&addInfo=${encodeURIComponent(memo)}`;
-    if (this.currentUser) void this.refreshChatAccess();
+    if (this.currentUser) {
+      void this.refreshChatAccess();
+      void this.refreshWallet();
+    }
     this.cdr.markForCheck();
   }
 
@@ -2273,55 +2270,37 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.privateRoomModalOpen = false;
   }
 
-  async requestPrivateRoom(): Promise<void> {
-    if (!this.currentUser || this.currentUser.id.startsWith('guest-')) {
-      this.toast('Đăng nhập để gửi yêu cầu tạo phòng riêng.');
-      return;
+  onPrivateRoomRequestPending(): void {
+    this.privateRoomPending = true;
+    if (!this.chatStatusTimer) {
+      this.chatStatusTimer = setInterval(() => void this.refreshChatAccess(), 5000);
     }
-    if (this.privateRoomPending) {
-      this.toast('Vui lòng đợi trong giây lát.');
-      return;
-    }
-    try {
-      const response = await this.paymentApi.requestPrivateRoom(
-        this.currentUser.id,
-        this.currentUser.username,
-        localStorage.getItem('healing_token') ?? '',
-        this.privateRoomForm.controls.name.value.trim(),
-      );
-      if (response.status === 401) {
-        this.handleExpiredSession();
-        return;
-      }
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.message || `Máy chủ từ chối yêu cầu (HTTP ${response.status}).`);
-      }
-      if (
-        !data ||
-        typeof data.id !== 'string' ||
-        data.type !== 'PRIVATE_ROOM' ||
-        data.status !== 'PENDING'
-      ) {
-        throw new Error('Máy chủ chưa xác nhận đã lưu yêu cầu. Vui lòng thử lại sau.');
-      }
-      this.privateRoomPending = true;
-      if (!this.chatStatusTimer) {
-        this.chatStatusTimer = setInterval(() => void this.refreshChatAccess(), 5000);
-      }
-      this.toast('Đã gửi yêu cầu phòng riêng. Admin sẽ duyệt sau khi xác nhận 10.000đ.');
-      this.addNotification(
-        'Yêu cầu tạo phòng đã gửi',
-        `“${this.privateRoomForm.controls.name.value.trim()}” đang chờ xác nhận thanh toán.`,
-        'info',
-      );
-      void this.refreshChatAccess();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không kết nối được máy chủ.';
-      this.toast(message);
-      this.addNotification('Không thể gửi yêu cầu tạo phòng', message, 'error');
-    }
-    this.cdr.markForCheck();
+  }
+
+  onPrivateRoomCreated(room: PrivateRoomView): void {
+    this.privateRoomCodes = [
+      ...this.privateRoomCodes.filter((existing) => existing.code !== room.code),
+      room,
+    ];
+    this.privateRoomPending = false;
+    this.walletBalance = Math.max(0, this.walletBalance - 10_000);
+  }
+
+  onPrivateRoomWalletRefresh(): void {
+    void this.refreshWallet();
+  }
+
+  onPrivateRoomSessionExpired(): void {
+    this.handleExpiredSession();
+  }
+
+  onPrivateRoomNotice(notice: {
+    message: string;
+    title?: string;
+    kind?: UserNotification['kind'];
+  }): void {
+    this.toast(notice.message);
+    if (notice.title) this.addNotification(notice.title, notice.message, notice.kind ?? 'info');
   }
 
   enterPrivateRoom(roomCode: string): void {
@@ -2342,18 +2321,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.addingVideo = false;
     this.lastLoadedVideoId = null;
     this.privateRoomModalOpen = false;
-    this.privateRoomInviteControl.reset('');
     this.connectToCinema(normalizedCode);
     this.toast('Đang vào rạp riêng. Hãy chia sẻ liên kết để mời bạn bè.');
-  }
-
-  enterPrivateRoomByInvite(): void {
-    const code = this.privateRoomInviteControl.value.trim();
-    if (!code) {
-      this.toast('Dán mã mời phòng để tiếp tục.');
-      return;
-    }
-    this.enterPrivateRoom(code);
   }
 
   // ── Send chat (không tự động mở panel bên phải khi chat thanh dưới) ──
@@ -2390,35 +2359,12 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.toastTimer = setTimeout(() => (this.toastMessage = ''), 2600);
   }
 
-  get unreadNotificationCount(): number {
-    return this.notifications.filter((notification) => !notification.read).length;
-  }
-
-  toggleNotifications(event: MouseEvent): void {
-    this.notificationsOpen = !this.notificationsOpen;
-    if (this.notificationsOpen) {
-      const anchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      const width = Math.min(360, window.innerWidth - 20);
-      this.notificationLeft = Math.max(
-        10,
-        Math.min(anchor.right + 12 - width, window.innerWidth - width - 10),
-      );
-      this.notificationTop = anchor.bottom + 10;
-      this.notifications = this.notifications.map((notification) => ({
-        ...notification,
-        read: true,
-      }));
-      this.saveNotifications();
-    }
+  markNotificationsRead(): void {
+    this.notificationStore.markAllRead();
   }
 
   clearNotifications(): void {
-    this.notifications = [];
-    this.saveNotifications();
-  }
-
-  formatNotificationTime(timestamp: number): string {
-    return new Date(timestamp).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+    this.notificationStore.clear();
   }
 
   onDonationTransactionPending(): void {
@@ -2460,42 +2406,10 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private activateNotificationFeed(): void {
     const owner = this.currentUser?.id || this.clientId || 'guest';
-    this.notificationStorageKey = `healing_notifications:${owner}`;
-    this.notificationsOpen = false;
-    try {
-      const saved = localStorage.getItem(this.notificationStorageKey);
-      const parsed: unknown = saved ? JSON.parse(saved) : [];
-      this.notifications = Array.isArray(parsed)
-        ? parsed
-            .filter(
-              (item): item is UserNotification =>
-                !!item &&
-                typeof item.id === 'string' &&
-                typeof item.title === 'string' &&
-                typeof item.message === 'string' &&
-                typeof item.createdAt === 'number' &&
-                typeof item.read === 'boolean' &&
-                ['success', 'error', 'info'].includes(item.kind),
-            )
-            .slice(0, 40)
-        : [];
-    } catch {
-      this.notifications = [];
-    }
+    this.notificationStore.activate(owner);
   }
 
   private addNotification(title: string, message: string, kind: UserNotification['kind']): void {
-    this.notifications = [
-      { id: crypto.randomUUID(), title, message, kind, createdAt: Date.now(), read: false },
-      ...this.notifications,
-    ].slice(0, 40);
-    this.saveNotifications();
-  }
-
-  private saveNotifications(): void {
-    if (!this.notificationStorageKey) return;
-    try {
-      localStorage.setItem(this.notificationStorageKey, JSON.stringify(this.notifications));
-    } catch {}
+    this.notificationStore.add(title, message, kind);
   }
 }

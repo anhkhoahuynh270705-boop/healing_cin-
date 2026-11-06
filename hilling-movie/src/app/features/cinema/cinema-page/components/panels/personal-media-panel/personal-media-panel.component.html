@@ -1,0 +1,71 @@
+<div class="side-panel personal-media-panel" [class.open]="open">
+  <div class="sp-header">
+    <span class="sp-title">
+      <i class="fa-solid fa-photo-film" aria-hidden="true"></i> Nội dung cá nhân
+    </span>
+    <button class="sp-close" type="button" (click)="close.emit()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="sp-body personal-media-body">
+    <p class="personal-media-intro">
+      Chiếu ảnh hoặc một đoạn video ngắn cho khán giả trong phòng này.
+    </p>
+    <label class="personal-media-file">
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+        (change)="fileSelected.emit($event)"
+      />
+      <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+      <span>{{ selectedFileName ?? 'Chọn ảnh hoặc video' }}</span>
+      <small>JPG, PNG, WEBP, MP4, WEBM · tối đa 20 MB</small>
+    </label>
+    <label class="personal-media-duration" for="personal-media-seconds">
+      <span>Thời lượng chiếu</span>
+      <strong>{{ durationControl.value }} giây</strong>
+    </label>
+    <input
+      id="personal-media-seconds"
+      class="personal-media-range"
+      type="range"
+      min="1"
+      max="10"
+      step="1"
+      [formControl]="durationControl"
+    />
+    <div class="personal-media-price">
+      <span>Phí chiếu</span>
+      <strong>{{ costLabel }}</strong>
+      <small>5.000đ / giây · trừ vào ví sử dụng được</small>
+    </div>
+    @if (authenticated) {
+      <p class="personal-media-balance">
+        Số dư hiện có: <strong>{{ balanceLabel }}</strong>
+      </p>
+      <button
+        type="button"
+        class="personal-media-submit"
+        (click)="uploadRequested.emit()"
+        [disabled]="uploading || !selectedFileName"
+      >
+        <i
+          class="fa-solid"
+          [class.fa-spinner]="uploading"
+          [class.fa-spin]="uploading"
+          [class.fa-play]="!uploading"
+          aria-hidden="true"
+        ></i>
+        {{ uploading ? 'Đang tải lên…' : 'Tải lên và chiếu' }}
+      </button>
+    } @else {
+      <button type="button" class="personal-media-submit" (click)="loginRequested.emit()">
+        Đăng nhập để tải lên
+      </button>
+    }
+    <p class="personal-media-note">
+      Ảnh hiển thị theo thời lượng đã chọn. Video sẽ tự dừng sau thời lượng đó; tối đa 10 giây mỗi
+      lượt.
+    </p>
+  </div>
+</div>

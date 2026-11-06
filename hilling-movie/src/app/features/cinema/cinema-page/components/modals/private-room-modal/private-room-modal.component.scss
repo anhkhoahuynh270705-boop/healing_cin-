@@ -1,0 +1,323 @@
+:host {
+  display: contents;
+}
+
+
+.vip-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(6, 4, 14, 0.84);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: authOverlayFade 0.25s ease-out;
+}
+
+.private-room-name-field {
+  display: grid;
+  gap: 7px;
+  color: #e9d5ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.private-room-name-field input {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid rgba(216, 180, 254, 0.25);
+  border-radius: 10px;
+  outline: none;
+  background: rgba(15, 10, 26, 0.72);
+  color: #fff;
+}
+
+.private-room-name-field input:focus {
+  border-color: #c084fc;
+  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.12);
+}
+
+.vip-payment-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.private-room-modal {
+  position: relative;
+  width: min(760px, calc(100vw - 28px));
+  max-height: min(90vh, 850px);
+  padding: 26px 24px 24px;
+  overflow-y: auto;
+}
+
+.private-room-modal > h2 {
+  margin: 8px 54px 18px 0;
+  line-height: 1.3;
+}
+
+.private-room-modal .vip-modal-close {
+  position: absolute;
+  top: 22px;
+  right: 20px;
+  z-index: 2;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #eee8f6;
+  margin-top: 0;
+  font:
+    400 25px/1 system-ui,
+    sans-serif;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease,
+    transform 150ms;
+}
+
+.vip-modal-close {
+  margin-top: -1rem;
+}
+
+.private-room-modal .vip-modal-close:hover {
+  transform: rotate(180deg);
+  border-color: rgba(196, 168, 255, 0.58);
+  background: rgba(183, 148, 246, 0.16);
+  color: #d4bfff;
+}
+
+.private-room-modal .vip-modal-close:focus-visible {
+  outline: 2px solid #b794f6;
+  outline-offset: 3px;
+}
+
+.private-room-modal > p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.private-room-modal > p strong {
+  color: #ffd27c;
+}
+
+.private-invite-entry {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(25, 20, 38, 0.76);
+}
+
+.private-invite-entry > label {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.private-invite-entry-controls {
+  display: flex;
+  gap: 7px;
+}
+
+.private-invite-entry-controls input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: rgba(14, 11, 23, 0.9);
+  font: inherit;
+  font-size: 12px;
+}
+
+.private-invite-entry-controls button {
+  padding: 8px 12px;
+  border: 1px solid #9b78d1;
+  border-radius: 7px;
+  color: #f3e9ff;
+  background: rgba(139, 92, 246, 0.2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.private-room-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.private-room-entry {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(25, 20, 38, 0.76);
+}
+
+.private-room-entry-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ink);
+}
+
+.private-room-entry-info code {
+  overflow-wrap: anywhere;
+  color: #e9d5ff;
+  font-size: 11px;
+}
+
+.private-room-entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.private-room-entry-actions button {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.private-room-entry-actions button:hover {
+  border-color: #c084fc;
+  color: #e9d5ff;
+}
+
+.private-room-entry-actions button:last-child {
+  margin-left: auto;
+  border-color: #9b78d1;
+}
+
+.private-room-list h3 {
+  margin: 0 0 4px;
+  color: #e9d5ff;
+}
+
+.private-room-list .vip-activate-test-btn {
+  background: linear-gradient(135deg, #8b5cf6, #c084fc);
+}
+
+.private-wallet-option {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(183, 148, 246, 0.26);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(58, 42, 83, 0.72), rgba(27, 22, 39, 0.88));
+}
+
+.private-wallet-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.private-wallet-copy strong {
+  color: #efe7ff;
+  font-size: 12px;
+}
+
+.private-wallet-copy strong i {
+  margin-right: 5px;
+  color: #d4bfff;
+}
+
+.private-wallet-copy span,
+.private-wallet-hint {
+  color: #b4a9c3;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.private-wallet-hint {
+  color: #b4a9c3;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.private-wallet-pay-btn {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid rgba(212, 191, 255, 0.4);
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(120deg, #7651bd, #9b70dc);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.private-wallet-pay-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.private-wallet-pay-btn:disabled {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #91889a;
+  background: rgba(255, 255, 255, 0.055);
+  cursor: not-allowed;
+}
+
+.payment-review-status {
+  margin: 8px 0 0;
+  color: #f6d79c;
+  font-size: 12px;
+  text-align: center;
+}
+
+.vip-activate-test-btn {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid rgba(216, 180, 254, 0.25);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  background: rgba(15, 10, 26, 0.72);
+
+  &:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+  }
+}

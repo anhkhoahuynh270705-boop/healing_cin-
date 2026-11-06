@@ -1,0 +1,61 @@
+<div class="notification-control">
+  <button
+    type="button"
+    class="tb-btn notification-bell"
+    title="Thông báo"
+    aria-label="Mở thông báo"
+    [attr.aria-expanded]="isOpen"
+    (click)="toggle($event)"
+  >
+    <i class="fa-solid fa-bell" aria-hidden="true"></i>
+    @if (unreadCount) {
+      <span class="notification-count">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+    }
+  </button>
+  @if (isOpen) {
+    <section
+      class="notification-popover"
+      aria-label="Danh sách thông báo"
+      [style.left.px]="popoverLeft"
+      [style.top.px]="popoverTop"
+    >
+      <header class="notification-popover-head">
+        <div><strong>Thông báo</strong><span>{{ notifications.length }} mục</span></div>
+        <button type="button" (click)="clearAll.emit()" [disabled]="!notifications.length">
+          Xóa tất cả
+        </button>
+      </header>
+      @if (notifications.length) {
+        <div class="notification-list">
+          @for (notification of notifications; track notification.id) {
+            <article
+              class="notification-item"
+              [class.unread]="!notification.read"
+              [class.notification-error]="notification.kind === 'error'"
+            >
+              <span class="notification-status-icon">
+                <i
+                  class="fa-solid"
+                  [class.fa-circle-check]="notification.kind === 'success'"
+                  [class.fa-circle-exclamation]="notification.kind === 'error'"
+                  [class.fa-circle-info]="notification.kind === 'info'"
+                  aria-hidden="true"
+                ></i>
+              </span>
+              <div class="notification-copy">
+                <strong>{{ notification.title }}</strong>
+                <p>{{ notification.message }}</p>
+                <time>{{ formatTime(notification.createdAt) }}</time>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="notification-empty">
+          <i class="fa-regular fa-bell-slash" aria-hidden="true"></i>
+          <span>Chưa có thông báo</span>
+        </div>
+      }
+    </section>
+  }
+</div>

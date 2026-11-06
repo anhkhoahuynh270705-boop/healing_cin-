@@ -1,0 +1,113 @@
+<div class="vip-modal-overlay private-room-overlay" (click)="closed.emit()">
+  <section
+    class="vip-modal private-room-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="private-room-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="vip-modal-close" (click)="closed.emit()" aria-label="Đóng">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+    <h2 id="private-room-title"><i class="fa-solid fa-film" aria-hidden="true"></i> Phòng chiếu riêng</h2>
+    <div class="private-invite-entry">
+      <label for="private-room-invite-code">Được mời? Dán mã phòng để tham gia</label>
+      <div class="private-invite-entry-controls">
+        <input
+          id="private-room-invite-code"
+          type="text"
+          [formControl]="inviteControl"
+          placeholder="private-xxxxxxxx"
+          autocomplete="off"
+          (keydown.enter)="enterByInvite()"
+        />
+        <button type="button" (click)="enterByInvite()">Vào phòng</button>
+      </div>
+    </div>
+    <div class="vip-payment-section" [formGroup]="roomForm">
+      <label class="private-room-name-field">
+        Tên phòng
+        <input type="text" formControlName="name" maxlength="40" placeholder="Ví dụ: Góc phim cuối tuần" />
+      </label>
+      <div class="private-wallet-option">
+        <div class="private-wallet-copy">
+          <strong><i class="fa-solid fa-wallet" aria-hidden="true"></i> Thanh toán bằng ví tiền</strong>
+          <span>Số dư {{ walletBalance.toLocaleString('vi-VN') }}đ · Giá phòng 10.000đ</span>
+        </div>
+        @if (isAuthenticated) {
+          <button
+            type="button"
+            class="private-wallet-pay-btn"
+            (click)="payFromWallet()"
+            [disabled]="submitting || pending || walletBalance < 10000 || !roomForm.controls.name.value.trim()"
+          >
+            <i
+              class="fa-solid"
+              [class.fa-spinner]="submitting"
+              [class.fa-spin]="submitting"
+              [class.fa-circle-check]="!submitting"
+              aria-hidden="true"
+            ></i>
+            {{ submitting ? 'Đang thanh toán…' : pending ? 'Đang chờ yêu cầu chuyển khoản' : walletBalance < 10000 ? 'Ví chưa đủ số dư' : 'Dùng 10.000đ từ ví' }}
+          </button>
+        } @else {
+          <button type="button" class="private-wallet-pay-btn" (click)="loginRequested.emit()">
+            Đăng nhập để dùng ví
+          </button>
+        }
+        @if (isAuthenticated && walletBalance < 10000) {
+          <small class="private-wallet-hint">
+            Bạn còn thiếu {{ (10000 - walletBalance).toLocaleString('vi-VN') }}đ. Có thể chuyển khoản bằng QR bên dưới.
+          </small>
+        }
+      </div>
+      <div class="vip-qr-box">
+        <div class="vip-qr-img-wrap">
+          <img [src]="qrUrl" alt="Mã QR thanh toán phòng riêng 10.000 đồng" class="vip-qr-img" />
+        </div>
+        <div class="vip-qr-info">
+          <div class="vqi-row"><span>Ngân hàng:</span><b class="vqi-bank">Techcombank (TCB)</b></div>
+          <div class="vqi-row"><span>Số tài khoản:</span><b class="vqi-acc">1221868856</b></div>
+          <div class="vqi-row">
+            <span>Nội dung CK:</span><code class="vqi-memo">Healing PHONG RIENG {{ user?.username || 'KHACH' }}</code>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="vip-activate-test-btn"
+        (click)="requestBankTransfer()"
+        [disabled]="pending || submitting || !roomForm.controls.name.value.trim()"
+      >
+        <i
+          class="fa-solid"
+          [class.fa-hourglass-half]="pending || submitting"
+          [class.fa-money-bill-transfer]="!pending && !submitting"
+          aria-hidden="true"
+        ></i>
+        {{ submitting ? 'Đang gửi yêu cầu…' : pending ? 'Đang chờ duyệt' : 'Tôi đã chuyển khoản 10.000đ' }}
+      </button>
+      @if (pending) {
+        <p class="payment-review-status">Yêu cầu đang chờ xác nhận giao dịch.</p>
+      }
+      @if (rooms.length) {
+        <div class="private-room-list">
+          <h3>Phòng riêng đã được duyệt</h3>
+          @for (room of rooms; track room.code) {
+            <div class="private-room-entry">
+              <div class="private-room-entry-info"><strong>{{ room.name }}</strong><code>{{ room.code }}</code></div>
+              <div class="private-room-entry-actions">
+                <button type="button" (click)="copyCode(room.code)">Copy mã</button>
+                <button type="button" (click)="copyLink(room.code)">Copy link mời</button>
+                <button type="button" (click)="enterRoom.emit(room.code)">Vào phòng</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+      @if (user && !pending) {
+        <p class="payment-review-status" (click)="refreshStatus.emit()">Bấm để kiểm tra trạng thái thanh toán.</p>
+      }
+    </div>
+  </section>
+</div>

@@ -88,6 +88,45 @@ public class PaymentApprovalService {
     }
 
     @Transactional
+    public PaymentRequest createPrivateRoomFromWallet(String userId, String username, String roomName) {
+        String safeRoomName = roomName == null ? "" : roomName.strip();
+        if (userId == null || userId.isBlank() || userId.startsWith("guest-")
+                || safeRoomName.isBlank() || safeRoomName.length() > 40) {
+            throw new IllegalArgumentException("Đăng nhập và nhập tên phòng tối đa 40 ký tự để tiếp tục.");
+        }
+        if (requests.existsByUserIdAndTypeAndStatus(userId, PRIVATE_ROOM, PENDING)) {
+            throw new IllegalArgumentException("Bạn đang có yêu cầu tạo phòng chờ admin duyệt.");
+        }
+
+        UserEntity user = users.findByIdForUpdate(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản."));
+        final int price = 10_000;
+        if (user.getDonationUsableBalance() < price) {
+            throw new IllegalArgumentException("Số dư ví ủng hộ không đủ. Phòng riêng cần 10.000đ.");
+        }
+
+        long existingPrivateRooms = requests.countByStatusAndType(APPROVED, PRIVATE_ROOM);
+        PaymentRequestEntity request = PaymentRequestEntity.builder()
+                .id(UUID.randomUUID().toString())
+                .userId(userId)
+                .username(clean(username, 24))
+                .tier(0)
+                .amount(price)
+                .memo("THANH TOAN VI UNG HO PHONG RIENG")
+                .status(APPROVED)
+                .createdAt(System.currentTimeMillis())
+                .type(PRIVATE_ROOM)
+                .roomCode("private-" + UUID.randomUUID().toString().substring(0, 8))
+                .roomName(safeRoomName)
+                .roomLofiIndex((int) ((1 + existingPrivateRooms) % LOFI_TRACK_COUNT))
+                .build();
+
+        user.setDonationUsableBalance(user.getDonationUsableBalance() - price);
+        users.save(user);
+        return PaymentRequestMapper.toDto(requests.save(request));
+    }
+
+    @Transactional
     public synchronized PaymentRequest submitDonation(String userId, int amount) {
         boolean validAmount = amount == 10_000 || amount == 20_000 || amount == 50_000
                 || amount == 100_000 || amount == 200_000 || amount == 500_000 || amount == 1_000_000;

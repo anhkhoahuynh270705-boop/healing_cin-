@@ -52,6 +52,20 @@ export class PaymentApiService {
     });
   }
 
+  createPrivateRoomFromWallet(
+    userId: string,
+    username: string,
+    authToken: string,
+    roomName: string,
+  ): Promise<Response> {
+    return fetch(`${this.baseUrl}/api/payments/private-room/wallet`, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, username, authToken, roomName }),
+    });
+  }
+
   getStatus(userId: string, token: string): Promise<Response> {
     return fetch(`${this.baseUrl}/api/payments/status?userId=${encodeURIComponent(userId)}`, {
       cache: 'no-store',
