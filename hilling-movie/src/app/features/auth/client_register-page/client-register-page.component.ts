@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { merge } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthApiService } from '../data-access/auth-api.service';
 import { AuthResponse } from '../models/user-profile.model';
 
@@ -28,8 +30,17 @@ export class ClientRegisterPageComponent {
   });
   busy = false;
   error = '';
+  showPassword = false;
+  showConfirmPassword = false;
 
   private readonly authApi = inject(AuthApiService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    merge(this.form.valueChanges, this.form.statusChanges)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.cdr.markForCheck());
+  }
 
   async submit(): Promise<void> {
     if (this.busy) return;
@@ -63,6 +74,7 @@ export class ClientRegisterPageComponent {
         error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ xác thực.';
     } finally {
       this.busy = false;
+      this.cdr.markForCheck();
     }
   }
 }

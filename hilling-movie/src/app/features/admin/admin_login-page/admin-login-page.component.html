@@ -9,12 +9,54 @@
     /></label>
     <label
       ><span>Mật khẩu</span
-      ><input formControlName="password" type="password" autocomplete="current-password" required
-    /></label>
+      ><div class="admin-password-field">
+        <input
+          formControlName="password"
+          [type]="showPassword ? 'text' : 'password'"
+          autocomplete="current-password"
+          required
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          [attr.aria-pressed]="showPassword"
+          (click)="showPassword = !showPassword"
+        >
+          <i
+            class="fa-solid"
+            [class.fa-eye]="!showPassword"
+            [class.fa-eye-slash]="showPassword"
+            aria-hidden="true"
+          ></i>
+        </button>
+      </div></label
+    >
     <label
       ><span>Admin key</span
-      ><input formControlName="key" type="password" autocomplete="off" required
-    /></label>
+      ><div class="admin-password-field">
+        <input
+          formControlName="key"
+          [type]="showAdminKey ? 'text' : 'password'"
+          autocomplete="off"
+          required
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          [attr.aria-label]="showAdminKey ? 'Ẩn admin key' : 'Hiện admin key'"
+          [attr.aria-pressed]="showAdminKey"
+          (click)="showAdminKey = !showAdminKey"
+        >
+          <i
+            class="fa-solid"
+            [class.fa-eye]="!showAdminKey"
+            [class.fa-eye-slash]="showAdminKey"
+            aria-hidden="true"
+          ></i>
+        </button>
+      </div></label
+    >
     <button type="submit" [disabled]="busy">
       {{ busy ? 'Đang xác thực…' : 'Vào bảng quản lý' }}
       <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>

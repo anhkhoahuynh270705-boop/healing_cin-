@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { merge } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PaymentApiService } from '../../payment/data-access/payment-api.service';
 
 @Component({
@@ -28,8 +30,18 @@ export class AdminRegisterPageComponent {
   });
   busy = false;
   error = '';
+  showPassword = false;
+  showConfirmPassword = false;
+  showAdminKey = false;
 
   private readonly paymentApi = inject(PaymentApiService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    merge(this.form.valueChanges, this.form.statusChanges)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.cdr.markForCheck());
+  }
 
   async submit(): Promise<void> {
     if (this.busy) return;
@@ -55,6 +67,7 @@ export class AdminRegisterPageComponent {
       this.error = error instanceof Error ? error.message : 'Không đăng ký được tài khoản admin.';
     } finally {
       this.busy = false;
+      this.cdr.markForCheck();
     }
   }
 }

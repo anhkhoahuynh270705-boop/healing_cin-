@@ -23,12 +23,21 @@
     <div class="input-with-icon">
       <span class="input-prefix"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
       <input
-        type="password"
+        [type]="showPassword ? 'text' : 'password'"
         formControlName="password"
         placeholder="Nhập mật khẩu…"
         autocomplete="current-password"
         required
       />
+      <button
+        type="button"
+        class="password-toggle"
+        [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+        [attr.aria-pressed]="showPassword"
+        (click)="showPassword = !showPassword"
+      >
+        <i class="fa-solid" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword" aria-hidden="true"></i>
+      </button>
     </div>
   </div>
   <button type="submit" class="auth-btn-primary" [disabled]="busy">

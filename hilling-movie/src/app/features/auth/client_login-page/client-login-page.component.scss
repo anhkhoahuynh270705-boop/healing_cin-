@@ -38,6 +38,8 @@
   font-size: 12px;
 }
 .input-with-icon input {
+  flex: 1;
+  min-width: 0;
   width: 100%;
   border: 0;
   outline: 0;
@@ -45,6 +47,24 @@
   background: transparent;
   font: inherit;
   font-size: 11px;
+}
+.password-toggle {
+  display: grid;
+  width: 28px;
+  height: 30px;
+  flex: 0 0 28px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: #a99ab9;
+  background: transparent;
+}
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: #e0c8ff;
+  background: rgba(183, 148, 246, 0.12);
+  outline: none;
 }
 .auth-btn-primary,
 .auth-btn-secondary {

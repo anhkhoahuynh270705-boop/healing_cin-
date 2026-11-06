@@ -10,6 +10,7 @@ export class AdminUserApiService {
   list(token: string, query: string, page: number, size = 20): Promise<Response> {
     const params = new URLSearchParams({ query, page: String(page), size: String(size) });
     return fetch(`${this.baseUrl}/api/admin/users?${params}`, {
+      cache: 'no-store',
       headers: { 'X-Admin-Token': token },
     });
   }

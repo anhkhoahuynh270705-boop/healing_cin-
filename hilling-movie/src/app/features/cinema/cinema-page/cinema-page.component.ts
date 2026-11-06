@@ -80,7 +80,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── Core state ──
   state: RoomState | null = null;
   sessionId: string | null = null;
-  guestName = 'Khoa';
+  guestName = 'Guess';
   clientId = '';
   activeRoomId = 'rap-chua-lanh';
   mySeat: number | null = null;
@@ -235,6 +235,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly titleRefreshInFlight = new Set<string>();
   playerReady = false;
   videoScreenReady = false;
+  autoplayBlocked = false;
+  videoPlaybackError: number | null = null;
   outdoorCinemaMode = false;
 
   private toastTimer?: ReturnType<typeof setTimeout>;
@@ -738,6 +740,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const videoId = playback?.videoId || 'Llw9Q6akRo4';
+    const mobilePlayback = this.isMobilePlayback;
 
     if (!window.YT?.Player) {
       this.createFallbackPlayer();
@@ -758,8 +761,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         playerVars: {
           autoplay: 1,
           mute: 1, // BẮT BUỘC cho Autoplay Policy của trình duyệt để video phát tức thì không bị màn hình đen
-          controls: 0,
-          disablekb: 1,
+          controls: mobilePlayback ? 1 : 0,
+          disablekb: mobilePlayback ? 0 : 1,
           fs: 0,
           modestbranding: 1,
           playsinline: 1,
@@ -813,6 +816,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
               this.cdr.markForCheck();
             }
             if (window.YT && event.data === window.YT.PlayerState.PLAYING) {
+              this.autoplayBlocked = false;
+              this.videoPlaybackError = null;
               try {
                 if (this.audioUnlocked && !this.isMuted && this.volumeLevel > 0) {
                   this.player?.unMute();
@@ -829,16 +834,15 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
               this.roomSocket.sendPlayback('ended');
             }
           },
+          onAutoplayBlocked: () => {
+            this.autoplayBlocked = true;
+            this.cdr.markForCheck();
+          },
           onError: (err: any) => {
             console.warn('YouTube Player error:', err);
             this.videoScreenReady = false;
+            this.videoPlaybackError = Number.isFinite(err?.data) ? err.data : -1;
             this.cdr.markForCheck();
-            this.roomSocket.sendPlayback('ended');
-            try {
-              if (this.player && typeof this.player.loadVideoById === 'function') {
-                this.player.loadVideoById({ videoId: 'FN7ALfpGxiI', startSeconds: 0 });
-              }
-            } catch {}
           },
         },
       });
@@ -854,6 +858,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     const videoId = playback?.videoId || 'Llw9Q6akRo4';
     const iframe = document.createElement('iframe');
     iframe.dataset['videoId'] = videoId;
+    iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     iframe.src = this.fallbackPlayerUrl(videoId, playback?.position ?? 0);
     iframe.title = 'YouTube video player';
     iframe.allow =
@@ -925,6 +930,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (force || this.lastLoadedVideoId !== playback.videoId) {
       this.lastLoadedVideoId = playback.videoId;
       this.videoScreenReady = false;
+      this.videoPlaybackError = null;
       this.cdr.markForCheck();
       this.player.loadVideoById({ videoId: playback.videoId, startSeconds: target });
       setTimeout(() => {
@@ -1070,13 +1076,23 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     const params = new URLSearchParams({
       autoplay: '1',
       mute: '1',
-      controls: '0',
+      controls: this.isMobilePlayback ? '1' : '0',
       playsinline: '1',
       enablejsapi: '1',
       start: String(Math.max(0, Math.floor(position))),
       origin: window.location.origin,
     });
     return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+  }
+
+  private get isMobilePlayback(): boolean {
+    return typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
+  }
+
+  openCurrentVideoOnYouTube(): void {
+    const videoId = this.state?.playback?.videoId;
+    if (!videoId || typeof window === 'undefined') return;
+    window.open(`https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`, '_blank', 'noopener');
   }
 
   //   PANEL MANAGEMENT
@@ -1861,7 +1877,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.walletBalance = 0;
     this.experiencePoints = 0;
     const guestId = Math.floor(10 + Math.random() * 90);
-    const name = 'Khoa';
+    const name = 'Guest';
     const token = 'guest-' + crypto.randomUUID();
     const guestUser: UserProfile = {
       id: 'guest-' + crypto.randomUUID(),
@@ -2205,6 +2221,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   unmuteAudio(): void {
     this.audioUnlocked = true;
+    this.autoplayBlocked = false;
     this.autoMuted = false;
     this.isMuted = false;
     if (this.volumeLevel === 0) {
@@ -2212,6 +2229,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.player && this.playerReady) {
       try {
+        this.player.playVideo();
         this.player.unMute();
         this.player.setVolume(this.volumeLevel);
       } catch {}

@@ -69,6 +69,33 @@ h2 {
 .admin-login-form input:focus {
   border-color: #b58d5b;
 }
+.admin-password-field {
+  position: relative;
+}
+.admin-login-form .admin-password-field input {
+  padding-right: 48px;
+}
+.admin-login-form .password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  display: grid;
+  width: 36px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  color: #aaa7b0;
+  background: transparent;
+}
+.admin-login-form .password-toggle:hover,
+.admin-login-form .password-toggle:focus-visible {
+  color: #f3d19c;
+  background: rgba(216, 178, 126, 0.12);
+  outline: none;
+}
 .admin-login-form button {
   min-height: 42px;
   margin-top: 3px;

@@ -299,12 +299,19 @@
       ></app-gym-room>
 
       <!-- Nút nổi bật để bật âm thanh khi trình duyệt autoplay ở chế độ tắt tiếng -->
-      @if (isMuted && currentRoom === 'cinema') {
+      @if (videoPlaybackError !== null && currentRoom === 'cinema') {
+        <button class="unmute-banner" (click)="openCurrentVideoOnYouTube()">
+          <span class="unmute-icon"
+            ><i class="fa-solid fa-circle-play" aria-hidden="true"></i
+          ></span>
+          <span>Video lỗi ({{ videoPlaybackError }}). Mở trên YouTube</span>
+        </button>
+      } @else if ((isMuted || autoplayBlocked) && currentRoom === 'cinema') {
         <button class="unmute-banner" (click)="unmuteAudio()">
           <span class="unmute-icon"
             ><i class="fa-solid fa-volume-high" aria-hidden="true"></i
           ></span>
-          <span>Bấm vào đây để bật âm thanh rạp</span>
+          <span>{{ autoplayBlocked ? 'Chạm để phát video' : 'Chạm để bật âm thanh rạp' }}</span>
         </button>
       }
     </div>

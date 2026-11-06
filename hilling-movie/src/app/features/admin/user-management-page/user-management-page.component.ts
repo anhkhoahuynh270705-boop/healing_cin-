@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
   AdminUserPage,
@@ -30,6 +30,7 @@ export class UserManagementPageComponent implements OnInit {
   private adminToken = '';
 
   private readonly usersApi = inject(AdminUserApiService);
+  private readonly cdr = inject(ChangeDetectorRef);
   ngOnInit(): void {
     try {
       this.adminToken = localStorage.getItem('cinema_admin_token') ?? '';
@@ -79,6 +80,7 @@ export class UserManagementPageComponent implements OnInit {
       this.error = error instanceof Error ? error.message : 'Không tải được danh sách user.';
     } finally {
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 

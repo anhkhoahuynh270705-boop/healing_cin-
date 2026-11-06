@@ -121,7 +121,9 @@ public class PaymentController {
         Page<UserEntity> results = users.searchForAdmin(
                 query == null ? "" : query.strip(),
                 PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt")));
-        return ResponseEntity.ok(AdminUserMapper.toPage(results));
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(AdminUserMapper.toPage(results));
     }
 
     @GetMapping("/api/admin/payments")
