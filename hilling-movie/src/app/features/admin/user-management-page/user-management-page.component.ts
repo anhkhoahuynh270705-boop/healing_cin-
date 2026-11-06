@@ -90,4 +90,8 @@ export class UserManagementPageComponent implements OnInit {
       timeStyle: 'short',
     }).format(timestamp);
   }
+
+  formatMoney(amount: number): string {
+    return new Intl.NumberFormat('vi-VN').format(amount || 0) + 'đ';
+  }
 }

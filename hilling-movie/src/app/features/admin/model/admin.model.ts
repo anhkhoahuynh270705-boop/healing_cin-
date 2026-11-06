@@ -4,6 +4,7 @@ export interface AdminUserView {
   displayName: string;
   avatar: string;
   vipTier: number;
+  donationTotalConfirmed: number;
   createdAt: number;
 }
 

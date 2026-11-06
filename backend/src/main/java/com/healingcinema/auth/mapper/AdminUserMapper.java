@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import com.healingcinema.auth.dto.AdminUserDtos.UserPage;
 import com.healingcinema.auth.dto.AdminUserDtos.UserView;
 import com.healingcinema.auth.entity.UserEntity;
+import com.healingcinema.auth.service.VipLevelPolicy;
 
 /** Mapper cho dữ liệu tài khoản trong màn quản trị. */
 public final class AdminUserMapper {
@@ -12,7 +13,8 @@ public final class AdminUserMapper {
 
     public static UserView toView(UserEntity user) {
         return new UserView(user.getId(), user.getUsername(), user.getDisplayName(), user.getAvatar(),
-                user.getVipTier(), user.getCreatedAt());
+                Math.max(user.getVipTier(), VipLevelPolicy.forConfirmedAmount(user.getDonationTotalConfirmed())),
+                user.getDonationTotalConfirmed(), user.getCreatedAt());
     }
 
     public static UserPage toPage(Page<UserEntity> page) {

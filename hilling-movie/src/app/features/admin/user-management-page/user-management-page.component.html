@@ -3,7 +3,7 @@
     <div>
       <p class="admin-eyebrow">TÀI KHOẢN & THÀNH VIÊN</p>
       <h1>Quản lý người dùng</h1>
-      <p>Theo dõi tài khoản, ngày đăng ký và quyền lợi khung chat VIP.</p>
+      <p>Theo dõi tổng tiền nạp đã duyệt, cấp VIP và ngày tham gia.</p>
     </div>
     <button type="button" class="user-refresh-button" (click)="load()" [disabled]="loading">
       <i class="fa-solid fa-rotate" [class.spinning]="loading" aria-hidden="true"></i>
@@ -64,6 +64,7 @@
             <tr>
               <th>TÀI KHOẢN</th>
               <th>TÊN HIỂN THỊ</th>
+              <th>TỔNG NẠP ĐÃ DUYỆT</th>
               <th>QUYỀN LỢI</th>
               <th>NGÀY THAM GIA</th>
             </tr>
@@ -81,6 +82,7 @@
                   </div>
                 </td>
                 <td>{{ user.displayName || '—' }}</td>
+                <td>{{ formatMoney(user.donationTotalConfirmed) }}</td>
                 <td>
                   @if (user.vipTier > 0) {
                     <span class="user-tier-badge"
@@ -88,7 +90,7 @@
                       {{ user.vipTier }}</span
                     >
                   } @else {
-                    <span class="user-free-badge">Cơ bản</span>
+                    <span class="user-free-badge">VIP 0 · Cơ bản</span>
                   }
                 </td>
                 <td>{{ formatDate(user.createdAt) }}</td>
