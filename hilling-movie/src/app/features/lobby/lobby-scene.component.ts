@@ -128,7 +128,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     this.scene = new THREE.Scene();
     this.scene.background = null;
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
-    this.camera.position.set(0, 9.2, 21.5);
+    this.camera.position.set(0, 7.5, 21.5);
     this.camera.lookAt(0, 2.0, -3.1);
     const foyer = new THREE.Group();
     this.buildFoyer(foyer);
@@ -204,13 +204,15 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     scene.add(this.box(0.45, 8, 17, 0xd0c0aa, -11, 4, 0, wallMaterial));
     scene.add(this.box(0.45, 8, 17, 0xd0c0aa, 11, 4, 0, wallMaterial));
     this.addWallFinish(scene);
-    for (const x of [-9.7, -2.45, 2.45, 9.7]) this.addColumn(scene, x, -6.55, 6.65, 0.28);
+    this.addCeiling(scene);
+    for (const x of [-9.7, -2.45, 2.45, 9.7]) this.addColumn(scene, x, -6.55, 8.1, 0.28);
     for (const x of [-9.7, 9.7]) {
-      for (const z of [-4.1, -0.1, 3.9]) this.addColumn(scene, x, z, 6.55, 0.3);
+      for (const z of [-4.1, -0.1, 3.9]) this.addColumn(scene, x, z, 8.1, 0.3);
     }
 
     this.addDoor(scene, 'outdoor', -4.75, 0x81c5d4);
     this.addDoor(scene, 'indoor', 4.75, 0xdfb36e);
+    this.addLobbyTelevision(scene);
     this.addBench(scene, -8.25);
     this.addBench(scene, 8.25);
     this.addPlant(scene, -8.7, -2.2);
@@ -221,10 +223,10 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
 
     const chandelier = new THREE.Group();
     const chain = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.035, 1.15, 8),
+      new THREE.CylinderGeometry(0.035, 0.035, 2.2, 8),
       new THREE.MeshStandardMaterial({ color: 0xa88454, metalness: 0.72, roughness: 0.3 }),
     );
-    chain.position.y = 6.3;
+    chain.position.y = 6.95;
     chandelier.add(chain);
     const fixture = new THREE.Mesh(
       new THREE.TorusGeometry(0.75, 0.075, 10, 36),
@@ -242,6 +244,87 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       chandelier.add(bulb);
     }
     scene.add(chandelier);
+  }
+
+  private addCeiling(scene: THREE.Group): void {
+    const ceiling = this.box(
+      22,
+      0.3,
+      17,
+      0x362d2b,
+      0,
+      8.32,
+      0,
+      new THREE.MeshStandardMaterial({ color: 0x362d2b, roughness: 0.86 }),
+    );
+    ceiling.receiveShadow = true;
+    scene.add(ceiling);
+
+    const beamMaterial = new THREE.MeshStandardMaterial({
+      color: 0x70573f,
+      metalness: 0.16,
+      roughness: 0.52,
+    });
+    const brassMaterial = new THREE.MeshStandardMaterial({
+      color: 0xb18b59,
+      metalness: 0.58,
+      roughness: 0.34,
+    });
+    for (const x of [-10.65, -6, -2, 2, 6, 10.65]) {
+      scene.add(this.box(0.18, 0.22, 16.8, 0x70573f, x, 8.02, 0, beamMaterial));
+      scene.add(this.box(0.035, 0.035, 16.5, 0xb18b59, x + 0.12, 7.89, 0, brassMaterial));
+    }
+    for (const z of [-8.15, -5, -2, 1, 4, 7.95]) {
+      scene.add(this.box(21.7, 0.22, 0.18, 0x70573f, 0, 8.02, z, beamMaterial));
+      scene.add(this.box(21.4, 0.035, 0.035, 0xb18b59, 0, 7.89, z + 0.12, brassMaterial));
+    }
+
+    const insetMaterial = new THREE.MeshStandardMaterial({
+      color: 0x51433c,
+      emissive: 0x24170d,
+      emissiveIntensity: 0.3,
+      roughness: 0.7,
+    });
+    for (const x of [-8, -4, 0, 4, 8]) {
+      for (const z of [-6.5, -3.25, 0, 3.25, 6.5]) {
+        scene.add(this.box(3.48, 0.045, 2.55, 0x51433c, x, 8.105, z, insetMaterial));
+      }
+    }
+
+    for (const x of [-6, 6]) {
+      for (const z of [-4, 4]) {
+        const poolLight = new THREE.PointLight(0xffd9a6, 13, 8, 2);
+        poolLight.position.set(x, 7.68, z);
+        scene.add(poolLight);
+      }
+    }
+  }
+
+  private addLobbyTelevision(scene: THREE.Group): void {
+    const centerY = 3.82;
+    const housing = new THREE.MeshStandardMaterial({ color: 0x211a19, roughness: 0.42, metalness: 0.22 });
+    const bezel = new THREE.MeshStandardMaterial({ color: 0x9d784e, roughness: 0.34, metalness: 0.64 });
+    scene.add(this.box(3.78, 2.48, 0.34, 0x211a19, 0, centerY, -6.76, housing));
+    scene.add(this.box(3.61, 2.31, 0.1, 0x3c3029, 0, centerY, -6.535, bezel));
+    scene.add(this.box(3.46, 2.16, 0.045, 0x11151a, 0, centerY, -6.465));
+
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.4, 1.91),
+      new THREE.MeshBasicMaterial({ map: this.makeLobbyTelevisionTexture(), toneMapped: false }),
+    );
+    screen.position.set(0, centerY, -6.435);
+    scene.add(screen);
+
+    const led = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 10, 8),
+      new THREE.MeshBasicMaterial({ color: 0xe5ba78 }),
+    );
+    led.position.set(1.78, centerY - 1.2, -6.42);
+    scene.add(led);
+
+    const tvGlow = new THREE.PointLight(0xe6b77c, 8, 5, 2);
+    tvGlow.position.set(0, centerY, -5.82);
+    scene.add(tvGlow);
   }
 
   private addWallFinish(scene: THREE.Group): void {
@@ -376,7 +459,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   }
 
   private addWallSconces(scene: THREE.Group): void {
-    for (const x of [-8.45, -1.55, 1.55, 8.45]) {
+    for (const x of [-8.45, -2.8, 2.8, 8.45]) {
       const plate = this.box(0.44, 0.62, 0.12, 0x624b3d, x, 3.55, -6.83);
       scene.add(plate);
       const backplate = this.box(0.32, 0.5, 0.05, 0xc4a273, x, 3.55, -6.74);
@@ -919,6 +1002,85 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     context.fillText(title, 160, 404);
     context.font = '14px sans-serif';
     context.fillText('A PLACE FOR YOUR NEXT STORY', 160, 438);
+    return this.canvasTexture(canvas);
+  }
+
+  private makeLobbyTelevisionTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 576;
+    const context = canvas.getContext('2d')!;
+
+    const sky = context.createLinearGradient(0, 0, 0, 576);
+    sky.addColorStop(0, '#18243a');
+    sky.addColorStop(0.52, '#75677a');
+    sky.addColorStop(0.75, '#e6ae79');
+    sky.addColorStop(1, '#273d42');
+    context.fillStyle = sky;
+    context.fillRect(0, 0, 1024, 576);
+
+    const glow = context.createRadialGradient(700, 250, 8, 700, 250, 250);
+    glow.addColorStop(0, 'rgba(255,226,181,0.9)');
+    glow.addColorStop(0.16, 'rgba(255,202,151,0.34)');
+    glow.addColorStop(1, 'rgba(255,196,147,0)');
+    context.fillStyle = glow;
+    context.fillRect(430, 0, 594, 520);
+
+    for (let index = 0; index < 54; index++) {
+      const x = (index * 193) % 1024;
+      const y = (index * 71) % 245;
+      context.fillStyle = `rgba(255,239,216,${0.24 + (index % 5) * 0.1})`;
+      context.beginPath();
+      context.arc(x, y, index % 7 === 0 ? 2.2 : 1.1, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    const drawRidge = (baseY: number, color: string, amplitude: number, phase: number) => {
+      context.beginPath();
+      context.moveTo(0, 390);
+      for (let x = 0; x <= 1024; x += 16) {
+        const y = baseY + Math.sin(x * 0.009 + phase) * amplitude + Math.sin(x * 0.021 + phase) * amplitude * 0.3;
+        context.lineTo(x, y);
+      }
+      context.lineTo(1024, 576);
+      context.lineTo(0, 576);
+      context.closePath();
+      context.fillStyle = color;
+      context.fill();
+    };
+    drawRidge(354, '#4c5358', 34, 0.8);
+    drawRidge(405, '#293d40', 38, 2.1);
+    drawRidge(458, '#172b30', 24, 4.2);
+
+    const water = context.createLinearGradient(0, 412, 0, 576);
+    water.addColorStop(0, 'rgba(229,171,126,0.66)');
+    water.addColorStop(0.24, 'rgba(110,112,116,0.76)');
+    water.addColorStop(1, 'rgba(17,35,40,0.98)');
+    context.fillStyle = water;
+    context.fillRect(0, 424, 1024, 152);
+    for (let line = 0; line < 34; line++) {
+      const y = 438 + line * 4;
+      const width = 18 + ((line * 47) % 168);
+      const x = (line * 83) % 1024;
+      context.fillStyle = `rgba(255,218,176,${0.05 + (line % 4) * 0.025})`;
+      context.fillRect(x, y, width, 1 + (line % 2));
+    }
+
+    const titleShade = context.createLinearGradient(0, 320, 0, 576);
+    titleShade.addColorStop(0, 'rgba(9,15,23,0)');
+    titleShade.addColorStop(1, 'rgba(8,13,19,0.78)');
+    context.fillStyle = titleShade;
+    context.fillRect(0, 310, 1024, 266);
+    context.textAlign = 'center';
+    context.fillStyle = '#fff1d9';
+    context.shadowColor = 'rgba(16, 12, 16, 0.5)';
+    context.shadowBlur = 14;
+    context.font = '600 46px Georgia, serif';
+    context.fillText('HEALING CINÉ', 512, 498);
+    context.shadowBlur = 0;
+    context.fillStyle = 'rgba(255,236,211,0.86)';
+    context.font = '500 15px sans-serif';
+    context.fillText('KHÔNG GIAN XEM PHIM RIÊNG TƯ', 512, 528);
     return this.canvasTexture(canvas);
   }
 
