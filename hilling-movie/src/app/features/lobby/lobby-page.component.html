@@ -38,10 +38,13 @@
       [accessoryIndex]="accessoryIndex()"
       [hairColorIndex]="hairColorIndex()"
       [selectedDoor]="selectedDoor()"
-      (doorReached)="enterCinema.emit($event)"
+      (doorProximityChanged)="onDoorProximityChanged($event)"
     />
     <div class="lobby-stage-hint" role="status" aria-live="polite">
-      @if (selectedDoor()) {
+      @if (nearbyDoor) {
+        <i class="fa-solid fa-door-open" aria-hidden="true"></i>
+        <span>Đã tới cửa {{ nearbyDoor === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · nhấn E để vào</span>
+      } @else if (selectedDoor()) {
         <i class="fa-solid fa-location-arrow" aria-hidden="true"></i>
         <span>Đang hướng tới {{ selectedDoor() === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · dùng W A S D hoặc phím mũi tên</span>
       } @else {
@@ -49,6 +52,13 @@
         <span>Nhân vật đang ở sảnh · chọn cửa bên dưới để bắt đầu</span>
       }
     </div>
+    @if (nearbyDoor) {
+      <button type="button" class="lobby-enter-prompt" (click)="enterSelectedDoor()">
+        <kbd>E</kbd>
+        <span>Vào {{ nearbyDoor === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }}</span>
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </button>
+    }
     <div class="lobby-movement-pad" role="group" aria-label="Điều khiển nhân vật trong sảnh">
       <button
         type="button"

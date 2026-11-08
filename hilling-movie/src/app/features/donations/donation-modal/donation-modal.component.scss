@@ -35,6 +35,14 @@
   animation: donation-dialog-enter 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+.donation-backdrop.donation-backdrop-leave {
+  animation: donation-backdrop-exit 170ms ease-in both;
+}
+
+.donation-dialog.donation-dialog-leave {
+  animation: donation-dialog-exit 160ms ease-in both;
+}
+
 @keyframes donation-backdrop-enter {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -43,6 +51,14 @@
 @keyframes donation-dialog-enter {
   from { opacity: 0; transform: translateY(10px) scale(0.99); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes donation-backdrop-exit {
+  to { opacity: 0; backdrop-filter: blur(0); }
+}
+
+@keyframes donation-dialog-exit {
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
 }
 
 .donation-content {

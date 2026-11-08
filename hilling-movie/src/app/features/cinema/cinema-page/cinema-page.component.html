@@ -1,5 +1,7 @@
 @if (currentRoom === 'lobby') {
   <app-lobby-page
+    animate.enter="cinema-scene-enter"
+    animate.leave="cinema-scene-leave"
     [displayName]="guestName"
     [vipLevel]="myVipLevel"
     [gender]="characterGender"
@@ -45,7 +47,12 @@
     </section>
   }
 
-  <div class="cinema-layout" [class.gym-active]="currentRoom === 'gym'">
+  <div
+    class="cinema-layout"
+    [class.gym-active]="currentRoom === 'gym'"
+    animate.enter="cinema-scene-enter"
+    animate.leave="cinema-scene-leave"
+  >
     <!-- ═══════ TOP BAR ═══════ -->
     <header class="cinema-topbar">
       <div class="topbar-left">
@@ -156,6 +163,8 @@
               id="cinema-info-panel"
               class="header-info-panel"
               aria-label="Hướng dẫn sử dụng"
+              animate.enter="popover-enter"
+              animate.leave="popover-leave"
             >
               <header>
                 <div>
@@ -699,7 +708,13 @@
 
 <!-- BACKDROP -->
 @if (activePanelId) {
-  <div class="panel-backdrop" [class.visible]="activePanelId" (click)="closePanel()"></div>
+  <div
+    class="panel-backdrop"
+    [class.visible]="activePanelId"
+    animate.enter="backdrop-enter"
+    animate.leave="backdrop-leave"
+    (click)="closePanel()"
+  ></div>
 }
 
 @if (donationModalOpen) {
@@ -1116,8 +1131,13 @@
 
 <!-- ═══════ AUTH MODAL POPUP ═══════ -->
 @if (authModalOpen) {
-  <div class="auth-modal-overlay" [class.auth-modal-overlay--login]="authStep === 'login'">
-    <div class="auth-modal-card">
+  <div
+    class="auth-modal-overlay"
+    [class.auth-modal-overlay--login]="authStep === 'login'"
+    animate.enter="modal-overlay-enter"
+    animate.leave="modal-overlay-leave"
+  >
+    <div class="auth-modal-card" animate.enter="modal-card-enter" animate.leave="modal-card-leave">
       <!-- MODAL HEADER -->
       <div class="auth-modal-header">
         <div class="auth-brand-badge">
@@ -1159,12 +1179,16 @@
           </div>
           @if (authStep === 'login') {
             <app-client-login-page
+              animate.enter="auth-form-enter"
+              animate.leave="auth-form-leave"
               (authenticated)="completeAuthentication($event)"
               (guestLogin)="guestQuickLogin()"
             ></app-client-login-page>
           }
           @if (authStep === 'register') {
             <app-client-register-page
+              animate.enter="auth-form-enter"
+              animate.leave="auth-form-leave"
               (registered)="completeAuthentication($event)"
             ></app-client-register-page>
           }

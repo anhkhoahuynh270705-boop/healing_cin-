@@ -6,5 +6,6 @@ import com.healingcinema.auth.entity.UserSessionEntity;
 
 public interface UserSessionRepository extends JpaRepository<UserSessionEntity, String> {
     boolean existsByTokenHashAndUserIdAndExpiresAtAfter(String tokenHash, String userId, long now);
+    long deleteByUserId(String userId);
     long deleteByExpiresAtLessThan(long now);
 }

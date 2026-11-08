@@ -1,4 +1,4 @@
-import { Component, input, OnDestroy, output, ViewChild } from '@angular/core';
+import { Component, HostListener, input, OnDestroy, output, ViewChild } from '@angular/core';
 import { LobbySceneComponent } from './lobby-scene.component';
 
 export type LobbyCinemaEnvironment = 'indoor' | 'outdoor';
@@ -28,6 +28,7 @@ export class LobbyPageComponent implements OnDestroy {
   private movementRepeat?: ReturnType<typeof setInterval>;
   private suppressPointerClick = false;
   private suppressClickTimer?: ReturnType<typeof setTimeout>;
+  nearbyDoor: LobbyCinemaEnvironment | null = null;
 
   moveCharacterBy(direction: 'up' | 'down' | 'left' | 'right'): void {
     this.lobbyScene?.moveBy(direction);
@@ -55,6 +56,30 @@ export class LobbyPageComponent implements OnDestroy {
       return;
     }
     this.moveCharacterBy(direction);
+  }
+
+  onDoorProximityChanged(environment: LobbyCinemaEnvironment | null): void {
+    this.nearbyDoor = environment;
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onEnterDoorKeydown(event: KeyboardEvent): void {
+    if (event.key.toLowerCase() !== 'e' || !this.nearbyDoor || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.isContentEditable || !!target.closest('input, textarea, select, [contenteditable="true"]'))) {
+      return;
+    }
+    event.preventDefault();
+    this.enterSelectedDoor();
+  }
+
+  enterSelectedDoor(): void {
+    if (!this.nearbyDoor) return;
+    const environment = this.nearbyDoor;
+    this.nearbyDoor = null;
+    this.enterCinema.emit(environment);
   }
 
   ngOnDestroy(): void {

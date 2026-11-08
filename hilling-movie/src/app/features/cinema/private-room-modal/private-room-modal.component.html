@@ -1,9 +1,16 @@
-<div class="vip-modal-overlay private-room-overlay" (click)="closed.emit()">
+<div
+  class="vip-modal-overlay private-room-overlay"
+  animate.enter="private-room-overlay-enter"
+  animate.leave="private-room-overlay-leave"
+  (click)="closed.emit()"
+>
   <section
     class="vip-modal private-room-modal"
     role="dialog"
     aria-modal="true"
     aria-labelledby="private-room-title"
+    animate.enter="private-room-dialog-enter"
+    animate.leave="private-room-dialog-leave"
     (click)="$event.stopPropagation()"
   >
     <button type="button" class="vip-modal-close" (click)="closed.emit()" aria-label="Đóng">

@@ -74,6 +74,115 @@ app-root {
   background: var(--bg);
 }
 
+.cinema-scene-enter {
+  animation: cinema-scene-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cinema-scene-leave {
+  animation: cinema-scene-leave 260ms cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+@keyframes cinema-scene-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cinema-scene-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-7px) scale(0.994);
+  }
+}
+
+.popover-enter {
+  animation: cinema-popover-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.popover-leave {
+  animation: cinema-popover-leave 130ms ease-in both;
+}
+
+@keyframes cinema-popover-enter {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cinema-popover-leave {
+  to { opacity: 0; transform: translateY(-4px) scale(0.985); }
+}
+
+.auth-modal-overlay.modal-overlay-enter {
+  animation: authOverlayFade 220ms ease-out both;
+}
+
+.auth-modal-overlay.modal-overlay-leave {
+  animation: cinema-modal-overlay-leave 170ms ease-in both;
+}
+
+.auth-modal-card.modal-card-enter {
+  animation: authCardScale 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.auth-modal-card.modal-card-leave {
+  animation: cinema-modal-card-leave 160ms ease-in both;
+}
+
+.auth-form-enter {
+  animation: auth-form-enter 190ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.auth-form-leave {
+  animation: auth-form-leave 120ms ease-in both;
+}
+
+@keyframes auth-form-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes auth-form-leave {
+  to { opacity: 0; transform: translateY(-3px); }
+}
+
+@keyframes cinema-modal-overlay-leave {
+  to { opacity: 0; backdrop-filter: blur(0); }
+}
+
+@keyframes cinema-modal-card-leave {
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinema-scene-enter,
+  .cinema-scene-leave,
+  .popover-enter,
+  .popover-leave,
+  .panel-backdrop.backdrop-enter,
+  .panel-backdrop.backdrop-leave,
+  .auth-modal-overlay.modal-overlay-enter,
+  .auth-modal-overlay.modal-overlay-leave,
+  .auth-modal-card.modal-card-enter,
+  .auth-modal-card.modal-card-leave,
+  .auth-form-enter,
+  .auth-form-leave {
+    animation-duration: 1ms !important;
+  }
+  .side-panel,
+  .scene-area > app-gym-room,
+  .scene-area > app-three-cinema,
+  .scene-area > .cinema-screen-overlay,
+  .right-sidebar {
+    transition-duration: 1ms !important;
+  }
+}
+
 .room-startup-overlay {
   position: fixed;
   inset: 0;
@@ -964,9 +1073,65 @@ app-cinema-page {
   display: block;
   width: 100%;
   height: 100%;
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition:
+    opacity 320ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 320ms;
+}
+.scene-area > .cinema-screen-overlay {
+  display: flex !important;
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition:
+    opacity 240ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 240ms;
+}
+.scene-area > .cinema-screen-overlay.room-mode-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.985);
+  pointer-events: none;
+}
+.scene-area > app-three-cinema {
+  transition:
+    opacity 320ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 320ms;
+}
+.scene-area > app-three-cinema.room-mode-hidden,
+.scene-area > app-gym-room.room-mode-hidden {
+  display: block !important;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.985) translateY(6px);
+  pointer-events: none;
+}
+.scene-area > app-three-cinema:not(.room-mode-hidden) {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+.scene-area > app-gym-room:not(.room-mode-hidden) {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+.scene-area > app-gym-room.room-mode-hidden {
+  display: block !important;
 }
 .scene-area > app-three-cinema.room-mode-hidden {
-  display: none !important;
+  display: block !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-area > app-gym-room,
+  .scene-area > app-three-cinema {
+    transition-duration: 1ms !important;
+  }
 }
 /* Make the Three.js host fill the container */
 .scene-area.outdoor-scene {
@@ -1675,6 +1840,14 @@ app-cinema-page {
     opacity 0.2s ease,
     background 0.2s ease;
 }
+.panel-backdrop.backdrop-enter {
+  animation: panel-backdrop-enter 200ms ease-out both;
+}
+.panel-backdrop.backdrop-leave {
+  animation: panel-backdrop-leave 150ms ease-in both;
+}
+@keyframes panel-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes panel-backdrop-leave { to { opacity: 0; } }
 
 .panel-backdrop.visible {
   background: rgba(0, 0, 0, 0.45);
@@ -1696,11 +1869,19 @@ app-cinema-page {
   display: flex;
   flex-direction: column;
   transform: translateX(calc(100% + var(--right-w) + 30px));
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.18s ease,
+    visibility 0s linear 0.28s;
+  opacity: 0;
+  visibility: hidden;
   overflow: hidden;
 }
 .side-panel.open {
   transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
 }
 
 /* Panel head */
@@ -5823,13 +6004,15 @@ app-cinema-page {
     pointer-events: none;
     transition:
       transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.18s ease;
+      opacity 0.18s ease,
+      visibility 0s linear 0.28s;
   }
 
   .side-panel.open {
     transform: translateY(0) scale(1);
     opacity: 1;
     pointer-events: auto;
+    transition-delay: 0s;
   }
 
   .unmute-banner {
@@ -6136,7 +6319,7 @@ app-cinema-page {
     position: fixed;
     inset: calc(var(--topbar-h) + 46px) 8px auto auto;
     z-index: 60;
-    display: none;
+    display: grid;
     width: min(310px, calc(100vw - 16px));
     max-height: calc(100dvh - var(--topbar-h) - 14px);
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6150,10 +6333,24 @@ app-cinema-page {
     border-radius: 13px;
     background: rgba(18, 13, 28, 0.98);
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.985);
+    transform-origin: top right;
+    pointer-events: none;
+    transition:
+      opacity 170ms ease,
+      transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      visibility 0s linear 220ms;
   }
 
   .right-sidebar.mobile-dropdown-open {
     display: grid;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    transition-delay: 0s;
   }
 
   .right-sidebar .rs-btn {

@@ -16,6 +16,7 @@ import com.healingcinema.auth.entity.UserEntity;
 public interface UserRepository extends JpaRepository<UserEntity, String> {
     Optional<UserEntity> findByUsernameIgnoreCase(String username);
     boolean existsByUsernameIgnoreCase(String username);
+    boolean existsByUsernameIgnoreCaseAndIdNot(String username, String id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserEntity u where u.id = :id")

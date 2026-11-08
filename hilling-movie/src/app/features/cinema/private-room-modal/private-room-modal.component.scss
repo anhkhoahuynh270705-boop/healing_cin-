@@ -17,6 +17,36 @@
   animation: authOverlayFade 0.25s ease-out;
 }
 
+.private-room-overlay.private-room-overlay-enter {
+  animation: private-room-fade-in 220ms ease-out both;
+}
+.private-room-overlay.private-room-overlay-leave {
+  animation: private-room-fade-out 160ms ease-in both;
+}
+.private-room-dialog-enter {
+  animation: private-room-dialog-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.private-room-dialog-leave {
+  animation: private-room-dialog-out 150ms ease-in both;
+}
+@keyframes private-room-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes private-room-fade-out { to { opacity: 0; backdrop-filter: blur(0); } }
+@keyframes private-room-dialog-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes private-room-dialog-out {
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .private-room-overlay,
+  .private-room-dialog-enter,
+  .private-room-dialog-leave {
+    animation-duration: 1ms !important;
+  }
+}
+
 .private-room-name-field {
   display: grid;
   gap: 7px;

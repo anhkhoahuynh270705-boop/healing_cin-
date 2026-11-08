@@ -41,6 +41,9 @@
   @if (error) {
     <p class="user-error" role="alert">{{ error }}</p>
   }
+  @if (success) {
+    <p class="user-success" role="status">{{ success }}</p>
+  }
 
   <section class="user-table-card" aria-label="Danh sách người dùng">
     <header class="user-table-heading">
@@ -67,6 +70,7 @@
               <th>TỔNG NẠP ĐÃ DUYỆT</th>
               <th>QUYỀN LỢI</th>
               <th>NGÀY THAM GIA</th>
+              <th>THAO TÁC</th>
             </tr>
           </thead>
           <tbody>
@@ -94,6 +98,33 @@
                   }
                 </td>
                 <td>{{ formatDate(user.createdAt) }}</td>
+                <td>
+                  <div class="user-row-actions">
+                    <button
+                      type="button"
+                      class="user-edit-button"
+                      (click)="editUser(user)"
+                      [disabled]="loading || deletingUserId === user.id"
+                      [attr.aria-label]="'Sửa tài khoản ' + user.username"
+                    >
+                      <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Sửa
+                    </button>
+                    <button
+                      type="button"
+                      class="user-delete-button"
+                      (click)="deleteUser(user)"
+                      [disabled]="loading || deletingUserId !== null"
+                      [attr.aria-label]="'Xóa tài khoản ' + user.username"
+                    >
+                      @if (deletingUserId === user.id) {
+                        <i class="fa-solid fa-spinner spinning" aria-hidden="true"></i>
+                      } @else {
+                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                      }
+                      Xóa
+                    </button>
+                  </div>
+                </td>
               </tr>
             }
           </tbody>
@@ -128,3 +159,83 @@
     }
   </section>
 </section>
+
+@if (editingUser) {
+  <div
+    class="user-editor-backdrop"
+    animate.enter="user-editor-backdrop-enter"
+    animate.leave="user-editor-backdrop-leave"
+    (click)="closeEditor()"
+  >
+    <section
+      class="user-editor-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="user-editor-title"
+      animate.enter="user-editor-dialog-enter"
+      animate.leave="user-editor-dialog-leave"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="user-editor-heading">
+        <div>
+          <p class="admin-eyebrow">CHỈNH SỬA TÀI KHOẢN</p>
+          <h2 id="user-editor-title">{{ editingUser.username }}</h2>
+        </div>
+        <button
+          type="button"
+          class="user-editor-close"
+          (click)="closeEditor()"
+          [disabled]="savingUser"
+          aria-label="Đóng"
+        >
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <form [formGroup]="editForm" (ngSubmit)="saveUser()">
+        <label>
+          <span>Tên đăng nhập</span>
+          <input formControlName="username" autocomplete="off" maxlength="24" />
+          @if (editForm.controls.username.touched && editForm.controls.username.invalid) {
+            <small>Tên đăng nhập phải có từ 3 đến 24 ký tự.</small>
+          }
+        </label>
+        <label>
+          <span>Tên hiển thị</span>
+          <input formControlName="displayName" maxlength="20" />
+          @if (editForm.controls.displayName.touched && editForm.controls.displayName.invalid) {
+            <small>Tên hiển thị không được để trống và tối đa 20 ký tự.</small>
+          }
+        </label>
+        <label>
+          <span>Avatar (emoji hoặc ký tự)</span>
+          <input formControlName="avatar" maxlength="32" />
+        </label>
+        <label>
+          <span>Cấp VIP</span>
+          <select formControlName="vipTier">
+            @for (tier of vipTiers; track tier) {
+              <option [ngValue]="tier">VIP {{ tier }}</option>
+            }
+          </select>
+        </label>
+        <p class="user-editor-note">
+          Tổng nạp đã duyệt và lịch sử thanh toán được giữ nguyên. VIP hiển thị sẽ không thấp hơn cấp
+          được tính từ tổng nạp.
+        </p>
+        <footer>
+          <button type="button" class="user-editor-cancel" (click)="closeEditor()" [disabled]="savingUser">
+            Hủy
+          </button>
+          <button type="submit" class="user-editor-save" [disabled]="savingUser || editForm.invalid">
+            @if (savingUser) {
+              <i class="fa-solid fa-spinner spinning" aria-hidden="true"></i> Đang lưu…
+            } @else {
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Lưu thay đổi
+            }
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}

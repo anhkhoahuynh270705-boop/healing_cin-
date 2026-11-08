@@ -1,4 +1,8 @@
-<div class="donation-backdrop" (click)="onBackdropClick($event)">
+<div
+  class="donation-backdrop"
+  animate.leave="donation-backdrop-leave"
+  (click)="onBackdropClick($event)"
+>
   <section
     #dialog
     class="donation-dialog"
@@ -6,6 +10,7 @@
     aria-modal="true"
     aria-labelledby="donation-title"
     tabindex="-1"
+    animate.leave="donation-dialog-leave"
   >
     <button class="donation-close" type="button" aria-label="Đóng" (click)="close()">
       <i class="fa-solid fa-xmark" aria-hidden="true"></i>

@@ -1,9 +1,10 @@
-<div class="character-entry-backdrop" (click)="close()">
+<div class="character-entry-backdrop" animate.leave="entry-backdrop-leave" (click)="close()">
   <section
     class="character-entry-modal"
     role="dialog"
     aria-modal="true"
     aria-labelledby="character-entry-title"
+    animate.leave="entry-modal-leave"
     (click)="$event.stopPropagation()"
   >
     <header class="entry-header">

@@ -40,7 +40,9 @@
   cursor: pointer;
 }
 .user-refresh-button:disabled,
-.user-search-form > button:disabled {
+.user-search-form > button:disabled,
+.user-row-actions button:disabled,
+.user-editor-dialog button:disabled {
   opacity: 0.55;
   cursor: wait;
 }
@@ -219,6 +221,31 @@ tbody tr:hover {
   font-size: 9px;
   font-weight: 700;
 }
+.user-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.user-row-actions button {
+  min-height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid #51483b;
+  border-radius: 6px;
+  color: #e7cfaa;
+  background: #29241f;
+  font: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+.user-row-actions .user-delete-button {
+  border-color: #654047;
+  color: #ffb2b4;
+  background: #2b1d22;
+}
 .user-free-badge {
   border-color: #3b3941;
   color: #aaa5af;
@@ -261,6 +288,15 @@ tbody tr:hover {
   background: #2b1d22;
   font-size: 11px;
 }
+.user-success {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #365b49;
+  border-radius: 8px;
+  color: #a6e3bd;
+  background: #192820;
+  font-size: 11px;
+}
 .user-loading,
 .user-empty {
   min-height: 150px;
@@ -285,6 +321,141 @@ tbody tr:hover {
 @keyframes user-refresh-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+.user-editor-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgb(7 7 11 / 74%);
+  backdrop-filter: blur(7px);
+}
+.user-editor-backdrop-enter {
+  animation: user-editor-backdrop-in 180ms ease-out both;
+}
+.user-editor-backdrop-leave {
+  animation: user-editor-backdrop-out 130ms ease-in both;
+}
+.user-editor-dialog {
+  width: min(100%, 450px);
+  max-height: min(90vh, 720px);
+  overflow-y: auto;
+  padding: 20px;
+  border: 1px solid #45414b;
+  border-radius: 14px;
+  background: #1b1b22;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 45%);
+}
+.user-editor-dialog-enter {
+  animation: user-editor-dialog-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.user-editor-dialog-leave {
+  animation: user-editor-dialog-out 140ms ease-in both;
+}
+@keyframes user-editor-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes user-editor-backdrop-out { to { opacity: 0; backdrop-filter: blur(0); } }
+@keyframes user-editor-dialog-in {
+  from { opacity: 0; transform: translateY(9px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes user-editor-dialog-out {
+  to { opacity: 0; transform: translateY(6px) scale(0.985); }
+}
+.user-editor-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.user-editor-heading h2 {
+  margin: 5px 0 0;
+  color: #f6f2ec;
+  font-size: 20px;
+}
+.user-editor-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #48434b;
+  border-radius: 8px;
+  color: #d7d0da;
+  background: #242329;
+  cursor: pointer;
+}
+.user-editor-dialog form {
+  display: grid;
+  gap: 13px;
+}
+.user-editor-dialog form > label {
+  display: grid;
+  gap: 6px;
+  color: #c6c0cc;
+  font-size: 11px;
+}
+.user-editor-dialog input,
+.user-editor-dialog select {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 0 11px;
+  border: 1px solid #3d3942;
+  border-radius: 8px;
+  outline: 0;
+  color: #f1edf3;
+  background: #15151b;
+  font: inherit;
+  font-size: 12px;
+}
+.user-editor-dialog input:focus,
+.user-editor-dialog select:focus {
+  border-color: #a78456;
+}
+.user-editor-dialog form > label small {
+  color: #ffaaaa;
+  font-size: 10px;
+}
+.user-editor-note {
+  margin: 0;
+  color: #99939f;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.user-editor-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 5px;
+}
+.user-editor-dialog footer button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid #48434b;
+  border-radius: 8px;
+  color: #d9d3dc;
+  background: #242329;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.user-editor-dialog footer .user-editor-save {
+  border-color: #786142;
+  color: #251d13;
+  background: #d8b479;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-editor-backdrop-enter,
+  .user-editor-backdrop-leave,
+  .user-editor-dialog-enter,
+  .user-editor-dialog-leave {
+    animation-duration: 1ms !important;
   }
 }
 @media (max-width: 600px) {

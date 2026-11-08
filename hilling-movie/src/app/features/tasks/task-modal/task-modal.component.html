@@ -1,9 +1,10 @@
-<div class="tasks-backdrop" (click)="closed.emit()">
+<div class="tasks-backdrop" animate.leave="tasks-backdrop-leave" (click)="closed.emit()">
   <section
     class="tasks-dialog"
     role="dialog"
     aria-modal="true"
     aria-labelledby="tasks-title"
+    animate.leave="tasks-dialog-leave"
     (click)="$event.stopPropagation()"
   >
     <header class="tasks-header">

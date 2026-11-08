@@ -15,3 +15,10 @@ export interface AdminUserPage {
   number: number;
   size: number;
 }
+
+export interface AdminUserUpdate {
+  username: string;
+  displayName: string;
+  avatar: string;
+  vipTier: number;
+}

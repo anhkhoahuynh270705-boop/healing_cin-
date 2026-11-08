@@ -2,11 +2,15 @@
   <div class="admin-login-screen">
     @if (adminAuthPage === 'login') {
       <app-admin-login-page
+        animate.enter="admin-auth-enter"
+        animate.leave="admin-auth-leave"
         (authenticated)="onAuthenticationChange($event)"
         (showRegister)="showAdminRegister()"
       ></app-admin-login-page>
     } @else {
       <app-admin-register-page
+        animate.enter="admin-auth-enter"
+        animate.leave="admin-auth-leave"
         (registered)="onAdminRegistered()"
         (showLogin)="adminAuthPage = 'login'"
       ></app-admin-register-page>
@@ -109,14 +113,19 @@
       </header>
       <div class="admin-content">
         @if (adminTab === 'overview') {
-          <section class="admin-welcome">
+          <section class="admin-welcome" animate.enter="admin-tab-enter" animate.leave="admin-tab-leave">
             <p class="admin-eyebrow">BẢNG ĐIỀU KHIỂN</p>
             <h1>Chào mừng trở lại</h1>
             <p>Tổng quan vận hành, thanh toán và tài khoản trong rạp chiếu.</p>
           </section>
         }
         @if (adminTab === 'overview') {
-          <section class="admin-overview-page" aria-label="Tổng quan hệ thống">
+          <section
+            class="admin-overview-page"
+            aria-label="Tổng quan hệ thống"
+            animate.enter="admin-tab-enter"
+            animate.leave="admin-tab-leave"
+          >
             <button type="button" class="admin-summary-card" (click)="selectTab('payments')">
               <span class="summary-icon payment-icon"
                 ><i class="fa-solid fa-comments-dollar" aria-hidden="true"></i
@@ -167,7 +176,7 @@
           </section>
         }
         @if (adminTab === 'rooms') {
-          <section class="admin-rooms-page">
+          <section class="admin-rooms-page" animate.enter="admin-tab-enter" animate.leave="admin-tab-leave">
             <div class="admin-section-heading">
               <p class="admin-eyebrow">QUẢN LÝ KHÔNG GIAN</p>
               <h1>Phòng chiếu</h1>
@@ -210,7 +219,11 @@
           ></app-payment-review>
         </section>
         @if (adminTab === 'users') {
-          <app-user-management-page (sessionExpired)="logoutAdmin()"></app-user-management-page>
+          <app-user-management-page
+            animate.enter="admin-tab-enter"
+            animate.leave="admin-tab-leave"
+            (sessionExpired)="logoutAdmin()"
+          ></app-user-management-page>
         }
         <footer class="admin-footer">Healing_ciné <span>·</span> Bảng quản trị</footer>
       </div>

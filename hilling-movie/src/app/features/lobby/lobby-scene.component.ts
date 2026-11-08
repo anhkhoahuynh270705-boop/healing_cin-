@@ -50,7 +50,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() accessoryIndex = 0;
   @Input() hairColorIndex = 0;
   @Input() selectedDoor: LobbyCinemaEnvironment | null = null;
-  @Output() doorReached = new EventEmitter<LobbyCinemaEnvironment>();
+  @Output() doorProximityChanged = new EventEmitter<LobbyCinemaEnvironment | null>();
 
   private renderer?: THREE.WebGLRenderer;
   private scene?: THREE.Scene;
@@ -63,6 +63,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   private marbleTexture?: THREE.CanvasTexture;
   private readonly target = new THREE.Vector3();
   private readonly doorMeshes = new Map<LobbyCinemaEnvironment, THREE.MeshStandardMaterial>();
+  private nearbyDoor: LobbyCinemaEnvironment | null = null;
 
   constructor(private readonly zone: NgZone) {}
 
@@ -85,7 +86,10 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     ) {
       this.createCharacter();
     }
-    if (changes['selectedDoor']) this.updateDoorHighlight();
+    if (changes['selectedDoor']) {
+      this.updateDoorHighlight();
+      this.setNearbyDoor(null);
+    }
   }
 
   ngOnDestroy(): void {
@@ -647,6 +651,10 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     character.scale.setScalar(1.3);
     character.rotation.y = 0;
     character.position.copy(position);
+    character.position.y = 0;
+    character.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(character);
+    if (Number.isFinite(bounds.min.y)) character.position.y = -0.025 - bounds.min.y;
     character.userData['targetX'] = character.position.x;
     character.userData['targetZ'] = character.position.z;
     this.character = character;
@@ -691,19 +699,26 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
             child.rotation.x *= 0.78;
           }
         }
-        this.checkDoorArrival(character.position.x, character.position.z);
       }
+      this.checkDoorProximity(character.position.x, character.position.z);
     }
     this.renderer.render(this.scene, this.camera);
   };
 
-  private checkDoorArrival(x: number, z: number): void {
-    if (!this.selectedDoor) return;
+  private checkDoorProximity(x: number, z: number): void {
+    if (!this.selectedDoor) {
+      this.setNearbyDoor(null);
+      return;
+    }
     const doorX = this.selectedDoor === 'outdoor' ? -4.75 : 4.75;
-    if (Math.hypot(x - doorX, z + 4.9) > 1.25) return;
-    const environment = this.selectedDoor;
-    this.selectedDoor = null;
-    this.zone.run(() => this.doorReached.emit(environment));
+    const environment = Math.hypot(x - doorX, z + 4.9) <= 1.55 ? this.selectedDoor : null;
+    this.setNearbyDoor(environment);
+  }
+
+  private setNearbyDoor(environment: LobbyCinemaEnvironment | null): void {
+    if (this.nearbyDoor === environment) return;
+    this.nearbyDoor = environment;
+    this.zone.run(() => this.doorProximityChanged.emit(environment));
   }
 
   private resize(): void {

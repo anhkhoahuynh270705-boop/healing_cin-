@@ -1,9 +1,10 @@
-<div class="wardrobe-overlay" (click)="close()">
+<div class="wardrobe-overlay" animate.leave="wardrobe-overlay-leave" (click)="close()">
   <section
     class="wardrobe-modal"
     role="dialog"
     aria-modal="true"
     aria-labelledby="wardrobe-title"
+    animate.leave="wardrobe-modal-leave"
     (click)="$event.stopPropagation()"
   >
     <button class="wardrobe-close" type="button" aria-label="Đóng" (click)="close()">

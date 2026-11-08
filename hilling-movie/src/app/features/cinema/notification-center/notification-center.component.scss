@@ -46,6 +46,24 @@
   backdrop-filter: blur(18px);
 }
 
+.notification-popover-enter {
+  animation: notification-popover-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.notification-popover-leave {
+  animation: notification-popover-out 140ms ease-in both;
+}
+
+@keyframes notification-popover-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes notification-popover-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-4px) scale(0.99); }
+}
+
 .notification-popover-head {
   display: flex;
   min-height: 54px;
@@ -129,6 +147,11 @@
   display: block;
   color: #f1ebf8;
   font-size: 11px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-popover-enter,
+  .notification-popover-leave { animation-duration: 1ms; }
 }
 
 .notification-copy p {

@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class PersonalMediaService {
+    private static final System.Logger LOGGER = System.getLogger(PersonalMediaService.class.getName());
     private static final long PRICE_PER_SECOND = 5_000L;
     private static final long MAX_FILE_BYTES = 20L * 1024 * 1024;
     private static final long VIP_FREE_IMAGE_COOLDOWN_MS = 2 * 60 * 1000L;
@@ -117,6 +118,20 @@ public class PersonalMediaService {
     @Transactional(readOnly = true)
     public PersonalMediaEntity find(String id) {
         return media.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nội dung."));
+    }
+
+    @Transactional
+    public void deleteUploadsForUser(String userId) {
+        var uploads = media.findByUploadedBy(userId);
+        for (PersonalMediaEntity upload : uploads) {
+            try {
+                Files.deleteIfExists(filePath(upload));
+            } catch (IOException error) {
+                LOGGER.log(System.Logger.Level.WARNING,
+                        "Could not remove personal media file for deleted user: " + upload.getStorageName(), error);
+            }
+        }
+        media.deleteAll(uploads);
     }
 
     public Path filePath(PersonalMediaEntity item) {

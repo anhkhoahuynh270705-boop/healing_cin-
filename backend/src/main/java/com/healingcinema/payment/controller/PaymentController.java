@@ -9,22 +9,28 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.CacheControl;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.healingcinema.auth.entity.UserEntity;
+import com.healingcinema.auth.dto.AdminUserDtos.UpdateUserRequest;
 import com.healingcinema.auth.mapper.AdminUserMapper;
 import com.healingcinema.auth.repository.UserRepository;
 import com.healingcinema.auth.service.AdminAuthService;
+import com.healingcinema.auth.service.AdminUserService;
 import com.healingcinema.auth.service.AuthService;
 import com.healingcinema.payment.dto.PaymentDtos.PaymentRequest;
 import com.healingcinema.payment.service.AdminPaymentNotifier;
 import com.healingcinema.payment.service.PaymentApprovalService;
+import com.healingcinema.room.service.RoomService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,6 +46,9 @@ public class PaymentController {
     private final AdminAuthService adminAuth;
     private final UserRepository users;
     private final AdminPaymentNotifier notifier;
+    private final AdminUserService adminUsers;
+    private final RoomService rooms;
+    private final SimpMessagingTemplate messaging;
 
     @PostMapping("/api/payments/request")
     public ResponseEntity<?> submit(@RequestBody SubmitPayment request) {
@@ -125,6 +134,42 @@ public class PaymentController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(AdminUserMapper.toPage(results));
+    }
+
+    @PutMapping("/api/admin/users/{id}")
+    public ResponseEntity<?> updateAdminUser(@PathVariable String id,
+            @RequestBody UpdateUserRequest request,
+            @RequestHeader(value = "X-Admin-Token", required = false) String token) {
+        if (!adminAuth.isValid(token)) return adminSessionExpired();
+        try {
+            return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(adminUsers.update(id, request));
+        } catch (IllegalArgumentException error) {
+            HttpStatus status = "Không tìm thấy người dùng.".equals(error.getMessage())
+                    ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(Map.of("message", error.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/api/admin/users/{id}")
+    public ResponseEntity<?> deleteAdminUser(@PathVariable String id,
+            @RequestHeader(value = "X-Admin-Token", required = false) String token) {
+        if (!adminAuth.isValid(token)) return adminSessionExpired();
+        try {
+            AdminUserService.DeleteResult result = adminUsers.delete(id);
+            for (String roomId : result.affectedRooms()) {
+                if (!rooms.isRoomAvailable(roomId)) continue;
+                for (String environment : List.of("indoor", "outdoor", "gym")) {
+                    messaging.convertAndSend("/topic/room/" + roomId + "/state/" + environment,
+                            rooms.snapshot(roomId, environment));
+                }
+            }
+            return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                    .body(Map.of("deleted", result.deleted()));
+        } catch (IllegalArgumentException error) {
+            HttpStatus status = "Không tìm thấy người dùng.".equals(error.getMessage())
+                    ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(Map.of("message", error.getMessage()));
+        }
     }
 
     @GetMapping("/api/admin/payments")
