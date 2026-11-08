@@ -507,6 +507,9 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   private readonly SX = 1.22;
   private readonly SZ = 1.65;
   private readonly AISLE_EXTRA = 1.5;
+  private readonly INDOOR_FLOOR_Y = -0.51;
+  private readonly INDOOR_STEP_RISE = 0.18;
+  private readonly INDOOR_SEAT_FOOT_HEIGHT = 0.42;
 
   constructor(private zone: NgZone) {}
 
@@ -822,23 +825,31 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   private addSeats(): void {
     const seats: { index: number; x: number; y: number; z: number }[] = [];
     const meshes: THREE.Group[] = [];
-    // ── Thêm 2 đường dải đèn LED dẫn lối dọc theo 2 lối đi giữa ──
+    this.addIndoorRisers();
+
+    // Đèn dẫn lối ôm hai mép lối đi, chạy theo từng mặt bậc.
     const aisleX1 = (-1.83 - 4.55) / 2; // ~ -3.19
     const aisleX2 = (1.83 + 4.55) / 2; // ~ +3.19
     const aisleLedMat = new THREE.MeshBasicMaterial({ color: 0xffaa22 });
 
     for (const ax of [aisleX1, aisleX2]) {
-      // 2 viền đèn LED vàng ở 2 mép mỗi lối đi
-      for (const offset of [-0.72, 0.72]) {
-        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 11.5), aisleLedMat);
-        strip.position.set(ax + offset, -0.49, 2.5);
-        this.indoorEnvironment.add(strip);
+      for (let row = 0; row <= this.ROWS; row++) {
+        const z = -1.6 + row * this.SZ;
+        const topY = this.indoorFloorYForRow(row);
+        for (const offset of [-0.72, 0.72]) {
+          const strip = new THREE.Mesh(
+            new THREE.BoxGeometry(0.035, 0.025, this.SZ - 0.12),
+            aisleLedMat,
+          );
+          strip.position.set(ax + offset, topY + 0.015, z);
+          this.indoorEnvironment.add(strip);
+        }
       }
 
-      // Đèn chiếu sáng hắt ấm trên lối đi
+      // Đèn thấp hắt ấm lên các bậc, không bị mặt sàn che khuất.
       for (let lz = -1.0; lz <= 6.5; lz += 2.0) {
         const pl = new THREE.PointLight(0xffbe44, 0.8, 4.5);
-        pl.position.set(ax, 0.05, lz);
+        pl.position.set(ax, this.indoorFloorYForRow(this.indoorRowAtZ(lz)) + 0.42, lz);
         this.indoorEnvironment.add(pl);
       }
     }
@@ -846,7 +857,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     // ── Tạo các hàng ghế ngồi to, dài, giật cấp theo chiều cao rạp ──
     for (let r = 0; r < this.ROWS; r++) {
       const z = -1.6 + r * this.SZ;
-      const y = -0.46 + r * 0.16; // Ghế sau cao hơn ghế trước
+      const y = this.indoorSeatY(r);
 
       for (let c = 0; c < this.COLS; c++) {
         const x = this.getColX(c);
@@ -865,7 +876,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     const sideSeatXs = [-9.6, -8.3, 8.3, 9.6];
     for (let r = 0; r < this.SIDE_SEAT_ROWS; r++) {
       const z = -1.6 + r * this.SZ;
-      const y = -0.46 + r * 0.16;
+      const y = this.indoorSeatY(r);
       for (let sideCol = 0; sideCol < this.SIDE_SEATS_PER_ROW; sideCol++) {
         const index = this.ROWS * this.COLS + r * this.SIDE_SEATS_PER_ROW + sideCol;
         const x = sideSeatXs[sideCol];
@@ -885,7 +896,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
       this.ROWS * this.COLS + this.SIDE_SEAT_ROWS * this.SIDE_SEATS_PER_ROW + this.COLS;
     for (let r = 0; r < this.SIDE_SEAT_ROWS; r++) {
       const z = -1.6 + r * this.SZ;
-      const y = -0.46 + r * 0.16;
+      const y = this.indoorSeatY(r);
       for (let sideCol = 0; sideCol < this.OUTER_SIDE_SEATS_PER_ROW; sideCol++) {
         const index = outerSideSeatStart + r * this.OUTER_SIDE_SEATS_PER_ROW + sideCol;
         const x = outerSideXs[sideCol];
@@ -902,7 +913,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     // Hàng cuối gồm 5 sofa đôi; mỗi nửa sofa vẫn là một ghế riêng có thể chọn.
     const backRow = this.ROWS;
     const backRowZ = -1.6 + backRow * this.SZ;
-    const backRowY = -0.46 + backRow * 0.16;
+    const backRowY = this.indoorFloorYForRow(backRow);
     const backRowSeatStart = this.ROWS * this.COLS + this.SIDE_SEAT_ROWS * this.SIDE_SEATS_PER_ROW;
     const loveseatCenters = [-6.1, -2.9, 0, 2.9, 6.1];
     for (let pair = 0; pair < loveseatCenters.length; pair++) {
@@ -930,6 +941,82 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
 
     this.indoorSeats = seats;
     this.indoorSeatMeshes = meshes;
+  }
+
+  private addIndoorRisers(): void {
+    const treadMaterial = new THREE.MeshStandardMaterial({
+      color: 0x27212a,
+      roughness: 0.88,
+      metalness: 0.02,
+    });
+    const riserMaterial = new THREE.MeshStandardMaterial({
+      color: 0x3b2731,
+      roughness: 0.78,
+      metalness: 0.04,
+    });
+    const brassMaterial = new THREE.MeshStandardMaterial({
+      color: 0xa27d51,
+      metalness: 0.54,
+      roughness: 0.38,
+    });
+    const roomWidth = 27.4;
+    const stepDepth = this.SZ;
+
+    for (let row = 0; row <= this.ROWS; row++) {
+      if (row === 0) continue;
+      const z = -1.6 + row * this.SZ;
+      const topY = this.indoorFloorYForRow(row);
+      const height = topY - this.INDOOR_FLOOR_Y;
+      const tread = new THREE.Mesh(
+        new THREE.BoxGeometry(roomWidth, height, stepDepth),
+        treadMaterial,
+      );
+      tread.position.set(0, this.INDOOR_FLOOR_Y + height / 2, z);
+      tread.receiveShadow = true;
+      tread.castShadow = true;
+      this.indoorEnvironment.add(tread);
+
+      const frontEdgeZ = z - stepDepth / 2 + 0.035;
+      const riserFace = new THREE.Mesh(
+        new THREE.BoxGeometry(roomWidth, this.INDOOR_STEP_RISE, 0.07),
+        riserMaterial,
+      );
+      riserFace.position.set(
+        0,
+        topY - this.INDOOR_STEP_RISE / 2,
+        frontEdgeZ,
+      );
+      riserFace.receiveShadow = true;
+      this.indoorEnvironment.add(riserFace);
+
+      // Brass nosing and warm LED markers make each rise legible in the dark auditorium.
+      for (const aisleX of [-3.19, 3.19]) {
+        const nosing = new THREE.Mesh(
+          new THREE.BoxGeometry(1.18, 0.025, 0.055),
+          brassMaterial,
+        );
+        nosing.position.set(aisleX, topY + 0.014, frontEdgeZ + 0.035);
+        this.indoorEnvironment.add(nosing);
+        const stepLight = new THREE.Mesh(
+          new THREE.BoxGeometry(0.92, 0.018, 0.032),
+          new THREE.MeshBasicMaterial({ color: 0xffbd62 }),
+        );
+        stepLight.position.set(aisleX, topY + 0.032, frontEdgeZ + 0.035);
+        this.indoorEnvironment.add(stepLight);
+      }
+    }
+  }
+
+  private indoorFloorYForRow(row: number): number {
+    return this.INDOOR_FLOOR_Y + THREE.MathUtils.clamp(row, 0, this.ROWS) * this.INDOOR_STEP_RISE;
+  }
+
+  private indoorSeatY(row: number): number {
+    return this.indoorFloorYForRow(row) + this.INDOOR_SEAT_FOOT_HEIGHT;
+  }
+
+  private indoorRowAtZ(z: number): number {
+    return THREE.MathUtils.clamp(Math.round((z + 1.6) / this.SZ), 0, this.ROWS);
   }
 
   /** Dựng bàn tròn quán cà phê và 118 ghế đơn/đôi/ba cho khu ngoài trời. */
@@ -1433,11 +1520,28 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     if (Math.abs(start.x - aisleX) > 0.45) {
       waypoints.push(new THREE.Vector3(aisleX, approachY, start.z));
     }
-    waypoints.push(
-      new THREE.Vector3(aisleX, approachY, targetPos.z),
-      new THREE.Vector3(targetPos.x, approachY, targetPos.z),
-      targetPos,
-    );
+    if (this.environmentMode === 'indoor') {
+      const startRow = this.indoorRowAtZ(start.z);
+      for (let row = startRow - 1; row >= 0; row--) {
+        waypoints.push(
+          new THREE.Vector3(
+            aisleX,
+            this.indoorFloorYForRow(row) + 0.32,
+            -1.6 + row * this.SZ,
+          ),
+        );
+      }
+      waypoints.push(
+        new THREE.Vector3(aisleX, this.indoorFloorYForRow(0) + 0.32, targetPos.z),
+        new THREE.Vector3(targetPos.x, this.indoorFloorYForRow(0) + 0.32, targetPos.z),
+      );
+    } else {
+      waypoints.push(
+        new THREE.Vector3(aisleX, approachY, targetPos.z),
+        new THREE.Vector3(targetPos.x, approachY, targetPos.z),
+      );
+    }
+    waypoints.push(targetPos);
     this.walkers.set(id, {
       id,
       group,
@@ -1452,13 +1556,19 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   private dancePosition(guest: Guest): THREE.Vector3 {
     const x = THREE.MathUtils.clamp(Number(guest.x) || 0.5, 0.08, 0.92);
     const row = THREE.MathUtils.clamp(Number(guest.y) || 0.53, 0.18, 0.9);
-    return new THREE.Vector3((x - 0.5) * 13, -0.46, -3.2 + (row - 0.53) * 6);
+    const z = -3.2 + (row - 0.53) * 6;
+    const y = this.environmentMode === 'indoor' ? this.indoorFloorYForRow(0) + 0.32 : -0.46;
+    return new THREE.Vector3((x - 0.5) * 13, y, z);
   }
 
   private standingPosition(guest: Guest): THREE.Vector3 {
     const normalizedX = THREE.MathUtils.clamp(Number(guest.x) || 0.5, 0.08, 0.92);
     const normalizedY = THREE.MathUtils.clamp(Number(guest.y) || 0.5, 0.18, 0.9);
-    return new THREE.Vector3((normalizedX - 0.5) * 13, -0.46, -1.3 + normalizedY * 7.5);
+    const z = -1.3 + normalizedY * 7.5;
+    const y = this.environmentMode === 'indoor'
+      ? this.indoorFloorYForRow(this.indoorRowAtZ(z)) + 0.32
+      : -0.46;
+    return new THREE.Vector3((normalizedX - 0.5) * 13, y, z);
   }
 
   /**
@@ -1481,6 +1591,10 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     if (!targetSd) return;
 
     const targetPos = new THREE.Vector3(targetSd.x, targetSd.y + 0.12, targetSd.z - 0.04);
+    const targetRow = this.environmentMode === 'indoor' ? this.indoorRowAtZ(targetSd.z) : 0;
+    const targetWalkY = this.environmentMode === 'indoor'
+      ? this.indoorFloorYForRow(targetRow) + 0.32
+      : targetSd.y + 0.32;
     const activeWalker = this.walkers.get(id);
     if (activeWalker?.targetSeatIndex === targetSeatIndex) return;
 
@@ -1534,7 +1648,10 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
       } else if (currentGuest) {
         grp.position.copy(this.standingPosition(currentGuest));
       } else {
-        grp.position.set(targetAisleX, -0.15, 7.5);
+        const entranceY = this.environmentMode === 'indoor'
+          ? this.indoorFloorYForRow(this.ROWS) + 0.32
+          : -0.15;
+        grp.position.set(targetAisleX, entranceY, 7.5);
       }
       grp.rotation.set(0, Math.PI, 0);
       this.scene.add(grp);
@@ -1543,6 +1660,10 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
 
     const startPos = grp.position.clone();
     const startAisleX = this.environmentMode === 'outdoor' ? 0 : startPos.x < 0 ? -3.19 : 3.19;
+    const startRow = this.environmentMode === 'indoor' ? this.indoorRowAtZ(startPos.z) : 0;
+    const startWalkY = this.environmentMode === 'indoor'
+      ? this.indoorFloorYForRow(startRow) + 0.32
+      : targetWalkY;
     const waypoints: THREE.Vector3[] = [];
 
     // 1. Đứng dậy & bước ra lối đi gần nhất nếu đang ở ghế
@@ -1552,14 +1673,28 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
 
     // 2. Nếu chuyển từ khối ghế bên này sang bên kia qua lối đi khác
     if (Math.abs(startAisleX - targetAisleX) > 0.5) {
-      waypoints.push(new THREE.Vector3(targetAisleX, targetSd.y + 0.32, startPos.z));
+      waypoints.push(new THREE.Vector3(targetAisleX, startWalkY, startPos.z));
     }
 
-    // 3. Đi dọc lối đi tới hàng ghế đích (theo trục Z và cao độ Y của hàng đó)
-    waypoints.push(new THREE.Vector3(targetAisleX, targetSd.y + 0.32, targetSd.z - 0.04));
+    // 3. Đi dọc cầu thang, thay đổi cao độ theo từng hàng thay vì lướt xuyên qua các bậc.
+    if (this.environmentMode === 'indoor') {
+      const rowDirection = Math.sign(targetRow - startRow);
+      for (let row = startRow + rowDirection; rowDirection && row !== targetRow; row += rowDirection) {
+        waypoints.push(
+          new THREE.Vector3(
+            targetAisleX,
+            this.indoorFloorYForRow(row) + 0.32,
+            -1.6 + row * this.SZ,
+          ),
+        );
+      }
+      waypoints.push(new THREE.Vector3(targetAisleX, targetWalkY, targetSd.z - 0.04));
+    } else {
+      waypoints.push(new THREE.Vector3(targetAisleX, targetWalkY, targetSd.z - 0.04));
+    }
 
     // 4. Bước ngang vào vị trí ghế đích
-    waypoints.push(new THREE.Vector3(targetSd.x, targetSd.y + 0.32, targetSd.z - 0.04));
+    waypoints.push(new THREE.Vector3(targetSd.x, targetWalkY, targetSd.z - 0.04));
 
     this.walkers.set(id, {
       id,
@@ -1586,10 +1721,14 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
 
     const normalizedX = THREE.MathUtils.clamp(Number(movement.x) || 0.5, 0.08, 0.92);
     const normalizedY = THREE.MathUtils.clamp(Number(movement.y) || 0.5, 0.18, 0.9);
+    const z = -1.3 + normalizedY * 7.5;
+    const y = this.environmentMode === 'indoor'
+      ? this.indoorFloorYForRow(this.indoorRowAtZ(z)) + 0.32
+      : -0.46;
     const target = new THREE.Vector3(
       (normalizedX - 0.5) * 13,
-      -0.46,
-      -1.3 + normalizedY * 7.5,
+      y,
+      z,
     );
     this.movementTargets.set(movement.id, { position: target, step: 0 });
   }

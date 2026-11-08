@@ -38,7 +38,7 @@ export class UserManagementPageComponent implements OnInit {
   page = 0;
   totalPages = 0;
   totalUsers = 0;
-  pageSize = 20;
+  pageSize = 10;
   private adminToken = '';
 
   private readonly usersApi = inject(AdminUserApiService);

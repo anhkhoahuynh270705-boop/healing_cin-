@@ -199,15 +199,15 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       map: plasterTexture,
       roughness: 0.88,
     });
-    const backWall = this.box(22, 8, 0.45, 0xd9cbb5, 0, 4, -7.2, wallMaterial);
+    const backWall = this.box(22, 10.6, 0.45, 0xd9cbb5, 0, 5.3, -7.2, wallMaterial);
     scene.add(backWall);
-    scene.add(this.box(0.45, 8, 17, 0xd0c0aa, -11, 4, 0, wallMaterial));
-    scene.add(this.box(0.45, 8, 17, 0xd0c0aa, 11, 4, 0, wallMaterial));
+    scene.add(this.box(0.45, 10.6, 17, 0xd0c0aa, -11, 5.3, 0, wallMaterial));
+    scene.add(this.box(0.45, 10.6, 17, 0xd0c0aa, 11, 5.3, 0, wallMaterial));
     this.addWallFinish(scene);
     this.addCeiling(scene);
-    for (const x of [-9.7, -2.45, 2.45, 9.7]) this.addColumn(scene, x, -6.55, 8.1, 0.28);
+    for (const x of [-9.7, -2.45, 2.45, 9.7]) this.addColumn(scene, x, -6.55, 10.58, 0.28);
     for (const x of [-9.7, 9.7]) {
-      for (const z of [-4.1, -0.1, 3.9]) this.addColumn(scene, x, z, 8.1, 0.3);
+      for (const z of [-4.1, -0.1, 3.9]) this.addColumn(scene, x, z, 10.58, 0.3);
     }
 
     this.addDoor(scene, 'outdoor', -4.75, 0x81c5d4);
@@ -223,10 +223,10 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
 
     const chandelier = new THREE.Group();
     const chain = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.035, 2.2, 8),
+      new THREE.CylinderGeometry(0.035, 0.035, 4.7, 8),
       new THREE.MeshStandardMaterial({ color: 0xa88454, metalness: 0.72, roughness: 0.3 }),
     );
-    chain.position.y = 6.95;
+    chain.position.y = 8.1;
     chandelier.add(chain);
     const fixture = new THREE.Mesh(
       new THREE.TorusGeometry(0.75, 0.075, 10, 36),
@@ -253,7 +253,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       17,
       0x362d2b,
       0,
-      8.32,
+      10.8,
       0,
       new THREE.MeshStandardMaterial({ color: 0x362d2b, roughness: 0.86 }),
     );
@@ -271,12 +271,12 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       roughness: 0.34,
     });
     for (const x of [-10.65, -6, -2, 2, 6, 10.65]) {
-      scene.add(this.box(0.18, 0.22, 16.8, 0x70573f, x, 8.02, 0, beamMaterial));
-      scene.add(this.box(0.035, 0.035, 16.5, 0xb18b59, x + 0.12, 7.89, 0, brassMaterial));
+      scene.add(this.box(0.18, 0.22, 16.8, 0x70573f, x, 10.5, 0, beamMaterial));
+      scene.add(this.box(0.035, 0.035, 16.5, 0xb18b59, x + 0.12, 10.37, 0, brassMaterial));
     }
     for (const z of [-8.15, -5, -2, 1, 4, 7.95]) {
-      scene.add(this.box(21.7, 0.22, 0.18, 0x70573f, 0, 8.02, z, beamMaterial));
-      scene.add(this.box(21.4, 0.035, 0.035, 0xb18b59, 0, 7.89, z + 0.12, brassMaterial));
+      scene.add(this.box(21.7, 0.22, 0.18, 0x70573f, 0, 10.5, z, beamMaterial));
+      scene.add(this.box(21.4, 0.035, 0.035, 0xb18b59, 0, 10.37, z + 0.12, brassMaterial));
     }
 
     const insetMaterial = new THREE.MeshStandardMaterial({
@@ -287,14 +287,14 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     });
     for (const x of [-8, -4, 0, 4, 8]) {
       for (const z of [-6.5, -3.25, 0, 3.25, 6.5]) {
-        scene.add(this.box(3.48, 0.045, 2.55, 0x51433c, x, 8.105, z, insetMaterial));
+        scene.add(this.box(3.48, 0.045, 2.55, 0x51433c, x, 10.585, z, insetMaterial));
       }
     }
 
     for (const x of [-6, 6]) {
       for (const z of [-4, 4]) {
         const poolLight = new THREE.PointLight(0xffd9a6, 13, 8, 2);
-        poolLight.position.set(x, 7.68, z);
+        poolLight.position.set(x, 10.15, z);
         scene.add(poolLight);
       }
     }
@@ -332,12 +332,16 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     const darkWood = 0x59453a;
     scene.add(this.box(21.7, 0.2, 0.12, darkWood, 0, 0.34, -6.91));
     scene.add(this.box(21.7, 0.1, 0.12, brass, 0, 0.48, -6.91));
-    scene.add(this.box(21.7, 0.15, 0.16, 0xb59970, 0, 6.78, -6.9));
-    scene.add(this.box(21.7, 0.08, 0.13, brass, 0, 6.91, -6.9));
+    scene.add(this.box(21.7, 0.15, 0.16, 0xb59970, 0, 9.86, -6.9));
+    scene.add(this.box(21.7, 0.08, 0.13, brass, 0, 10.0, -6.9));
     scene.add(this.box(0.12, 0.22, 16.6, darkWood, -10.72, 0.34, 0));
     scene.add(this.box(0.12, 0.22, 16.6, darkWood, 10.72, 0.34, 0));
     scene.add(this.box(0.12, 0.1, 16.6, brass, -10.72, 0.49, 0));
     scene.add(this.box(0.12, 0.1, 16.6, brass, 10.72, 0.49, 0));
+    for (const side of [-1, 1]) {
+      scene.add(this.box(0.16, 0.34, 16.6, 0x59453a, side * 10.72, 9.86, 0));
+      scene.add(this.box(0.19, 0.08, 16.6, brass, side * 10.72, 10.08, 0));
+    }
 
     for (const x of [-8.35, -6.55, -1.25, 1.25, 6.55, 8.35]) {
       const panel = new THREE.Group();
@@ -357,13 +361,13 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       }
     }
 
-    // A shallow coffered frieze gives the tall walls a finished transition into the ceiling.
+    // A high coffered frieze ties the taller walls into the ceiling cornice.
     for (const x of [-8, -4, 0, 4, 8]) {
-      scene.add(this.box(0.12, 0.28, 0.56, 0x886c50, x, 7.15, -6.72));
-      scene.add(this.box(0.12, 0.28, 0.56, 0x886c50, x, 7.15, 6.72));
+      scene.add(this.box(0.12, 0.3, 0.56, 0x886c50, x, 9.55, -6.72));
+      scene.add(this.box(0.12, 0.3, 0.56, 0x886c50, x, 9.55, 6.72));
     }
-    scene.add(this.box(21.5, 0.34, 0.4, 0x332a29, 0, 7.42, -6.85));
-    scene.add(this.box(21.5, 0.12, 0.5, 0xb18e64, 0, 7.22, -6.82));
+    scene.add(this.box(21.5, 0.34, 0.4, 0x332a29, 0, 10.26, -6.85));
+    scene.add(this.box(21.5, 0.12, 0.5, 0xb18e64, 0, 10.04, -6.82));
   }
 
   private addColumn(
