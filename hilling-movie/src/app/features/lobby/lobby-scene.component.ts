@@ -11,8 +11,10 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import * as THREE from 'three';
 import { createCinemaCharacter } from '../room/character/cinema-character.factory';
+import type { Playback } from '../room/models';
 import type { LobbyCinemaEnvironment } from './lobby-page.component';
 
 const FOYER_SCALE_X = 1.35;
@@ -28,7 +30,33 @@ type LobbySeatTarget = {
 @Component({
   selector: 'app-lobby-scene',
   standalone: true,
-  template: '<div #host class="lobby-scene-host" aria-label="Sảnh chờ 3D"></div>',
+  template: `
+    <div #host class="lobby-scene-host" aria-label="Sảnh chờ 3D">
+      <div #tvScreenOverlay class="lobby-tv-live-screen" aria-label="Phim đang chiếu trên TV sảnh">
+        @if (playback?.source === 'personal-video' && personalMediaUrl) {
+          <video
+            [src]="personalMediaUrl"
+            [autoplay]="playback?.playing ?? true"
+            [muted]="true"
+            [loop]="true"
+            controls
+            playsinline
+            (loadedmetadata)="seekPersonalVideo($event)"
+          ></video>
+        } @else if (playback?.source === 'personal-image' && personalMediaUrl) {
+          <img [src]="personalMediaUrl" [alt]="playback?.title || 'Ảnh đang chiếu'" />
+        } @else {
+          <iframe
+            [src]="televisionEmbedUrl()"
+            [title]="playback?.title || 'Phim đang chiếu tại Healing Ciné'"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        }
+      </div>
+    </div>
+  `,
   styles: [
     `
       :host {
@@ -38,13 +66,32 @@ type LobbySeatTarget = {
         overflow: hidden;
       }
       .lobby-scene-host {
+        position: relative;
         width: 100%;
         height: 100%;
+        overflow: hidden;
       }
       .lobby-scene-host canvas {
         display: block;
         width: 100%;
         height: 100%;
+      }
+      .lobby-tv-live-screen {
+        position: absolute;
+        z-index: 2;
+        display: none;
+        overflow: hidden;
+        background: #050609;
+        box-shadow: 0 0 12px rgba(10, 8, 8, 0.55);
+      }
+      .lobby-tv-live-screen iframe,
+      .lobby-tv-live-screen video,
+      .lobby-tv-live-screen img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        object-fit: fill;
       }
     `,
   ],
@@ -59,10 +106,18 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() shirtTier = 0;
   @Input() accessoryIndex = 0;
   @Input() hairColorIndex = 0;
+  @Input() playback: Playback | null = null;
+  @Input() personalMediaUrl = '';
   @Output() doorProximityChanged = new EventEmitter<LobbyCinemaEnvironment | null>();
-  @Output() tvRequested = new EventEmitter<void>();
 
   private renderer?: THREE.WebGLRenderer;
+  private lastPlaybackIdentity = '';
+  private televisionEmbedKey = '';
+  private televisionEmbedUrl?: SafeResourceUrl;
+  private readonly televisionCorners = [
+    new THREE.Vector3(-1.7, -0.955, 0),
+    new THREE.Vector3(1.7, 0.955, 0),
+  ];
   private scene?: THREE.Scene;
   private camera?: THREE.PerspectiveCamera;
   private character?: THREE.Group;
@@ -77,10 +132,14 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   private readonly pointerRaycaster = new THREE.Raycaster();
   private readonly pointerPosition = new THREE.Vector2();
   private tvScreenMesh?: THREE.Mesh;
+  @ViewChild('tvScreenOverlay', { static: true }) private tvScreenOverlay!: ElementRef<HTMLDivElement>;
   private ceilingFanRotor?: THREE.Group;
   private nearbyDoor: LobbyCinemaEnvironment | null = null;
 
-  constructor(private readonly zone: NgZone) {}
+  constructor(
+    private readonly zone: NgZone,
+    private readonly sanitizer: DomSanitizer,
+  ) {}
 
   ngAfterViewInit(): void {
     if (typeof window === 'undefined') return;
@@ -88,6 +147,15 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['playback']) {
+      const playback = this.playback;
+      const identity = `${playback?.source || 'youtube'}:${playback?.videoId || 'Llw9Q6akRo4'}:${playback?.playing ?? true}`;
+      if (identity !== this.lastPlaybackIdentity) {
+        this.lastPlaybackIdentity = identity;
+        this.televisionEmbedKey = '';
+      }
+      this.syncPersonalVideoPlayback();
+    }
     if (!this.scene) return;
     if (
       changes['displayName'] ||
@@ -138,16 +206,82 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     );
     this.pointerRaycaster.setFromCamera(this.pointerPosition, this.camera);
     const targets: THREE.Object3D[] = this.lobbySeatTargets.map((seat) => seat.hitArea);
-    if (this.tvScreenMesh) targets.push(this.tvScreenMesh);
     const hit = this.pointerRaycaster.intersectObjects(targets, false)[0];
     if (!hit) return;
-    if (hit.object === this.tvScreenMesh) {
-      this.zone.run(() => this.tvRequested.emit());
-      return;
-    }
     const seatIndex = Number(hit.object.userData['lobbySeatIndex']);
     if (Number.isInteger(seatIndex)) this.walkToLobbySeat(seatIndex);
   };
+
+  televisionEmbedUrl(): SafeResourceUrl {
+    const playback = this.playback;
+    const videoId = playback?.videoId || 'Llw9Q6akRo4';
+    const source = playback?.source || 'youtube';
+    const key = `${source}:${videoId}:${playback?.playing ?? true}`;
+    if (key !== this.televisionEmbedKey || !this.televisionEmbedUrl) {
+      const elapsed = playback?.playing
+        ? Math.max(0, (playback.serverNow - playback.updatedAt) / 1000)
+        : 0;
+      const start = Math.floor(Math.max(0, (playback?.position ?? 0) + elapsed));
+      const autoplay = playback?.playing ?? true;
+      const url = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=${autoplay ? 1 : 0}&mute=1&controls=1&start=${start}&rel=0&playsinline=1`;
+      this.televisionEmbedKey = key;
+      this.televisionEmbedUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    return this.televisionEmbedUrl!;
+  }
+
+  seekPersonalVideo(event: Event): void {
+    const video = event.target;
+    const playback = this.playback;
+    if (!(video instanceof HTMLVideoElement) || !playback) return;
+    const elapsed = playback.playing
+      ? Math.max(0, (playback.serverNow - playback.updatedAt) / 1000)
+      : 0;
+    const target = Math.max(0, playback.position + elapsed);
+    video.currentTime = Number.isFinite(video.duration) && video.duration > 0
+      ? target % video.duration
+      : target;
+    this.syncPersonalVideoPlayback(video);
+  }
+
+  private syncPersonalVideoPlayback(video?: HTMLVideoElement): void {
+    const player = video ?? this.host?.nativeElement.querySelector<HTMLVideoElement>('.lobby-tv-live-screen video');
+    if (!player) return;
+    if (this.playback?.playing === false) {
+      player.pause();
+      return;
+    }
+    if (player.paused) void player.play().catch(() => undefined);
+  }
+
+  private updateTelevisionOverlay(): void {
+    const renderer = this.renderer;
+    const camera = this.camera;
+    const screen = this.tvScreenMesh;
+    const overlay = this.tvScreenOverlay?.nativeElement;
+    if (!renderer || !camera || !screen || !overlay) return;
+
+    camera.updateMatrixWorld();
+    screen.updateWorldMatrix(true, false);
+    const first = screen.localToWorld(this.televisionCorners[0].clone()).project(camera);
+    const second = screen.localToWorld(this.televisionCorners[1].clone()).project(camera);
+    if (first.z < -1 || first.z > 1 || second.z < -1 || second.z > 1) {
+      overlay.style.display = 'none';
+      return;
+    }
+
+    const width = renderer.domElement.clientWidth;
+    const height = renderer.domElement.clientHeight;
+    const left = (Math.min(first.x, second.x) + 1) * 0.5 * width;
+    const right = (Math.max(first.x, second.x) + 1) * 0.5 * width;
+    const top = (1 - Math.max(first.y, second.y)) * 0.5 * height;
+    const bottom = (1 - Math.min(first.y, second.y)) * 0.5 * height;
+    overlay.style.left = `${left}px`;
+    overlay.style.top = `${top}px`;
+    overlay.style.width = `${right - left}px`;
+    overlay.style.height = `${bottom - top}px`;
+    overlay.style.display = right > 0 && left < width && bottom > 0 && top < height ? 'block' : 'none';
+  }
 
   private walkToLobbySeat(index: number): void {
     const character = this.character;
@@ -1014,6 +1148,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       this.checkDoorProximity(character.position.x, character.position.z);
     }
     if (this.ceilingFanRotor) this.ceilingFanRotor.rotation.y += delta * 0.7;
+    this.updateTelevisionOverlay();
     this.renderer.render(this.scene, this.camera);
   };
 

@@ -28,8 +28,9 @@
       [shirtTier]="shirtTier()"
       [accessoryIndex]="accessoryIndex()"
       [hairColorIndex]="hairColorIndex()"
+      [playback]="playback()"
+      [personalMediaUrl]="personalMediaUrl()"
       (doorProximityChanged)="onDoorProximityChanged($event)"
-      (tvRequested)="openTelevision()"
     />
     <div class="lobby-stage-hint" role="status" aria-live="polite">
       @if (nearbyDoor) {
@@ -37,7 +38,7 @@
         <span>Đã tới cửa {{ nearbyDoor === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · nhấn E để vào</span>
       } @else {
         <i class="fa-solid fa-person-walking" aria-hidden="true"></i>
-        <span>Dùng W A S D để đi tới cửa · chạm TV để xem phim · bấm ghế để ngồi</span>
+        <span>Phim đang chiếu trực tiếp trên TV sảnh</span>
       }
     </div>
     @if (nearbyDoor) {
@@ -98,52 +99,5 @@
       </button>
     </div>
   </section>
-
-  @if (tvOpen) {
-    <div class="lobby-tv-backdrop" (click)="closeTelevision()">
-      <section
-        class="lobby-tv-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="TV sảnh chờ"
-        (click)="$event.stopPropagation()"
-      >
-        <header class="lobby-tv-header">
-          <div>
-            <span><i class="fa-solid fa-tv" aria-hidden="true"></i> PHÒNG CHIẾU SẢNH</span>
-            <strong>{{ playback()?.title || 'Healing Ciné · phim đang chiếu' }}</strong>
-          </div>
-          <button type="button" aria-label="Đóng TV" (click)="closeTelevision()">
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-          </button>
-        </header>
-        <div class="lobby-tv-screen">
-          @if (playback()?.source === 'personal-video' && personalMediaUrl()) {
-            <video
-              controls
-              autoplay
-              playsinline
-              [src]="personalMediaUrl()"
-              (loadedmetadata)="seekPersonalVideo($event)"
-            ></video>
-          } @else if (playback()?.source === 'personal-image' && personalMediaUrl()) {
-            <img [src]="personalMediaUrl()" [alt]="playback()?.title || 'Ảnh đang chiếu'" />
-          } @else {
-            <iframe
-              [src]="televisionEmbedUrl()"
-              [title]="playback()?.title || 'Phim đang chiếu tại Healing Ciné'"
-              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-              referrerpolicy="strict-origin-when-cross-origin"
-              allowfullscreen
-            ></iframe>
-          }
-        </div>
-        <footer class="lobby-tv-footer">
-          <span><i class="fa-solid fa-volume-high" aria-hidden="true"></i> Điều khiển phát nằm trên khung video</span>
-          <span>Nhấn Esc để đóng</span>
-        </footer>
-      </section>
-    </div>
-  }
 
 </main>
