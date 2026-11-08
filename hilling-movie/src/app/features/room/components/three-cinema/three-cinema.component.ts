@@ -508,7 +508,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
   private readonly SZ = 1.65;
   private readonly AISLE_EXTRA = 1.5;
   private readonly INDOOR_FLOOR_Y = -0.51;
-  private readonly INDOOR_STEP_RISE = 0.18;
+  private readonly INDOOR_STEP_RISE = 0.25;
   private readonly INDOOR_SEAT_FOOT_HEIGHT = 0.42;
 
   constructor(private zone: NgZone) {}
@@ -822,10 +822,17 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     return 2.5 * this.SX + this.AISLE_EXTRA + (c - 7) * this.SX;
   }
 
+  private indoorAisleXFor(x: number): number {
+    return [-14.35, -3.19, 3.19, 14.35].reduce((closest, aisleX) =>
+      Math.abs(aisleX - x) < Math.abs(closest - x) ? aisleX : closest,
+    -3.19);
+  }
+
   private addSeats(): void {
     const seats: { index: number; x: number; y: number; z: number }[] = [];
     const meshes: THREE.Group[] = [];
     this.addIndoorRisers();
+    this.addIndoorSideAisles();
 
     // Đèn dẫn lối ôm hai mép lối đi, chạy theo từng mặt bậc.
     const aisleX1 = (-1.83 - 4.55) / 2; // ~ -3.19
@@ -959,7 +966,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
       metalness: 0.54,
       roughness: 0.38,
     });
-    const roomWidth = 27.4;
+    const roomWidth = 32;
     const stepDepth = this.SZ;
 
     for (let row = 0; row <= this.ROWS; row++) {
@@ -1004,6 +1011,134 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
         stepLight.position.set(aisleX, topY + 0.032, frontEdgeZ + 0.035);
         this.indoorEnvironment.add(stepLight);
       }
+    }
+  }
+
+  private addIndoorSideAisles(): void {
+    const aisleWidth = 2.3;
+    const aisleX = 14.35;
+    const carpet = new THREE.MeshStandardMaterial({
+      color: 0x542b35,
+      roughness: 0.94,
+      metalness: 0.01,
+    });
+    const brass = new THREE.MeshStandardMaterial({
+      color: 0xb38b58,
+      roughness: 0.34,
+      metalness: 0.62,
+    });
+    const guideLight = new THREE.MeshBasicMaterial({ color: 0xffbd62 });
+    const railMaterial = new THREE.MeshStandardMaterial({
+      color: 0x614838,
+      roughness: 0.38,
+      metalness: 0.42,
+    });
+    const railHighlight = new THREE.MeshStandardMaterial({
+      color: 0xb38b58,
+      roughness: 0.3,
+      metalness: 0.7,
+    });
+    const up = new THREE.Vector3(0, 1, 0);
+
+    const addRailSegment = (start: THREE.Vector3, end: THREE.Vector3, radius: number) => {
+      const direction = end.clone().sub(start);
+      const rail = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, direction.length(), 10),
+        railMaterial,
+      );
+      rail.position.copy(start).add(end).multiplyScalar(0.5);
+      rail.quaternion.setFromUnitVectors(up, direction.normalize());
+      rail.castShadow = true;
+      this.indoorEnvironment.add(rail);
+    };
+
+    const addSteppedRail = (railX: number) => {
+      for (let row = 0; row <= this.ROWS; row++) {
+        const floorY = this.indoorFloorYForRow(row);
+        const z = -1.6 + row * this.SZ + this.SZ / 2 - 0.06;
+        const postBottom = new THREE.Vector3(railX, floorY + 0.05, z);
+        const postTop = new THREE.Vector3(railX, floorY + 0.9, z);
+        const post = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.045, 0.06, postTop.distanceTo(postBottom), 10),
+          railMaterial,
+        );
+        post.position.copy(postBottom).add(postTop).multiplyScalar(0.5);
+        post.quaternion.setFromUnitVectors(up, postTop.clone().sub(postBottom).normalize());
+        post.castShadow = true;
+        this.indoorEnvironment.add(post);
+
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), railHighlight);
+        cap.position.copy(postTop);
+        this.indoorEnvironment.add(cap);
+
+        if (row < this.ROWS) {
+          const nextY = this.indoorFloorYForRow(row + 1);
+          const nextZ = z + this.SZ;
+          addRailSegment(
+            new THREE.Vector3(railX, floorY + 0.9, z),
+            new THREE.Vector3(railX, nextY + 0.9, nextZ),
+            0.055,
+          );
+          addRailSegment(
+            new THREE.Vector3(railX, floorY + 0.48, z),
+            new THREE.Vector3(railX, nextY + 0.48, nextZ),
+            0.034,
+          );
+        }
+      }
+    };
+
+    for (const side of [-1, 1]) {
+      const centerX = side * aisleX;
+      for (let row = 0; row <= this.ROWS; row++) {
+        const z = -1.6 + row * this.SZ;
+        const floorY = this.indoorFloorYForRow(row);
+        const tread = new THREE.Mesh(
+          new THREE.BoxGeometry(aisleWidth, 0.035, this.SZ - 0.06),
+          carpet,
+        );
+        tread.position.set(centerX, floorY + 0.025, z);
+        tread.receiveShadow = true;
+        this.indoorEnvironment.add(tread);
+
+        const nosing = new THREE.Mesh(
+          new THREE.BoxGeometry(aisleWidth, 0.028, 0.065),
+          brass,
+        );
+        nosing.position.set(centerX, floorY + 0.052, z - this.SZ / 2 + 0.04);
+        this.indoorEnvironment.add(nosing);
+        const led = new THREE.Mesh(
+          new THREE.BoxGeometry(aisleWidth - 0.16, 0.018, 0.035),
+          guideLight,
+        );
+        led.position.set(centerX, floorY + 0.071, z - this.SZ / 2 + 0.04);
+        this.indoorEnvironment.add(led);
+
+        for (const edge of [-1, 1]) {
+          const trim = new THREE.Mesh(
+            new THREE.BoxGeometry(0.045, 0.018, this.SZ - 0.1),
+            brass,
+          );
+          trim.position.set(centerX + edge * (aisleWidth / 2 - 0.035), floorY + 0.05, z);
+          this.indoorEnvironment.add(trim);
+        }
+      }
+
+      // A wider landing connects both side aisles to the rear entrance.
+      const landingY = this.indoorFloorYForRow(this.ROWS);
+      const landing = new THREE.Mesh(
+        new THREE.BoxGeometry(aisleWidth, 0.04, 1.65),
+        carpet,
+      );
+      landing.position.set(centerX, landingY + 0.025, 10.0);
+      landing.receiveShadow = true;
+      this.indoorEnvironment.add(landing);
+
+    }
+
+    // Rail both edges of the side stairs and the two central aisles, with a second safety bar.
+    for (const railX of [-15.65, -13.05, -4.42, -1.96, 1.96, 4.42, 13.05, 15.65]) {
+      addSteppedRail(railX);
     }
   }
 
@@ -1514,7 +1649,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     if (!group || this.walkers.has(id)) return;
     const start = group.position.clone();
     const targetPos = target.clone();
-    const aisleX = this.environmentMode === 'outdoor' ? 0 : start.x < 0 ? -3.19 : 3.19;
+    const aisleX = this.environmentMode === 'outdoor' ? 0 : this.indoorAisleXFor(start.x);
     const approachY = Math.max(start.y, targetPos.y) + 0.18;
     const waypoints: THREE.Vector3[] = [];
     if (Math.abs(start.x - aisleX) > 0.45) {
@@ -1606,7 +1741,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
 
     // A new destination replaces the current route and starts from the live position.
     if (activeWalker) this.walkers.delete(id);
-    const targetAisleX = this.environmentMode === 'outdoor' ? 0 : targetSd.x < 0 ? -3.19 : 3.19;
+    const targetAisleX = this.environmentMode === 'outdoor' ? 0 : this.indoorAisleXFor(targetSd.x);
 
     // Hồ sơ có thể vừa đổi lúc nhân vật đã tồn tại trong scene; dựng lại model
     // trước khi bắt đầu di chuyển để không giữ màu áo/giới tính cũ.
@@ -1659,7 +1794,7 @@ export class ThreeCinemaComponent implements AfterViewInit, OnChanges, OnDestroy
     }
 
     const startPos = grp.position.clone();
-    const startAisleX = this.environmentMode === 'outdoor' ? 0 : startPos.x < 0 ? -3.19 : 3.19;
+    const startAisleX = this.environmentMode === 'outdoor' ? 0 : this.indoorAisleXFor(startPos.x);
     const startRow = this.environmentMode === 'indoor' ? this.indoorRowAtZ(startPos.z) : 0;
     const startWalkY = this.environmentMode === 'indoor'
       ? this.indoorFloorYForRow(startRow) + 0.32

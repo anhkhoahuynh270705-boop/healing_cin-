@@ -555,17 +555,53 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
 
   private addLobbyTelevision(scene: THREE.Group): void {
     const centerY = 3.82;
+    const housingZ = -3.75;
+    const screenZ = housingZ + 0.325;
     const housing = new THREE.MeshStandardMaterial({ color: 0x211a19, roughness: 0.42, metalness: 0.22 });
     const bezel = new THREE.MeshStandardMaterial({ color: 0x9d784e, roughness: 0.34, metalness: 0.64 });
-    scene.add(this.box(3.78, 2.48, 0.34, 0x211a19, 0, centerY, -6.76, housing));
-    scene.add(this.box(3.61, 2.31, 0.1, 0x3c3029, 0, centerY, -6.535, bezel));
-    scene.add(this.box(3.46, 2.16, 0.045, 0x11151a, 0, centerY, -6.465));
+    const steel = new THREE.MeshStandardMaterial({ color: 0x393532, roughness: 0.34, metalness: 0.76 });
+    const darkSteel = new THREE.MeshStandardMaterial({ color: 0x211f20, roughness: 0.4, metalness: 0.68 });
+
+    // Ceiling suspension keeps the screen visibly clear of the back wall.
+    const hangerY = (10.58 + centerY + 1.3) / 2;
+    const hangerLength = 10.58 - (centerY + 1.3);
+    const chainLinkGeometry = new THREE.TorusGeometry(0.064, 0.014, 6, 10);
+    for (const x of [-1.35, 1.35]) {
+      const ceilingPlate = this.box(0.38, 0.12, 0.38, 0xb18b5d, x, 10.58, housingZ, bezel);
+      scene.add(ceilingPlate);
+      const mount = this.box(0.2, 0.16, 0.2, 0x393532, x, 10.43, housingZ, steel);
+      scene.add(mount);
+      const hanger = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, hangerLength, 12), steel);
+      hanger.position.set(x, hangerY, housingZ);
+      hanger.castShadow = true;
+      scene.add(hanger);
+
+      for (let link = 0; link < 24; link++) {
+        const chainLink = new THREE.Mesh(chainLinkGeometry, darkSteel);
+        chainLink.position.set(x, 5.32 + link * 0.22, housingZ);
+        chainLink.rotation.x = Math.PI / 2;
+        chainLink.rotation.y = link % 2 === 0 ? 0.42 : -0.42;
+        scene.add(chainLink);
+      }
+    }
+
+    const supportBar = this.box(3.45, 0.14, 0.2, 0x393532, 0, 5.12, housingZ, steel);
+    supportBar.castShadow = true;
+    scene.add(supportBar);
+    for (const x of [-1.35, 1.35]) {
+      scene.add(this.box(0.32, 0.14, 0.38, 0xb18b5d, x, 5.1, housingZ, bezel));
+      scene.add(this.box(0.09, 0.18, 0.12, 0x393532, x, 5.0, housingZ, steel));
+    }
+
+    scene.add(this.box(3.78, 2.48, 0.34, 0x211a19, 0, centerY, housingZ, housing));
+    scene.add(this.box(3.61, 2.31, 0.1, 0x3c3029, 0, centerY, housingZ + 0.225, bezel));
+    scene.add(this.box(3.46, 2.16, 0.045, 0x11151a, 0, centerY, housingZ + 0.295));
 
     const screen = new THREE.Mesh(
       new THREE.PlaneGeometry(3.4, 1.91),
       new THREE.MeshBasicMaterial({ map: this.makeLobbyTelevisionTexture(), toneMapped: false }),
     );
-    screen.position.set(0, centerY, -6.435);
+    screen.position.set(0, centerY, screenZ);
     scene.add(screen);
     this.tvScreenMesh = screen;
 
@@ -573,11 +609,11 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       new THREE.SphereGeometry(0.035, 10, 8),
       new THREE.MeshBasicMaterial({ color: 0xe5ba78 }),
     );
-    led.position.set(1.78, centerY - 1.2, -6.42);
+    led.position.set(1.78, centerY - 1.2, screenZ + 0.015);
     scene.add(led);
 
     const tvGlow = new THREE.PointLight(0xe6b77c, 8, 5, 2);
-    tvGlow.position.set(0, centerY, -5.82);
+    tvGlow.position.set(0, centerY, screenZ + 0.55);
     scene.add(tvGlow);
   }
 
