@@ -141,7 +141,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     this.frameId = requestAnimationFrame(this.animate);
   }
 
-  private buildFoyer(scene: THREE.Scene): void {
+  private buildFoyer(scene: THREE.Group): void {
     scene.add(new THREE.HemisphereLight(0xcdd9ec, 0x282025, 1.35));
 
     const keyLight = new THREE.DirectionalLight(0xffe4c1, 3.6);
@@ -244,7 +244,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     scene.add(chandelier);
   }
 
-  private addWallFinish(scene: THREE.Scene): void {
+  private addWallFinish(scene: THREE.Group): void {
     const brass = 0x98754f;
     const darkWood = 0x59453a;
     scene.add(this.box(21.7, 0.2, 0.12, darkWood, 0, 0.34, -6.91));
@@ -284,7 +284,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   }
 
   private addColumn(
-    scene: THREE.Scene,
+    scene: THREE.Group,
     x: number,
     z: number,
     height: number,
@@ -375,7 +375,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     scene.add(column);
   }
 
-  private addWallSconces(scene: THREE.Scene): void {
+  private addWallSconces(scene: THREE.Group): void {
     for (const x of [-8.45, -1.55, 1.55, 8.45]) {
       const plate = this.box(0.44, 0.62, 0.12, 0x624b3d, x, 3.55, -6.83);
       scene.add(plate);
@@ -406,7 +406,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     }
   }
 
-  private addPosterFrames(scene: THREE.Scene): void {
+  private addPosterFrames(scene: THREE.Group): void {
     for (const [x, title, color] of [
       [-7.2, 'CINÉ · NO. 01', '#a87654'],
       [7.2, 'FILM · MUSIC', '#62778a'],
@@ -432,7 +432,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     }
   }
 
-  private addSideTables(scene: THREE.Scene): void {
+  private addSideTables(scene: THREE.Group): void {
     for (const x of [-6.65, 6.65]) {
       const top = new THREE.Mesh(
         new THREE.CylinderGeometry(0.49, 0.49, 0.12, 28),
@@ -470,7 +470,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   }
 
   private addDoor(
-    scene: THREE.Scene,
+    scene: THREE.Group,
     environment: LobbyCinemaEnvironment,
     x: number,
     accent: number,
@@ -571,7 +571,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     scene.add(welcomeLight);
   }
 
-  private addBench(scene: THREE.Scene, x: number): void {
+  private addBench(scene: THREE.Group, x: number): void {
     const wood = new THREE.MeshStandardMaterial({
       color: 0x5a4035,
       roughness: 0.4,
@@ -610,7 +610,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     scene.add(bench);
   }
 
-  private addPlant(scene: THREE.Scene, x: number, z: number): void {
+  private addPlant(scene: THREE.Group, x: number, z: number): void {
     const pot = new THREE.Mesh(
       new THREE.CylinderGeometry(0.42, 0.54, 0.78, 16),
       new THREE.MeshStandardMaterial({ color: 0x6d473b, roughness: 0.85 }),
