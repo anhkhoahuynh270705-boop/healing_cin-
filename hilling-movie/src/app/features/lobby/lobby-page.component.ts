@@ -20,9 +20,7 @@ export class LobbyPageComponent implements OnDestroy {
   readonly shirtTier = input(0);
   readonly accessoryIndex = input(0);
   readonly hairColorIndex = input(0);
-  readonly selectedDoor = input<LobbyCinemaEnvironment | null>(null);
   readonly enterCinema = output<LobbyCinemaEnvironment>();
-  readonly doorSelected = output<LobbyCinemaEnvironment>();
   readonly loginRequested = output<void>();
   readonly donationRequested = output<void>();
   private movementRepeat?: ReturnType<typeof setInterval>;

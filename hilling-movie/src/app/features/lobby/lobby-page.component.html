@@ -1,7 +1,4 @@
 <main class="lobby-page">
-  <div class="lobby-ambient lobby-ambient--left" aria-hidden="true"></div>
-  <div class="lobby-ambient lobby-ambient--right" aria-hidden="true"></div>
-
   <header class="lobby-header">
     <a class="lobby-brand" href="/" aria-label="Healing Ciné - sảnh chính">
       <span class="lobby-brand-mark"><i class="fa-solid fa-clapperboard" aria-hidden="true"></i></span>
@@ -21,13 +18,7 @@
     </div>
   </header>
 
-  <section class="lobby-welcome" aria-labelledby="lobby-title">
-    <p class="lobby-overline"><span></span> MỘT NƠI ĐỂ CÙNG NHAU THƯ GIÃN</p>
-    <h1 id="lobby-title">Chào mừng đến <em>Healing Ciné</em></h1>
-    <p class="lobby-subtitle">Chọn một cánh cửa, rồi dẫn nhân vật bước tới đó để vào rạp.</p>
-  </section>
-
-  <section class="lobby-stage" aria-label="Nhân vật đang đứng trong sảnh">
+  <section class="lobby-stage" aria-label="Sảnh chờ 3D toàn màn hình">
     <app-lobby-scene
       [displayName]="displayName()"
       [vipLevel]="vipLevel()"
@@ -37,19 +28,15 @@
       [shirtTier]="shirtTier()"
       [accessoryIndex]="accessoryIndex()"
       [hairColorIndex]="hairColorIndex()"
-      [selectedDoor]="selectedDoor()"
       (doorProximityChanged)="onDoorProximityChanged($event)"
     />
     <div class="lobby-stage-hint" role="status" aria-live="polite">
       @if (nearbyDoor) {
         <i class="fa-solid fa-door-open" aria-hidden="true"></i>
         <span>Đã tới cửa {{ nearbyDoor === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · nhấn E để vào</span>
-      } @else if (selectedDoor()) {
-        <i class="fa-solid fa-location-arrow" aria-hidden="true"></i>
-        <span>Đang hướng tới {{ selectedDoor() === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · dùng W A S D hoặc phím mũi tên</span>
       } @else {
         <i class="fa-solid fa-person-walking" aria-hidden="true"></i>
-        <span>Nhân vật đang ở sảnh · chọn cửa bên dưới để bắt đầu</span>
+        <span>Dùng W A S D hoặc phím mũi tên để đi tới một trong hai cửa</span>
       }
     </div>
     @if (nearbyDoor) {
@@ -111,37 +98,4 @@
     </div>
   </section>
 
-  <section class="lobby-doors" aria-label="Chọn cánh cửa muốn đi tới">
-    <button
-      type="button"
-      class="lobby-door lobby-door--outdoor"
-      [class.selected]="selectedDoor() === 'outdoor'"
-      [attr.aria-pressed]="selectedDoor() === 'outdoor'"
-      (click)="doorSelected.emit('outdoor')"
-      aria-label="Chọn cửa rạp chiếu ngoài trời"
-    >
-      <i class="fa-solid fa-cloud-moon" aria-hidden="true"></i>
-      <span><strong>Rạp ngoài trời</strong><small>Đi tới cửa bên trái</small></span>
-      <span class="door-cta">{{ selectedDoor() === 'outdoor' ? 'Đang chọn' : 'Chọn cửa' }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
-    </button>
-
-    <button
-      type="button"
-      class="lobby-door lobby-door--indoor"
-      [class.selected]="selectedDoor() === 'indoor'"
-      [attr.aria-pressed]="selectedDoor() === 'indoor'"
-      (click)="doorSelected.emit('indoor')"
-      aria-label="Chọn cửa rạp chiếu kín"
-    >
-      <i class="fa-solid fa-door-closed" aria-hidden="true"></i>
-      <span><strong>Rạp kín</strong><small>Đi tới cửa bên phải</small></span>
-      <span class="door-cta">{{ selectedDoor() === 'indoor' ? 'Đang chọn' : 'Chọn cửa' }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
-    </button>
-  </section>
-
-  <footer class="lobby-footer">
-    <span><i class="fa-solid fa-keyboard" aria-hidden="true"></i> Di chuyển: W A S D / ↑ ↓ ← →</span>
-    <span class="lobby-footer-center"><i class="fa-solid fa-sparkles" aria-hidden="true"></i> YOUR QUIET PLACE, TOGETHER</span>
-    <span class="lobby-status"><i></i> SẢNH ĐANG MỞ CỬA</span>
-  </footer>
 </main>

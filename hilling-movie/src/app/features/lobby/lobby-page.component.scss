@@ -454,3 +454,79 @@
   .lobby-door { min-height: 48px; }
   .lobby-footer { min-height: 27px; }
 }
+
+/* Immersive foyer: the 3D architecture fills the viewport behind lightweight UI. */
+.lobby-header {
+  position: absolute;
+  z-index: 8;
+  top: 0;
+  right: 0;
+  left: 0;
+  min-height: 76px;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(12, 10, 11, 0.88), rgba(12, 10, 11, 0.34));
+  backdrop-filter: blur(12px);
+}
+
+.lobby-stage {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lobby-stage::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(8, 7, 8, 0.16), transparent 24%, transparent 78%, rgba(8, 7, 8, 0.24)),
+    radial-gradient(ellipse at center, transparent 48%, rgba(8, 7, 8, 0.24));
+  content: '';
+  pointer-events: none;
+}
+
+.lobby-stage-hint {
+  z-index: 3;
+  top: 92px;
+  max-width: min(70vw, 520px);
+  min-height: 36px;
+  padding: 7px 14px;
+  border-color: rgba(228, 202, 164, 0.22);
+  background: rgba(20, 16, 17, 0.72);
+  font-size: 10px;
+}
+
+.lobby-enter-prompt {
+  z-index: 5;
+  bottom: 24px;
+}
+
+.lobby-movement-pad {
+  z-index: 4;
+  bottom: 20px;
+  left: 20px;
+}
+
+@media (max-width: 700px) {
+  .lobby-header { min-height: 62px; }
+  .lobby-stage-hint {
+    top: 72px;
+    max-width: calc(100% - 32px);
+    min-height: 32px;
+    font-size: 8px;
+  }
+  .lobby-enter-prompt { bottom: 14px; }
+  .lobby-movement-pad { bottom: 12px; left: 10px; }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .lobby-header { min-height: 52px; }
+  .lobby-stage-hint { top: 60px; }
+}

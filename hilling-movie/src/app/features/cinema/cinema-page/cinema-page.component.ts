@@ -129,7 +129,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   infoPanelOpen = false;
   orientationNoticeDismissed = false;
   currentRoom: 'lobby' | 'cinema' | 'gym' = 'lobby';
-  selectedLobbyDoor: 'indoor' | 'outdoor' | null = null;
   donationModalOpen = false;
   tasksModalOpen = false;
   walletBalance = 0;
@@ -380,7 +379,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   enterLobbyCinema(environment: 'indoor' | 'outdoor'): void {
-    this.selectedLobbyDoor = null;
     this.currentRoom = 'cinema';
     this.outdoorCinemaMode = environment === 'outdoor';
     this.activePanelId = null;
@@ -400,7 +398,6 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     clearTimeout(this.roomStartupTimer);
     this.finishRoomStartup();
     this.currentRoom = 'lobby';
-    this.selectedLobbyDoor = null;
     this.connected = false;
     this.state = null;
     this.sessionId = null;

@@ -10,8 +10,6 @@
     [shirtTier]="equippedShirtTier"
     [accessoryIndex]="wardrobe.accessoryIndex"
     [hairColorIndex]="wardrobe.hairColorIndex ?? 0"
-    [selectedDoor]="selectedLobbyDoor"
-    (doorSelected)="selectedLobbyDoor = $event"
     (enterCinema)="enterLobbyCinema($event)"
     (loginRequested)="openAuthModal('login')"
     (donationRequested)="toggleDonationModal()"

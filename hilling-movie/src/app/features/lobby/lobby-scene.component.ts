@@ -15,6 +15,9 @@ import * as THREE from 'three';
 import { createCinemaCharacter } from '../room/character/cinema-character.factory';
 import type { LobbyCinemaEnvironment } from './lobby-page.component';
 
+const FOYER_SCALE_X = 1.35;
+const FOYER_SCALE_Z = 1.25;
+
 @Component({
   selector: 'app-lobby-scene',
   standalone: true,
@@ -49,7 +52,6 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() shirtTier = 0;
   @Input() accessoryIndex = 0;
   @Input() hairColorIndex = 0;
-  @Input() selectedDoor: LobbyCinemaEnvironment | null = null;
   @Output() doorProximityChanged = new EventEmitter<LobbyCinemaEnvironment | null>();
 
   private renderer?: THREE.WebGLRenderer;
@@ -86,10 +88,6 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     ) {
       this.createCharacter();
     }
-    if (changes['selectedDoor']) {
-      this.updateDoorHighlight();
-      this.setNearbyDoor(null);
-    }
   }
 
   ngOnDestroy(): void {
@@ -109,8 +107,8 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     if (direction === 'right') this.target.x += step;
     if (direction === 'up') this.target.z -= step;
     if (direction === 'down') this.target.z += step;
-    this.target.x = THREE.MathUtils.clamp(this.target.x, -7.4, 7.4);
-    this.target.z = THREE.MathUtils.clamp(this.target.z, -5.8, 6.4);
+    this.target.x = THREE.MathUtils.clamp(this.target.x, -10.8, 10.8);
+    this.target.z = THREE.MathUtils.clamp(this.target.z, -8.45, 10.4);
     this.character.userData['targetX'] = this.target.x;
     this.character.userData['targetZ'] = this.target.z;
   }
@@ -129,12 +127,14 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
 
     this.scene = new THREE.Scene();
     this.scene.background = null;
-    this.camera = new THREE.PerspectiveCamera(43, 1, 0.1, 90);
-    this.camera.position.set(0, 7.3, 16.4);
-    this.camera.lookAt(0, 1.8, -1.7);
-    this.buildFoyer(this.scene);
+    this.camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
+    this.camera.position.set(0, 9.2, 21.5);
+    this.camera.lookAt(0, 2.0, -3.1);
+    const foyer = new THREE.Group();
+    this.buildFoyer(foyer);
+    foyer.scale.set(FOYER_SCALE_X, 1, FOYER_SCALE_Z);
+    this.scene.add(foyer);
     this.createCharacter();
-    this.updateDoorHighlight();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(host);
     this.resize();
@@ -655,6 +655,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     character.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(character);
     if (Number.isFinite(bounds.min.y)) character.position.y = -0.025 - bounds.min.y;
+    character.userData['groundY'] = character.position.y;
     character.userData['targetX'] = character.position.x;
     character.userData['targetZ'] = character.position.z;
     this.character = character;
@@ -663,7 +664,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
 
   private updateDoorHighlight(): void {
     for (const [environment, material] of this.doorMeshes) {
-      material.emissiveIntensity = this.selectedDoor === environment ? 1.05 : 0.27;
+      material.emissiveIntensity = this.nearbyDoor === environment ? 1.05 : 0.27;
     }
   }
 
@@ -682,22 +683,28 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       const dz = targetZ - character.position.z;
       const distance = Math.hypot(dx, dz);
       if (distance > 0.035) {
-        const step = Math.min(distance, 3.8 * delta);
+        const step = Math.min(distance, 2.8 * delta);
         character.position.x += (dx / distance) * step;
         character.position.z += (dz / distance) * step;
         character.rotation.y = Math.atan2(dx, dz);
-        this.walkPhase += delta * 11;
+        this.walkPhase += delta * 9.2;
+        const stride = Math.sin(this.walkPhase) * 0.56;
         for (const child of character.children) {
-          if (child.name === 'gym-leg-left') child.rotation.x = Math.sin(this.walkPhase) * 0.28;
-          if (child.name === 'gym-leg-right') child.rotation.x = -Math.sin(this.walkPhase) * 0.28;
+          if (child.name === 'gym-leg-left') child.rotation.x = stride;
+          if (child.name === 'gym-leg-right') child.rotation.x = -stride;
+          if (child.name === 'dance-arm-left') child.rotation.x = -stride * 0.3;
+          if (child.name === 'dance-arm-right') child.rotation.x = stride * 0.3;
         }
+        character.position.y = Number(character.userData['groundY']) + (0.5 - Math.cos(this.walkPhase * 2) * 0.5) * 0.035;
       } else {
         character.position.x = targetX;
         character.position.z = targetZ;
+        character.position.y = Number(character.userData['groundY']);
         for (const child of character.children) {
           if (child.name === 'gym-leg-left' || child.name === 'gym-leg-right') {
             child.rotation.x *= 0.78;
           }
+          if (child.name === 'dance-arm-left' || child.name === 'dance-arm-right') child.rotation.x *= 0.78;
         }
       }
       this.checkDoorProximity(character.position.x, character.position.z);
@@ -706,18 +713,24 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   };
 
   private checkDoorProximity(x: number, z: number): void {
-    if (!this.selectedDoor) {
-      this.setNearbyDoor(null);
-      return;
-    }
-    const doorX = this.selectedDoor === 'outdoor' ? -4.75 : 4.75;
-    const environment = Math.hypot(x - doorX, z + 4.9) <= 1.55 ? this.selectedDoor : null;
+    const doors: readonly [LobbyCinemaEnvironment, number][] = [
+      ['outdoor', -4.75],
+      ['indoor', 4.75],
+    ];
+    const closest = doors
+      .map(([environment, doorX]) => ({
+        environment,
+        distance: Math.hypot(x - doorX * FOYER_SCALE_X, z + 6.5 * FOYER_SCALE_Z),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0];
+    const environment = closest.distance <= 2.05 ? closest.environment : null;
     this.setNearbyDoor(environment);
   }
 
   private setNearbyDoor(environment: LobbyCinemaEnvironment | null): void {
     if (this.nearbyDoor === environment) return;
     this.nearbyDoor = environment;
+    this.updateDoorHighlight();
     this.zone.run(() => this.doorProximityChanged.emit(environment));
   }
 
@@ -725,7 +738,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     const host = this.host.nativeElement;
     if (!this.renderer || !this.camera || !host.clientWidth || !host.clientHeight) return;
     this.camera.aspect = host.clientWidth / host.clientHeight;
-    this.camera.fov = this.camera.aspect < 1.45 ? 56 : 43;
+    this.camera.fov = this.camera.aspect < 1.45 ? 56 : 48;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(host.clientWidth, host.clientHeight, false);
   }
