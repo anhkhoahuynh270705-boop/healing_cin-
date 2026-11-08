@@ -1,7 +1,9 @@
 <main class="lobby-page">
   <header class="lobby-header">
     <a class="lobby-brand" href="/" aria-label="Healing Ciné - sảnh chính">
-      <span class="lobby-brand-mark"><i class="fa-solid fa-clapperboard" aria-hidden="true"></i></span>
+      <span class="lobby-brand-mark"
+        ><i class="fa-solid fa-clapperboard" aria-hidden="true"></i
+      ></span>
       <span><strong>HEALING CINÉ</strong><small>THE PRIVATE MOVIE LOUNGE</small></span>
     </a>
     <div class="lobby-header-actions">
@@ -35,7 +37,10 @@
     <div class="lobby-stage-hint" role="status" aria-live="polite">
       @if (nearbyDoor) {
         <i class="fa-solid fa-door-open" aria-hidden="true"></i>
-        <span>Đã tới cửa {{ nearbyDoor === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · nhấn E để vào</span>
+        <span
+          >Đã tới cửa {{ nearbyDoor === 'outdoor' ? 'rạp ngoài trời' : 'rạp kín' }} · nhấn E để
+          vào</span
+        >
       } @else {
         <i class="fa-solid fa-person-walking" aria-hidden="true"></i>
         <span>Phim đang chiếu trực tiếp trên TV sảnh</span>
@@ -99,5 +104,4 @@
       </button>
     </div>
   </section>
-
 </main>

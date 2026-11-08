@@ -236,6 +236,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── YouTube Player state ──
   private player?: YouTubePlayer;
+  private playerGeneration = 0;
   private audioUnlocked = false;
   private autoMuted = false;
   private lastLoadedVideoId: string | null = null;
@@ -397,6 +398,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   returnToLobby(): void {
+    this.disposePlaybackPlayer();
     this.roomSocket.disconnect();
     if (typeof location !== 'undefined' && typeof history !== 'undefined') {
       const url = new URL(location.href);
@@ -843,8 +845,8 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     clearTimeout(this.roomStartupTimer);
     this.subscriptions.unsubscribe();
     this.roomSocket.disconnect();
+    this.disposePlaybackPlayer();
     clearTimeout(this.toastTimer);
-    this.player = undefined;
   }
 
   private beginRoomStartup(): void {
@@ -915,6 +917,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private createPlayer(): void {
     if (!this.playerHost?.nativeElement) return;
+    if (this.player) return;
     const playback = this.state?.playback;
     if (playback?.source.startsWith('personal-')) {
       this.renderPersonalPlayback(playback);
@@ -935,13 +938,14 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.playerHost.nativeElement.replaceChildren(targetDiv);
 
     try {
+      const generation = ++this.playerGeneration;
       this.player = new window.YT.Player(targetDiv, {
         videoId: videoId,
         width: '100%',
         height: '100%',
         playerVars: {
-          autoplay: 1,
-          mute: 1, // BẮT BUỘC cho Autoplay Policy của trình duyệt để video phát tức thì không bị màn hình đen
+          autoplay: 0,
+          mute: 1,
           controls: mobilePlayback ? 1 : 0,
           disablekb: mobilePlayback ? 0 : 1,
           fs: 0,
@@ -954,10 +958,10 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
           origin: typeof window !== 'undefined' ? window.location.origin : undefined,
         },
         events: {
-          onReady: (event: any) => {
+          onReady: () => {
+            if (generation !== this.playerGeneration) return;
             this.playerReady = true;
             try {
-              event.target.playVideo();
               if (this.audioUnlocked && !this.isMuted && this.volumeLevel > 0) {
                 this.player?.unMute();
                 this.player?.setVolume(this.volumeLevel);
@@ -967,6 +971,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
             } catch {}
             this.updateVolumeCss();
             setTimeout(() => {
+              if (generation !== this.playerGeneration) return;
               try {
                 if (this.player?.isMuted && this.player.isMuted()) {
                   this.isMuted = true;
@@ -984,6 +989,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           },
           onStateChange: (event: { data: number }) => {
+            if (generation !== this.playerGeneration) return;
             if (
               window.YT &&
               [
@@ -992,7 +998,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
                 window.YT.PlayerState.CUED,
               ].includes(event.data)
             ) {
-              // Player có thể tự chạy video dự phòng khi state phòng chưa kịp tải ID.
+              // Player đã tải hoặc bắt đầu phát video đồng bộ với timeline của phòng.
               this.videoScreenReady = true;
               this.cdr.markForCheck();
             }
@@ -1016,10 +1022,12 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           },
           onAutoplayBlocked: () => {
+            if (generation !== this.playerGeneration) return;
             this.autoplayBlocked = true;
             this.cdr.markForCheck();
           },
           onError: (err: any) => {
+            if (generation !== this.playerGeneration) return;
             console.warn('YouTube Player error:', err);
             this.videoScreenReady = false;
             this.videoPlaybackError = Number.isFinite(err?.data) ? err.data : -1;
@@ -1053,6 +1061,23 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.playerHost.nativeElement.replaceChildren(iframe);
     this.playerReady = true;
+  }
+
+  private disposePlaybackPlayer(): void {
+    this.playerGeneration++;
+    clearTimeout(this.personalMediaEndTimer);
+    try {
+      this.player?.destroy?.();
+    } catch {}
+    this.player = undefined;
+    this.playerReady = false;
+    this.videoScreenReady = false;
+    this.autoplayBlocked = false;
+    this.pendingPlayback = null;
+    this.lastLoadedVideoId = null;
+    this.activePersonalMediaId = null;
+    this.endedPersonalMediaId = null;
+    this.playerHost?.nativeElement.replaceChildren();
   }
 
   private applyPlayback(playback: Playback, force = false): void {
@@ -1114,7 +1139,9 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.videoPlaybackError = null;
       this.cdr.markForCheck();
       this.player.loadVideoById({ videoId: playback.videoId, startSeconds: target });
+      const generation = this.playerGeneration;
       setTimeout(() => {
+        if (generation !== this.playerGeneration) return;
         try {
           if (playback.playing) this.player?.playVideo();
           if (this.isMuted || this.volumeLevel === 0 || !this.audioUnlocked) {
