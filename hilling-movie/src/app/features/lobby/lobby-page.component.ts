@@ -1,4 +1,6 @@
-import { Component, HostListener, input, OnDestroy, output, ViewChild } from '@angular/core';
+import { Component, HostListener, inject, input, OnDestroy, output, ViewChild } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import type { Playback } from '../room/models';
 import { LobbySceneComponent } from './lobby-scene.component';
 
 export type LobbyCinemaEnvironment = 'indoor' | 'outdoor';
@@ -11,6 +13,7 @@ export type LobbyCinemaEnvironment = 'indoor' | 'outdoor';
   styleUrl: './lobby-page.component.scss',
 })
 export class LobbyPageComponent implements OnDestroy {
+  private readonly sanitizer = inject(DomSanitizer);
   @ViewChild(LobbySceneComponent) private lobbyScene?: LobbySceneComponent;
   readonly displayName = input('Khách');
   readonly vipLevel = input(0);
@@ -20,13 +23,18 @@ export class LobbyPageComponent implements OnDestroy {
   readonly shirtTier = input(0);
   readonly accessoryIndex = input(0);
   readonly hairColorIndex = input(0);
+  readonly playback = input<Playback | null>(null);
+  readonly personalMediaUrl = input('');
   readonly enterCinema = output<LobbyCinemaEnvironment>();
   readonly loginRequested = output<void>();
   readonly donationRequested = output<void>();
   private movementRepeat?: ReturnType<typeof setInterval>;
   private suppressPointerClick = false;
   private suppressClickTimer?: ReturnType<typeof setTimeout>;
+  private lastTelevisionUrl = '';
+  private safeTelevisionUrl?: SafeResourceUrl;
   nearbyDoor: LobbyCinemaEnvironment | null = null;
+  tvOpen = false;
 
   moveCharacterBy(direction: 'up' | 'down' | 'left' | 'right'): void {
     this.lobbyScene?.moveBy(direction);
@@ -62,6 +70,11 @@ export class LobbyPageComponent implements OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   onEnterDoorKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.tvOpen) {
+      this.closeTelevision();
+      return;
+    }
+    if (this.tvOpen) return;
     if (event.key.toLowerCase() !== 'e' || !this.nearbyDoor || event.altKey || event.ctrlKey || event.metaKey) {
       return;
     }
@@ -78,6 +91,42 @@ export class LobbyPageComponent implements OnDestroy {
     const environment = this.nearbyDoor;
     this.nearbyDoor = null;
     this.enterCinema.emit(environment);
+  }
+
+  openTelevision(): void {
+    this.tvOpen = true;
+  }
+
+  closeTelevision(): void {
+    this.tvOpen = false;
+  }
+
+  televisionEmbedUrl(): SafeResourceUrl {
+    const playback = this.playback();
+    const videoId = playback?.videoId || 'Llw9Q6akRo4';
+    const elapsed = playback?.playing
+      ? Math.max(0, (playback.serverNow - playback.updatedAt) / 1000)
+      : 0;
+    const start = Math.floor(Math.max(0, (playback?.position ?? 0) + elapsed));
+    const url = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&start=${start}&rel=0&playsinline=1`;
+    if (url !== this.lastTelevisionUrl || !this.safeTelevisionUrl) {
+      this.lastTelevisionUrl = url;
+      this.safeTelevisionUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    return this.safeTelevisionUrl!;
+  }
+
+  seekPersonalVideo(event: Event): void {
+    const video = event.target;
+    const playback = this.playback();
+    if (!(video instanceof HTMLVideoElement) || !playback) return;
+    const elapsed = playback.playing
+      ? Math.max(0, (playback.serverNow - playback.updatedAt) / 1000)
+      : 0;
+    const target = Math.max(0, playback.position + elapsed);
+    video.currentTime = Number.isFinite(video.duration) && video.duration > 0
+      ? target % video.duration
+      : target;
   }
 
   ngOnDestroy(): void {

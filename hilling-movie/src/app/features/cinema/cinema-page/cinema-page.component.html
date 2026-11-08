@@ -10,6 +10,8 @@
     [shirtTier]="equippedShirtTier"
     [accessoryIndex]="wardrobe.accessoryIndex"
     [hairColorIndex]="wardrobe.hairColorIndex ?? 0"
+    [playback]="lobbyVideoPlayback"
+    [personalMediaUrl]="lobbyPersonalMediaUrl"
     (enterCinema)="enterLobbyCinema($event)"
     (loginRequested)="openAuthModal('login')"
     (donationRequested)="toggleDonationModal()"

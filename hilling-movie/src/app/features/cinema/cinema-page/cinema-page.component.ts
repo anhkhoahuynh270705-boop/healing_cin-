@@ -84,6 +84,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Core state ──
   state: RoomState | null = null;
+  lobbyVideoPlayback: Playback | null = null;
   sessionId: string | null = null;
   guestName = 'Guess';
   clientId = '';
@@ -277,6 +278,13 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get myGuest(): Guest | null {
     return this.state?.guests.find((guest) => guest.id === this.sessionId) ?? null;
+  }
+
+  get lobbyPersonalMediaUrl(): string {
+    const playback = this.lobbyVideoPlayback;
+    return playback?.source.startsWith('personal-')
+      ? this.personalMediaApi.mediaUrl(playback.videoId)
+      : '';
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -590,6 +598,7 @@ export class CinemaPageComponent implements OnInit, AfterViewInit, OnDestroy {
         const prevVideoId = this.state?.playback?.videoId;
         this.state = state;
         if (state) {
+          if (state.playback?.videoId) this.lobbyVideoPlayback = { ...state.playback };
           const me = this.sessionId
             ? state.guests.find((guest) => guest.id === this.sessionId)
             : undefined;

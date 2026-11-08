@@ -18,6 +18,13 @@ import type { LobbyCinemaEnvironment } from './lobby-page.component';
 const FOYER_SCALE_X = 1.35;
 const FOYER_SCALE_Z = 1.25;
 
+type LobbySeatTarget = {
+  hitArea: THREE.Mesh;
+  position: THREE.Vector3;
+  rotation: number;
+  surfaceY: number;
+};
+
 @Component({
   selector: 'app-lobby-scene',
   standalone: true,
@@ -53,6 +60,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() accessoryIndex = 0;
   @Input() hairColorIndex = 0;
   @Output() doorProximityChanged = new EventEmitter<LobbyCinemaEnvironment | null>();
+  @Output() tvRequested = new EventEmitter<void>();
 
   private renderer?: THREE.WebGLRenderer;
   private scene?: THREE.Scene;
@@ -65,6 +73,11 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   private marbleTexture?: THREE.CanvasTexture;
   private readonly target = new THREE.Vector3();
   private readonly doorMeshes = new Map<LobbyCinemaEnvironment, THREE.MeshStandardMaterial>();
+  private readonly lobbySeatTargets: LobbySeatTarget[] = [];
+  private readonly pointerRaycaster = new THREE.Raycaster();
+  private readonly pointerPosition = new THREE.Vector2();
+  private tvScreenMesh?: THREE.Mesh;
+  private ceilingFanRotor?: THREE.Group;
   private nearbyDoor: LobbyCinemaEnvironment | null = null;
 
   constructor(private readonly zone: NgZone) {}
@@ -95,12 +108,14 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       cancelAnimationFrame(this.frameId);
     }
     this.resizeObserver?.disconnect();
+    this.renderer?.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
     if (this.scene) this.disposeObject(this.scene);
     this.renderer?.dispose();
   }
 
   moveBy(direction: 'up' | 'down' | 'left' | 'right'): void {
     if (!this.character) return;
+    this.standFromLobbySeat();
     const step = 0.38;
     this.target.copy(this.character.position);
     if (direction === 'left') this.target.x -= step;
@@ -111,6 +126,51 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     this.target.z = THREE.MathUtils.clamp(this.target.z, -8.45, 10.4);
     this.character.userData['targetX'] = this.target.x;
     this.character.userData['targetZ'] = this.target.z;
+  }
+
+  private readonly onCanvasPointerDown = (event: PointerEvent): void => {
+    if (!this.renderer || !this.camera || event.button !== 0) return;
+    const bounds = this.renderer.domElement.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    this.pointerPosition.set(
+      ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+      -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+    );
+    this.pointerRaycaster.setFromCamera(this.pointerPosition, this.camera);
+    const targets: THREE.Object3D[] = this.lobbySeatTargets.map((seat) => seat.hitArea);
+    if (this.tvScreenMesh) targets.push(this.tvScreenMesh);
+    const hit = this.pointerRaycaster.intersectObjects(targets, false)[0];
+    if (!hit) return;
+    if (hit.object === this.tvScreenMesh) {
+      this.zone.run(() => this.tvRequested.emit());
+      return;
+    }
+    const seatIndex = Number(hit.object.userData['lobbySeatIndex']);
+    if (Number.isInteger(seatIndex)) this.walkToLobbySeat(seatIndex);
+  };
+
+  private walkToLobbySeat(index: number): void {
+    const character = this.character;
+    const seat = this.lobbySeatTargets[index];
+    if (!character || !seat || (character.userData['isSeated'] && character.userData['seatIndex'] === index)) {
+      return;
+    }
+    this.standFromLobbySeat();
+    character.userData['seatTargetIndex'] = index;
+    character.userData['targetX'] = seat.position.x;
+    character.userData['targetZ'] = seat.position.z;
+  }
+
+  private standFromLobbySeat(): void {
+    const character = this.character;
+    if (!character) return;
+    character.userData['isSeated'] = false;
+    character.userData['seatIndex'] = -1;
+    character.userData['seatTargetIndex'] = -1;
+    for (const child of character.children) {
+      if (child.name === 'gym-leg-left' || child.name === 'gym-leg-right') child.rotation.x = 0;
+      if (child.name === 'dance-arm-left' || child.name === 'dance-arm-right') child.rotation.x = 0;
+    }
   }
 
   private initialize(): void {
@@ -124,6 +184,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     this.renderer.toneMappingExposure = 1.12;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(this.renderer.domElement);
+    this.renderer.domElement.addEventListener('pointerdown', this.onCanvasPointerDown);
 
     this.scene = new THREE.Scene();
     this.scene.background = null;
@@ -156,9 +217,9 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     keyLight.shadow.camera.updateProjectionMatrix();
     scene.add(keyLight);
 
-    const chandelierLight = new THREE.PointLight(0xffd69b, 44, 24, 2);
-    chandelierLight.position.set(0, 6.4, 0.2);
-    scene.add(chandelierLight);
+    const fanLight = new THREE.PointLight(0xffd69b, 38, 24, 2);
+    fanLight.position.set(0, 7.15, 0.2);
+    scene.add(fanLight);
 
     const floorTexture = this.makeFloorTexture();
     const floor = new THREE.Mesh(
@@ -218,32 +279,90 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     this.addPlant(scene, -8.7, -2.2);
     this.addPlant(scene, 8.7, -2.2);
     this.addSideTables(scene);
+    this.addLobbySeating(scene);
     this.addWallSconces(scene);
     this.addPosterFrames(scene);
+    this.addCeilingFan(scene);
+  }
 
-    const chandelier = new THREE.Group();
-    const chain = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.035, 4.7, 8),
-      new THREE.MeshStandardMaterial({ color: 0xa88454, metalness: 0.72, roughness: 0.3 }),
-    );
-    chain.position.y = 8.1;
-    chandelier.add(chain);
-    const fixture = new THREE.Mesh(
-      new THREE.TorusGeometry(0.75, 0.075, 10, 36),
-      new THREE.MeshStandardMaterial({ color: 0xe6c58a, emissive: 0x593816, metalness: 0.65 }),
-    );
-    fixture.position.y = 5.68;
-    chandelier.add(fixture);
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const bulb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 12, 10),
-        new THREE.MeshBasicMaterial({ color: 0xffdca2 }),
-      );
-      bulb.position.set(Math.cos(angle) * 0.75, 5.65, Math.sin(angle) * 0.75);
-      chandelier.add(bulb);
+  private addCeilingFan(scene: THREE.Group): void {
+    const metal = new THREE.MeshStandardMaterial({ color: 0x9e835c, metalness: 0.72, roughness: 0.3 });
+    const darkMetal = new THREE.MeshStandardMaterial({ color: 0x39312c, metalness: 0.68, roughness: 0.3 });
+    const fan = new THREE.Group();
+
+    const canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.3, 0.16, 32), metal);
+    canopy.position.y = 10.58;
+    fan.add(canopy);
+    const ceilingMount = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.25, 20), darkMetal);
+    ceilingMount.position.y = 10.38;
+    fan.add(ceilingMount);
+
+    const downrod = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 2.45, 16), metal);
+    downrod.position.y = 9.14;
+    fan.add(downrod);
+    const upperCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.16, 20), darkMetal);
+    upperCollar.position.y = 7.94;
+    fan.add(upperCollar);
+
+    const rotor = new THREE.Group();
+    rotor.position.y = 7.82;
+    const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.38, 32), darkMetal);
+    motor.position.y = 0.05;
+    rotor.add(motor);
+    const motorBand = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.035, 8, 32), metal);
+    motorBand.rotation.x = Math.PI / 2;
+    motorBand.position.y = -0.07;
+    rotor.add(motorBand);
+
+    const bladeShape = new THREE.Shape();
+    bladeShape.moveTo(0.24, -0.12);
+    bladeShape.lineTo(1.45, -0.2);
+    bladeShape.quadraticCurveTo(1.86, -0.18, 1.98, -0.05);
+    bladeShape.lineTo(1.8, 0.13);
+    bladeShape.lineTo(0.3, 0.16);
+    bladeShape.closePath();
+    const bladeGeometry = new THREE.ExtrudeGeometry(bladeShape, {
+      depth: 0.065,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.025,
+      bevelThickness: 0.025,
+    });
+    bladeGeometry.rotateX(-Math.PI / 2);
+    const bladeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x604936,
+      roughness: 0.42,
+      metalness: 0.12,
+    });
+    for (let bladeIndex = 0; bladeIndex < 5; bladeIndex++) {
+      const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+      blade.rotation.y = (bladeIndex / 5) * Math.PI * 2;
+      blade.castShadow = true;
+      rotor.add(blade);
+      const bladeHub = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), metal);
+      bladeHub.position.set(Math.cos(blade.rotation.y) * 0.38, 0.06, -Math.sin(blade.rotation.y) * 0.38);
+      rotor.add(bladeHub);
     }
-    scene.add(chandelier);
+
+    const lightHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.31, 0.16, 24), metal);
+    lightHousing.position.y = -0.2;
+    rotor.add(lightHousing);
+    const diffuser = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 20, 14),
+      new THREE.MeshStandardMaterial({
+        color: 0xffe0ab,
+        emissive: 0xffc878,
+        emissiveIntensity: 0.48,
+        roughness: 0.24,
+      }),
+    );
+    diffuser.scale.y = 0.62;
+    diffuser.position.y = -0.36;
+    rotor.add(diffuser);
+    fan.add(rotor);
+    scene.add(fan);
+    this.ceilingFanRotor = rotor;
   }
 
   private addCeiling(scene: THREE.Group): void {
@@ -314,6 +433,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     );
     screen.position.set(0, centerY, -6.435);
     scene.add(screen);
+    this.tvScreenMesh = screen;
 
     const led = new THREE.Mesh(
       new THREE.SphereGeometry(0.035, 10, 8),
@@ -556,6 +676,85 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     }
   }
 
+  private addLobbySeating(scene: THREE.Group): void {
+    const wood = new THREE.MeshStandardMaterial({ color: 0x49362d, roughness: 0.44, metalness: 0.1 });
+    const velvet = new THREE.MeshStandardMaterial({ color: 0x70434a, roughness: 0.9 });
+    const piping = new THREE.MeshStandardMaterial({ color: 0xc3a06e, metalness: 0.48, roughness: 0.34 });
+    const darkMetal = new THREE.MeshStandardMaterial({ color: 0x292326, metalness: 0.62, roughness: 0.36 });
+    const hitMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const seatPositions: Array<[number, number]> = [
+      [-5.05, -0.85],
+      [5.05, -0.85],
+      [-5.05, 2.15],
+      [5.05, 2.15],
+      [-5.05, 5.05],
+      [5.05, 5.05],
+    ];
+
+    seatPositions.forEach(([x, z], index) => {
+      const chair = new THREE.Group();
+      chair.position.set(x, 0, z);
+      chair.rotation.y = Math.PI;
+
+      const footBase = this.box(1.14, 0.16, 0.94, 0x3e302b, 0, 0.12, 0.02, wood);
+      chair.add(footBase);
+      const apron = this.box(1.08, 0.18, 0.83, 0x594138, 0, 0.39, 0.02, wood);
+      chair.add(apron);
+      const cushion = this.box(1.03, 0.22, 0.84, 0x70434a, 0, 0.61, 0.05, velvet);
+      cushion.castShadow = true;
+      chair.add(cushion);
+      const seatPiping = this.box(1.04, 0.035, 0.84, 0xc3a06e, 0, 0.735, 0.05, piping);
+      chair.add(seatPiping);
+
+      const backShell = this.box(1.12, 1.22, 0.2, 0x49362d, 0, 1.18, -0.34, wood);
+      chair.add(backShell);
+      const backCushion = this.box(0.94, 0.99, 0.12, 0x70434a, 0, 1.21, -0.205, velvet);
+      chair.add(backCushion);
+      const headPad = this.box(0.72, 0.2, 0.13, 0x85525a, 0, 1.78, -0.19, velvet);
+      chair.add(headPad);
+      for (const buttonY of [0.94, 1.2, 1.46]) {
+        const button = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), piping);
+        button.position.set(0, buttonY, -0.128);
+        chair.add(button);
+      }
+
+      for (const side of [-1, 1]) {
+        const armBase = this.box(0.24, 0.42, 0.82, 0x49362d, side * 0.63, 0.7, 0.08, wood);
+        chair.add(armBase);
+        const armPad = this.box(0.25, 0.11, 0.78, 0x85525a, side * 0.63, 0.96, 0.08, velvet);
+        chair.add(armPad);
+        const armTrim = this.box(0.26, 0.035, 0.78, 0xc3a06e, side * 0.63, 1.025, 0.08, piping);
+        chair.add(armTrim);
+        for (const legZ of [-0.31, 0.34]) {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.43, 12), darkMetal);
+          leg.position.set(side * 0.43, 0.23, legZ);
+          chair.add(leg);
+          const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.08, 0.08, 12), piping);
+          foot.position.set(side * 0.43, 0.045, legZ);
+          chair.add(foot);
+        }
+      }
+
+      const hitArea = new THREE.Mesh(new THREE.BoxGeometry(1.62, 2.05, 1.5), hitMaterial);
+      hitArea.position.set(0, 1.0, 0.02);
+      hitArea.userData['lobbySeatIndex'] = index;
+      chair.add(hitArea);
+      scene.add(chair);
+      this.lobbySeatTargets.push({
+        hitArea,
+        // Chairs face the television at negative Z, so approach from their front edge.
+        position: new THREE.Vector3(x * FOYER_SCALE_X, 0, (z - 0.88) * FOYER_SCALE_Z),
+        rotation: Math.PI,
+        surfaceY: 0.735,
+      });
+    });
+  }
+
   private addDoor(
     scene: THREE.Group,
     environment: LobbyCinemaEnvironment,
@@ -745,6 +944,9 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     character.userData['groundY'] = character.position.y;
     character.userData['targetX'] = character.position.x;
     character.userData['targetZ'] = character.position.z;
+    character.userData['seatTargetIndex'] = -1;
+    character.userData['seatIndex'] = -1;
+    character.userData['isSeated'] = false;
     this.character = character;
     this.scene.add(character);
   }
@@ -782,20 +984,36 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
           if (child.name === 'dance-arm-left') child.rotation.x = -stride * 0.3;
           if (child.name === 'dance-arm-right') child.rotation.x = stride * 0.3;
         }
-        character.position.y = Number(character.userData['groundY']) + (0.5 - Math.cos(this.walkPhase * 2) * 0.5) * 0.035;
-      } else {
+        const walkingHeight = Number(character.userData['groundY']) + (0.5 - Math.cos(this.walkPhase * 2) * 0.5) * 0.035;
+        character.position.y = THREE.MathUtils.damp(character.position.y, walkingHeight, 9, delta);
+      } else if (!character.userData['isSeated']) {
         character.position.x = targetX;
         character.position.z = targetZ;
-        character.position.y = Number(character.userData['groundY']);
-        for (const child of character.children) {
-          if (child.name === 'gym-leg-left' || child.name === 'gym-leg-right') {
-            child.rotation.x *= 0.78;
+        const seatIndex = Number(character.userData['seatTargetIndex']);
+        const seat = Number.isInteger(seatIndex) && seatIndex >= 0
+          ? this.lobbySeatTargets[seatIndex]
+          : undefined;
+        if (seat) {
+          character.position.y = seat.surfaceY - 0.13;
+          character.rotation.y = seat.rotation;
+          character.userData['isSeated'] = true;
+          character.userData['seatIndex'] = seatIndex;
+          character.userData['seatTargetIndex'] = -1;
+          for (const child of character.children) {
+            if (child.name === 'gym-leg-left' || child.name === 'gym-leg-right') child.rotation.x = -0.88;
+            if (child.name === 'dance-arm-left' || child.name === 'dance-arm-right') child.rotation.x = 0.2;
           }
-          if (child.name === 'dance-arm-left' || child.name === 'dance-arm-right') child.rotation.x *= 0.78;
+        } else {
+          character.position.y = Number(character.userData['groundY']);
+          for (const child of character.children) {
+            if (child.name === 'gym-leg-left' || child.name === 'gym-leg-right') child.rotation.x *= 0.78;
+            if (child.name === 'dance-arm-left' || child.name === 'dance-arm-right') child.rotation.x *= 0.78;
+          }
         }
       }
       this.checkDoorProximity(character.position.x, character.position.z);
     }
+    if (this.ceilingFanRotor) this.ceilingFanRotor.rotation.y += delta * 0.7;
     this.renderer.render(this.scene, this.camera);
   };
 
