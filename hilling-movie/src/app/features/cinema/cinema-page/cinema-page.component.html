@@ -15,646 +15,663 @@
     (donationRequested)="toggleDonationModal()"
   />
 } @else {
-@if (isBootingRoom) {
-  <div class="room-startup-overlay" role="status" aria-live="polite">
-    <div class="room-startup-content">
-      <span class="room-startup-mark" aria-hidden="true">
-        <i class="fa-solid fa-film"></i>
-      </span>
-      <span class="room-startup-spinner" aria-hidden="true"></span>
-      <p class="room-startup-eyebrow">HEALING MOVIE</p>
-      <h1>Đang khởi động rạp phim</h1>
-      <p class="room-startup-caption">Đang kết nối phòng chiếu và đồng bộ chỗ ngồi của bạn…</p>
-      <div class="room-startup-progress" aria-hidden="true"><span></span></div>
-    </div>
-  </div>
-}
-
-@if (!orientationNoticeDismissed) {
-  <section class="orientation-notice" aria-labelledby="orientation-notice-title">
-    <div class="orientation-notice-card">
-      <span class="orientation-notice-icon" aria-hidden="true">
-        <i class="fa-solid fa-mobile-screen-button"></i>
-        <i class="fa-solid fa-rotate orientation-rotate-icon"></i>
-      </span>
-      <p class="orientation-notice-eyebrow">Trải nghiệm tốt hơn</p>
-      <h1 id="orientation-notice-title">Hãy xoay ngang màn hình</h1>
-      <p>Rạp phim và phòng gym được thiết kế rộng hơn khi xem ở chế độ ngang.</p>
-      <button type="button" (click)="dismissOrientationNotice()">Tiếp tục theo chiều dọc</button>
-    </div>
-  </section>
-}
-
-<div class="cinema-layout" [class.gym-active]="currentRoom === 'gym'">
-  <!-- ═══════ TOP BAR ═══════ -->
-  <header class="cinema-topbar">
-    <div class="topbar-left">
-      <div class="brand-logo">
-        <span class="brand-icon"
-          ><i
-            class="fa-solid"
-            [class.fa-film]="currentRoom === 'cinema'"
-            [class.fa-dumbbell]="currentRoom === 'gym'"
-            aria-hidden="true"
-          ></i
-        ></span>
-        <div class="brand-text">
-          <span class="brand-name">{{
-            currentRoom === 'gym' ? 'Healing Fitness' : 'Healing_ciné'
-          }}</span>
-          <span class="brand-sub">{{
-            currentRoom === 'gym' ? 'MOVEMENT · STRENGTH · WELLNESS' : 'FILM · MUSIC · BEATS'
-          }}</span>
-        </div>
-      </div>
-    </div>
-    <div class="topbar-center">
-      <div class="status-badge">
-        <span class="status-dot" [class.offline]="!connected"></span>
-        <span>{{
-          currentRoom === 'gym' ? 'Đang tập luyện' : connected ? 'Đang chiếu' : 'Đang kết nối…'
-        }}</span>
-      </div>
-      @if (currentRoom === 'gym') {
-        <div class="room-title-badge">
-          <i class="fa-solid fa-dumbbell" aria-hidden="true"></i> Healing Fitness Club
-        </div>
-      } @else if (state?.roomName) {
-        <div class="room-title-badge">
-          <i class="fa-solid fa-film" aria-hidden="true"></i> {{ state?.roomName }}
-        </div>
-      }
-      @if (currentRoom === 'cinema') {
-        <div class="online-count">
-          <span class="online-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
-          <div class="online-info">
-            <span class="online-number">{{ guestCount }} đang online</span>
-            <span class="seat-count"
-              >{{ guestCount }} / {{ state?.seatCount ?? TOTAL_SEATS }} ghế</span
-            >
-          </div>
-        </div>
-      }
-    </div>
-    <div class="topbar-right">
-      @if (isInPrivateRoom) {
-        <button
-          type="button"
-          class="room-exit-btn"
-          (click)="returnToCommonRoom()"
-          title="Rời phòng riêng và quay về rạp chung"
-        >
-          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Rạp chung</span>
-        </button>
-      }
-      <app-notification-center
-        [notifications]="notifications"
-        (markRead)="markNotificationsRead()"
-        (clearAll)="clearNotifications()"
-      />
-      <button type="button" class="tb-btn lobby-return-btn" title="Quay về sảnh" (click)="returnToLobby()">
-        <i class="fa-solid fa-door-open" aria-hidden="true"></i>
-      </button>
-      <button class="tb-btn" title="Chia sẻ phòng" (click)="copyRoomLink()">
-        <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
-      </button>
-      <button class="tb-btn" title="Toàn màn hình" (click)="toggleFullscreen()">
-        <i class="fa-solid fa-expand" aria-hidden="true"></i>
-      </button>
-      <button
-        type="button"
-        class="tb-btn mobile-action-trigger"
-        title="Mở bảng điều khiển"
-        aria-label="Mở bảng điều khiển phòng"
-        aria-controls="right-sidebar"
-        [attr.aria-expanded]="mobileActionMenuOpen"
-        (click)="toggleMobileActionMenu()"
-      >
-        <i class="fa-solid fa-bars-staggered" aria-hidden="true"></i>
-      </button>
-      <div class="header-info-control">
-        <button
-          type="button"
-          class="tb-btn"
-          title="Thông tin"
-          [attr.aria-label]="
-            'Hướng dẫn sử dụng ' + (currentRoom === 'gym' ? 'Healing Fitness' : 'Healing Ciné')
-          "
-          [attr.aria-expanded]="infoPanelOpen"
-          aria-controls="cinema-info-panel"
-          (click)="toggleInfoPanel()"
-        >
-          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-        </button>
-        @if (infoPanelOpen) {
-          <section id="cinema-info-panel" class="header-info-panel" aria-label="Hướng dẫn sử dụng">
-            <header>
-              <div>
-                <span>HƯỚNG DẪN</span>
-                <h2>{{ currentRoom === 'gym' ? 'Healing Fitness' : 'Healing Ciné' }}</h2>
-              </div>
-              <button type="button" aria-label="Đóng hướng dẫn" (click)="toggleInfoPanel()">
-                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-              </button>
-            </header>
-            @if (currentRoom === 'gym') {
-              <ul>
-                <li>
-                  <i class="fa-solid fa-dumbbell" aria-hidden="true"></i> Chọn máy tập trong phòng
-                  để đưa nhân vật đến vị trí đó.
-                </li>
-                <li>
-                  <i class="fa-solid fa-person-running" aria-hidden="true"></i> Dùng bảng điều khiển
-                  của máy để bắt đầu hoặc kết thúc bài tập.
-                </li>
-                <li>
-                  <i class="fa-solid fa-film" aria-hidden="true"></i> Chuyển sang phòng chiếu phim
-                  từ nút đổi phòng.
-                </li>
-              </ul>
-            } @else {
-              <ul>
-                <li>
-                  <i class="fa-solid fa-chair" aria-hidden="true"></i> Chọn ghế để nhân vật vào chỗ;
-                  bấm ghế khác để di chuyển.
-                </li>
-                <li>
-                  <i class="fa-solid fa-gamepad movement-help-icon" aria-hidden="true"></i> Điều
-                  khiển nhân vật bằng W A S D, phím mũi tên hoặc cụm nút di chuyển trong rạp.
-                </li>
-                <li>
-                  <i class="fa-solid fa-list" aria-hidden="true"></i> Mở các tab bên phải để xem
-                  hàng chờ, khán giả, trò chuyện và hành động.
-                </li>
-                <li>
-                  <i class="fa-solid fa-photo-film" aria-hidden="true"></i> Nội dung cá nhân cho
-                  phép tải ảnh hoặc video ngắn lên màn chiếu.
-                </li>
-                <li>
-                  <i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Chia sẻ liên kết để mời
-                  bạn bè vào cùng phòng.
-                </li>
-              </ul>
-            }
-            <p class="header-info-footer">
-              Cần tài khoản và số dư ví cho một số tính năng trả phí.
-            </p>
-          </section>
-        }
-      </div>
-      <button
-        type="button"
-        class="topbar-action"
-        (click)="openTasksModal()"
-        title="Nhiệm vụ nhận EXP"
-      >
-        <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>Nhiệm vụ</span>
-      </button>
-      <button
-        type="button"
-        class="topbar-wallet"
-        (click)="toggleDonationModal()"
-        title="Số dư ví ủng hộ"
-      >
-        <i class="fa-solid fa-wallet" aria-hidden="true"></i>
-        <span>{{ formatWalletAmount(walletBalance) }}</span>
-      </button>
-      <button
-        type="button"
-        class="topbar-vip"
-        (click)="openCharacterEntry()"
-        [attr.aria-label]="vipHeaderAriaLabel"
-        [title]="vipHeaderTitle"
-      >
-        <i class="fa-solid fa-crown" aria-hidden="true"></i>
-        <span class="topbar-vip-label">VIP {{ myVipLevel }}</span>
-        <span class="topbar-vip-track" aria-hidden="true">
-          <span [style.width.%]="vipProgressPercent"></span>
+  @if (isBootingRoom) {
+    <div class="room-startup-overlay" role="status" aria-live="polite">
+      <div class="room-startup-content">
+        <span class="room-startup-mark" aria-hidden="true">
+          <i class="fa-solid fa-film"></i>
         </span>
-      </button>
-      <button
-        type="button"
-        class="user-profile-badge"
-        (click)="openCharacterEntry()"
-        aria-label="Tùy chỉnh nhân vật trước khi vào rạp"
-        title="Tùy chỉnh nhân vật"
-      >
-        <span class="user-profile-name">{{ guestName }}</span>
-      </button>
-      @if (currentUser) {
-        <button class="tb-btn tb-btn-auth logout-btn" (click)="logout()" title="Đăng xuất">
-          <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>Đăng xuất</span>
-        </button>
-      }
-      @if (!currentUser) {
-        <button class="tb-btn-primary" (click)="openAuthModal('login')">Đăng nhập</button>
-      }
+        <span class="room-startup-spinner" aria-hidden="true"></span>
+        <p class="room-startup-eyebrow">HEALING MOVIE</p>
+        <h1>Đang khởi động rạp phim</h1>
+        <p class="room-startup-caption">Đang kết nối phòng chiếu và đồng bộ chỗ ngồi của bạn…</p>
+        <div class="room-startup-progress" aria-hidden="true"><span></span></div>
+      </div>
     </div>
-  </header>
+  }
 
-  <!-- ═══════ BODY ═══════ -->
-  <div class="cinema-body">
-    <!-- LEFT SIDEBAR -->
-    <aside class="left-sidebar" [class.room-mode-hidden]="currentRoom === 'gym'">
-      <div class="sidebar-section">
-        <p class="sidebar-eyebrow">TRÊN MÀN ẢNH</p>
-        @if (state?.playback?.videoId) {
-          <div class="sidebar-poster-wrap">
-            <img
-              class="sidebar-poster"
-              [src]="screenPosterUrl(state!.playback)"
-              [alt]="state!.playback.title"
-              loading="lazy"
-            />
-            <span class="sidebar-poster-badge"
-              ><i class="fa-solid fa-play" aria-hidden="true"></i> Đang chiếu</span
-            >
-          </div>
-        }
-        <h2 class="sidebar-title">{{ state?.playback?.title ?? 'Đang chuẩn bị phòng chiếu…' }}</h2>
-        <div class="sidebar-meta">
-          <span class="sidebar-source">
-            <i
+  @if (!orientationNoticeDismissed) {
+    <section class="orientation-notice" aria-labelledby="orientation-notice-title">
+      <div class="orientation-notice-card">
+        <span class="orientation-notice-icon" aria-hidden="true">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+          <i class="fa-solid fa-rotate orientation-rotate-icon"></i>
+        </span>
+        <p class="orientation-notice-eyebrow">Trải nghiệm tốt hơn</p>
+        <h1 id="orientation-notice-title">Hãy xoay ngang màn hình</h1>
+        <p>Rạp phim và phòng gym được thiết kế rộng hơn khi xem ở chế độ ngang.</p>
+        <button type="button" (click)="dismissOrientationNotice()">Tiếp tục theo chiều dọc</button>
+      </div>
+    </section>
+  }
+
+  <div class="cinema-layout" [class.gym-active]="currentRoom === 'gym'">
+    <!-- ═══════ TOP BAR ═══════ -->
+    <header class="cinema-topbar">
+      <div class="topbar-left">
+        <div class="brand-logo">
+          <span class="brand-icon"
+            ><i
               class="fa-solid"
-              [class.fa-list-ol]="state?.playback?.source === 'queue'"
-              [class.fa-photo-film]="state?.playback?.source?.startsWith('personal-')"
-              [class.fa-radio]="state?.playback?.source === 'lofi'"
+              [class.fa-film]="currentRoom === 'cinema'"
+              [class.fa-dumbbell]="currentRoom === 'gym'"
               aria-hidden="true"
-            ></i>
-            {{ playbackSourceLabel(state?.playback?.source) }}
-          </span>
+            ></i
+          ></span>
+          <div class="brand-text">
+            <span class="brand-name">{{
+              currentRoom === 'gym' ? 'Healing Fitness' : 'Healing_ciné'
+            }}</span>
+            <span class="brand-sub">{{
+              currentRoom === 'gym' ? 'MOVEMENT · STRENGTH · WELLNESS' : 'FILM · MUSIC · BEATS'
+            }}</span>
+          </div>
         </div>
       </div>
-
-      <!-- Vote skip (Backend processed: cần >= 90% số người đồng ý) -->
-      <div class="vote-section">
-        <button class="vote-btn" (click)="voteSkip()" [class.voted]="hasVotedSkip">
-          <span class="vote-icon"><i class="fa-solid fa-forward-step" aria-hidden="true"></i></span>
-          <span class="vote-label">Vote bỏ qua <small>(≥90%)</small></span>
-          <strong>{{ skipVotes }}/{{ minSkipVotes }}</strong>
-        </button>
-        <div class="vote-bar-wrap">
-          <div class="vote-bar" [style.width.%]="skipPercent"></div>
+      <div class="topbar-center">
+        <div class="status-badge">
+          <span class="status-dot" [class.offline]="!connected"></span>
+          <span>{{
+            currentRoom === 'gym' ? 'Đang tập luyện' : connected ? 'Đang chiếu' : 'Đang kết nối…'
+          }}</span>
         </div>
-      </div>
-
-      <!-- Reaction buttons -->
-      <div class="sidebar-section">
-        <p class="sidebar-eyebrow">PHẢN ỨNG</p>
-        <div class="reaction-grid">
-          @for (emoji of reactionEmojis; track emoji) {
-            <button class="reaction-emoji-btn" (click)="sendReactionEmoji(emoji)" [title]="emoji">
-              {{ emoji }}
-            </button>
-          }
-        </div>
-      </div>
-    </aside>
-
-    <!-- 3D SCENE + YOUTUBE CINEMA SCREEN -->
-    <div
-      class="scene-area"
-      [class.outdoor-scene]="outdoorCinemaMode"
-      [class.gym-active]="currentRoom === 'gym'"
-    >
-      <!-- YouTube Screen đặt phía sau (z-index: 1, không box shadow) -->
-      <div class="cinema-screen-overlay" [class.room-mode-hidden]="currentRoom === 'gym'">
-        <div #playerHost id="youtube-embed-screen"></div>
-        @if (showOutdoorScreenLoading) {
-          <div class="outdoor-screen-loading" role="status" aria-live="polite">
-            <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-            <span>Đang tải video</span>
+        @if (currentRoom === 'gym') {
+          <div class="room-title-badge">
+            <i class="fa-solid fa-dumbbell" aria-hidden="true"></i> Healing Fitness Club
+          </div>
+        } @else if (state?.roomName) {
+          <div class="room-title-badge">
+            <i class="fa-solid fa-film" aria-hidden="true"></i> {{ state?.roomName }}
+          </div>
+        }
+        @if (currentRoom === 'cinema') {
+          <div class="online-count">
+            <span class="online-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
+            <div class="online-info">
+              <span class="online-number">{{ guestCount }} đang online</span>
+              <span class="seat-count"
+                >{{ guestCount }} / {{ state?.seatCount ?? TOTAL_SEATS }} ghế</span
+              >
+            </div>
           </div>
         }
       </div>
-
-      <!-- Three.js Visualizer / 3D Auditorium Room đặt phía trên (z-index: 2) để ánh đèn, quả cầu disco và loa nằm trên màn hình -->
-      <app-three-cinema
-        [class.room-mode-hidden]="currentRoom === 'gym'"
-        [state]="state"
-        [sessionId]="sessionId"
-        [discoEnabled]="discoEnabled"
-        [environment]="outdoorCinemaMode ? 'outdoor' : 'indoor'"
-        (seatSelected)="claimSeat($event)"
-        (environmentChanged)="onCinemaEnvironmentChanged($event)"
-      ></app-three-cinema>
-
-      <app-gym-room
-        [class.room-mode-hidden]="currentRoom !== 'gym'"
-        [active]="currentRoom === 'gym'"
-        [guest]="myGuest"
-        [displayName]="guestName"
-        (exitGym)="switchRoom('cinema')"
-      ></app-gym-room>
-
-      @if (currentRoom === 'cinema') {
-        <section class="character-movement-controls" aria-label="Điều khiển di chuyển nhân vật">
-          <span class="movement-control-label">DI CHUYỂN</span>
-          <div class="movement-control-pad">
-            <button
-              type="button"
-              title="Đi lên (W hoặc mũi tên lên)"
-              aria-label="Đi lên"
-              (click)="moveCharacterBy('up')"
-            >
-              <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
-            </button>
-            <button
-              type="button"
-              title="Đi sang trái (A hoặc mũi tên trái)"
-              aria-label="Đi sang trái"
-              (click)="moveCharacterBy('left')"
-            >
-              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-            </button>
-            <button
-              type="button"
-              title="Đi xuống (S hoặc mũi tên xuống)"
-              aria-label="Đi xuống"
-              (click)="moveCharacterBy('down')"
-            >
-              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-            </button>
-            <button
-              type="button"
-              title="Đi sang phải (D hoặc mũi tên phải)"
-              aria-label="Đi sang phải"
-              (click)="moveCharacterBy('right')"
-            >
-              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-            </button>
-          </div>
-          <small>W A S D · ↑ ↓ ← →</small>
-        </section>
-      }
-
-      <!-- Nút nổi bật để bật âm thanh khi trình duyệt autoplay ở chế độ tắt tiếng -->
-      @if (videoPlaybackError !== null && currentRoom === 'cinema') {
-        <button class="unmute-banner" (click)="openCurrentVideoOnYouTube()">
-          <span class="unmute-icon"
-            ><i class="fa-solid fa-circle-play" aria-hidden="true"></i
-          ></span>
-          <span>Video lỗi ({{ videoPlaybackError }}). Mở trên YouTube</span>
-        </button>
-      } @else if ((isMuted || autoplayBlocked) && currentRoom === 'cinema') {
-        <button class="unmute-banner" (click)="unmuteAudio()">
-          <span class="unmute-icon"
-            ><i class="fa-solid fa-volume-high" aria-hidden="true"></i
-          ></span>
-          <span>{{ autoplayBlocked ? 'Chạm để phát video' : 'Chạm để bật âm thanh rạp' }}</span>
-        </button>
-      }
-    </div>
-
-    <!-- RIGHT SIDEBAR -->
-    @if (mobileActionMenuOpen) {
-      <button
-        type="button"
-        class="mobile-menu-backdrop"
-        aria-label="Đóng bảng điều khiển"
-        (click)="closeMobileActionMenu()"
-      ></button>
-    }
-    <aside
-      id="right-sidebar"
-      class="right-sidebar"
-      [class.mobile-dropdown-open]="mobileActionMenuOpen"
-    >
-      <button
-        class="rs-btn room-switch-btn"
-        [class.rs-btn--active]="currentRoom === 'cinema'"
-        title="Chuyển đến phòng xem phim"
-        (click)="switchRoom('cinema')"
-      >
-        <i class="fa-solid fa-film" aria-hidden="true"></i><span>Rạp phim</span>
-      </button>
-      <button
-        class="rs-btn room-switch-btn"
-        [class.rs-btn--active]="currentRoom === 'gym'"
-        title="Chuyển đến phòng gym"
-        (click)="switchRoom('gym')"
-      >
-        <i class="fa-solid fa-dumbbell" aria-hidden="true"></i>
-        <span>Phòng gym</span>
-      </button>
-
-      @if (currentRoom === 'cinema') {
-        <!-- 2. Chọn ghế -->
+      <div class="topbar-right">
+        @if (isInPrivateRoom) {
+          <button
+            type="button"
+            class="room-exit-btn"
+            (click)="returnToCommonRoom()"
+            title="Rời phòng riêng và quay về rạp chung"
+          >
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Rạp chung</span>
+          </button>
+        }
+        <app-notification-center
+          [notifications]="notifications"
+          (markRead)="markNotificationsRead()"
+          (clearAll)="clearNotifications()"
+        />
         <button
-          class="rs-btn"
-          [class.rs-btn--active]="activePanelId === 'seats'"
-          title="Chọn ghế"
-          (click)="togglePanel('seats')"
-        >
-          <i class="fa-solid fa-couch" aria-hidden="true"></i>
-          <span>Chọn ghế</span>
-        </button>
-
-        <!-- 3. Nội dung cá nhân -->
-        <button
-          class="rs-btn"
-          [class.rs-btn--active]="activePanelId === 'personal-media'"
-          title="Tải ảnh hoặc video cá nhân lên màn ảnh"
-          (click)="togglePanel('personal-media')"
-        >
-          <i class="fa-solid fa-photo-film" aria-hidden="true"></i>
-          <span>Tải lên</span>
-        </button>
-
-        <!-- 4. Diễn đàn (guest list) -->
-        <button
-          class="rs-btn"
-          [class.rs-btn--active]="activePanelId === 'guests'"
-          title="Khán giả trong phòng"
-          (click)="togglePanel('guests')"
-        >
-          <i class="fa-solid fa-users" aria-hidden="true"></i>
-          <span>Diễn đàn</span>
-          @if (guestCount > 0) {
-            <span class="rs-badge">{{ guestCount }}</span>
-          }
-        </button>
-
-        <!-- 5. Hàng chờ -->
-        <button
-          class="rs-btn rs-btn--highlight"
-          [class.rs-btn--active]="activePanelId === 'queue'"
-          title="Hàng chờ video"
-          (click)="togglePanel('queue')"
-        >
-          <i class="fa-solid fa-rectangle-list" aria-hidden="true"></i>
-          <span>Hàng chờ</span>
-          @if (queueCount > 0) {
-            <span class="rs-badge">{{ queueCount }}</span>
-          }
-        </button>
-
-        <!-- 6. Trò chuyện (chat) -->
-        <button
-          class="rs-btn"
-          [class.rs-btn--active]="activePanelId === 'chat'"
-          title="Chat phòng"
-          (click)="togglePanel('chat')"
-        >
-          <i class="fa-solid fa-comments" aria-hidden="true"></i>
-          <span>Trò chuyện</span>
-          @if (chatMessages.length > 0) {
-            <span class="rs-badge rs-badge--violet">{{ chatMessages.length }}</span>
-          }
-        </button>
-
-        <!-- 7. Tủ đồ (wardrobe) -->
-        <button
-          class="rs-btn"
-          [class.rs-btn--active]="activePanelId === 'wardrobe'"
-          title="Tùy chỉnh nhân vật"
-          (click)="togglePanel('wardrobe')"
-        >
-          <i class="fa-solid fa-user-astronaut" aria-hidden="true"></i>
-          <span>Tủ đồ</span>
-        </button>
-
-        <!-- Động tác avatar -->
-        <button
-          class="rs-btn rs-btn--dance"
-          [class.rs-btn--active]="activePanelId === 'dance' || myDanceAction !== 'idle'"
-          title="Chọn động tác cho nhân vật"
-          (click)="togglePanel('dance')"
-        >
-          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-          <span>Hành động</span>
-        </button>
-
-        <!-- Phòng riêng đặt ngay trước nút ủng hộ -->
-        <button
-          class="rs-btn rs-btn--private"
-          title="Tạo hoặc tham gia phòng riêng"
-          (click)="openPrivateRoom()"
+          type="button"
+          class="tb-btn lobby-return-btn"
+          title="Quay về sảnh"
+          (click)="returnToLobby()"
         >
           <i class="fa-solid fa-door-open" aria-hidden="true"></i>
-          <span>Phòng riêng</span>
         </button>
-
-        <!-- 8. Ủng hộ (support) -->
+        <button class="tb-btn" title="Chia sẻ phòng" (click)="copyRoomLink()">
+          <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+        </button>
+        <button class="tb-btn" title="Toàn màn hình" (click)="toggleFullscreen()">
+          <i class="fa-solid fa-expand" aria-hidden="true"></i>
+        </button>
         <button
-          class="rs-btn"
-          [class.rs-btn--active]="donationModalOpen"
-          title="Ủng hộ admin"
-          (click)="toggleDonationModal()"
+          type="button"
+          class="tb-btn mobile-action-trigger"
+          title="Mở bảng điều khiển"
+          aria-label="Mở bảng điều khiển phòng"
+          aria-controls="right-sidebar"
+          [attr.aria-expanded]="mobileActionMenuOpen"
+          (click)="toggleMobileActionMenu()"
         >
-          <i class="fa-solid fa-heart" aria-hidden="true"></i>
-          <span>ủng hộ</span>
+          <i class="fa-solid fa-bars-staggered" aria-hidden="true"></i>
         </button>
-      }
-    </aside>
-  </div>
-
-  <!--BOTTOM BAR-->
-  <footer class="cinema-bottombar">
-    <div class="bottom-left">
-      <button class="bl-btn" title="Chế độ phòng">
-        <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
-      </button>
-      <button class="bl-btn" title="Danh sách người dùng" (click)="togglePanel('guests')">
-        <i class="fa-solid fa-users" aria-hidden="true"></i>
-      </button>
-      <button class="bl-btn" title="Chat" (click)="togglePanel('chat')">
-        <i class="fa-solid fa-comments" aria-hidden="true"></i>
-      </button>
-    </div>
-
-    <div class="bottom-center">
-      <button class="chat-emoji-btn" (click)="togglePanel('chat')" title="Mở trò chuyện">
-        <i class="fa-solid fa-comments" aria-hidden="true"></i>
-      </button>
-      <input
-        class="chat-input"
-        type="text"
-        [formControl]="footerChatControl"
-        [placeholder]="
-          !chatApproved
-            ? 'Chat cần admin duyệt'
-            : connected
-              ? currentRoom === 'gym'
-                ? 'Nói gì với mọi người...'
-                : 'Nói gì với cả rạp đi...'
-              : 'Đang kết nối lại…'
-        "
-        maxlength="100"
-        (keydown.enter)="sendChat()"
-      />
-      <button
-        type="button"
-        class="chat-picker-toggle"
-        (click)="toggleChatEmojiPicker('footer')"
-        [attr.aria-expanded]="chatEmojiPicker === 'footer'"
-        aria-label="Chọn icon cho tin nhắn"
-        title="Chèn icon"
-      >
-        <i class="fa-regular fa-face-smile" aria-hidden="true"></i>
-      </button>
-      <span class="chat-count">{{ footerChatControl.value.length }}/100</span>
-      <button class="chat-send-btn" (click)="sendChat()" [disabled]="!canChat" title="Gửi">
-        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-      </button>
-      @if (chatEmojiPicker === 'footer') {
-        <div class="chat-emoji-picker footer-emoji-picker" role="group" aria-label="Icon tin nhắn">
-          @for (emoji of chatEmojis; track emoji) {
-            <button
-              type="button"
-              (click)="insertChatEmoji(emoji)"
-              [attr.aria-label]="'Chèn ' + emoji"
+        <div class="header-info-control">
+          <button
+            type="button"
+            class="tb-btn"
+            title="Thông tin"
+            [attr.aria-label]="
+              'Hướng dẫn sử dụng ' + (currentRoom === 'gym' ? 'Healing Fitness' : 'Healing Ciné')
+            "
+            [attr.aria-expanded]="infoPanelOpen"
+            aria-controls="cinema-info-panel"
+            (click)="toggleInfoPanel()"
+          >
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          </button>
+          @if (infoPanelOpen) {
+            <section
+              id="cinema-info-panel"
+              class="header-info-panel"
+              aria-label="Hướng dẫn sử dụng"
             >
-              {{ emoji }}
-            </button>
+              <header>
+                <div>
+                  <span>HƯỚNG DẪN</span>
+                  <h2>{{ currentRoom === 'gym' ? 'Healing Fitness' : 'Healing Ciné' }}</h2>
+                </div>
+                <button type="button" aria-label="Đóng hướng dẫn" (click)="toggleInfoPanel()">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              </header>
+              @if (currentRoom === 'gym') {
+                <ul>
+                  <li>
+                    <i class="fa-solid fa-dumbbell" aria-hidden="true"></i> Chọn máy tập trong phòng
+                    để đưa nhân vật đến vị trí đó.
+                  </li>
+                  <li>
+                    <i class="fa-solid fa-person-running" aria-hidden="true"></i> Dùng bảng điều
+                    khiển của máy để bắt đầu hoặc kết thúc bài tập.
+                  </li>
+                  <li>
+                    <i class="fa-solid fa-film" aria-hidden="true"></i> Chuyển sang phòng chiếu phim
+                    từ nút đổi phòng.
+                  </li>
+                </ul>
+              } @else {
+                <ul>
+                  <li>
+                    <i class="fa-solid fa-chair" aria-hidden="true"></i> Chọn ghế để nhân vật vào
+                    chỗ; bấm ghế khác để di chuyển.
+                  </li>
+                  <li>
+                    <i class="fa-solid fa-gamepad movement-help-icon" aria-hidden="true"></i> Điều
+                    khiển nhân vật bằng W A S D, phím mũi tên hoặc cụm nút di chuyển trong rạp.
+                  </li>
+                  <li>
+                    <i class="fa-solid fa-list" aria-hidden="true"></i> Mở các tab bên phải để xem
+                    hàng chờ, khán giả, trò chuyện và hành động.
+                  </li>
+                  <li>
+                    <i class="fa-solid fa-photo-film" aria-hidden="true"></i> Nội dung cá nhân cho
+                    phép tải ảnh hoặc video ngắn lên màn chiếu.
+                  </li>
+                  <li>
+                    <i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Chia sẻ liên kết để
+                    mời bạn bè vào cùng phòng.
+                  </li>
+                </ul>
+              }
+              <p class="header-info-footer">
+                Cần tài khoản và số dư ví cho một số tính năng trả phí.
+              </p>
+            </section>
           }
         </div>
+        <button
+          type="button"
+          class="topbar-action"
+          (click)="openTasksModal()"
+          title="Nhiệm vụ nhận EXP"
+        >
+          <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>Nhiệm vụ</span>
+        </button>
+        <button
+          type="button"
+          class="topbar-wallet"
+          (click)="toggleDonationModal()"
+          title="Số dư ví ủng hộ"
+        >
+          <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+          <span>{{ formatWalletAmount(walletBalance) }}</span>
+        </button>
+        <button
+          type="button"
+          class="topbar-vip"
+          (click)="openCharacterEntry()"
+          [attr.aria-label]="vipHeaderAriaLabel"
+          [title]="vipHeaderTitle"
+        >
+          <i class="fa-solid fa-crown" aria-hidden="true"></i>
+          <span class="topbar-vip-label">VIP {{ myVipLevel }}</span>
+          <span class="topbar-vip-track" aria-hidden="true">
+            <span [style.width.%]="vipProgressPercent"></span>
+          </span>
+        </button>
+        <button
+          type="button"
+          class="user-profile-badge"
+          (click)="openCharacterEntry()"
+          aria-label="Tùy chỉnh nhân vật trước khi vào rạp"
+          title="Tùy chỉnh nhân vật"
+        >
+          <span class="user-profile-name">{{ guestName }}</span>
+        </button>
+        @if (currentUser) {
+          <button class="tb-btn tb-btn-auth logout-btn" (click)="logout()" title="Đăng xuất">
+            <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>Đăng xuất</span>
+          </button>
+        }
+        @if (!currentUser) {
+          <button class="tb-btn-primary" (click)="openAuthModal('login')">Đăng nhập</button>
+        }
+      </div>
+    </header>
+
+    <!-- ═══════ BODY ═══════ -->
+    <div class="cinema-body">
+      <!-- LEFT SIDEBAR -->
+      <aside class="left-sidebar" [class.room-mode-hidden]="currentRoom === 'gym'">
+        <div class="sidebar-section">
+          <p class="sidebar-eyebrow">TRÊN MÀN ẢNH</p>
+          @if (state?.playback?.videoId) {
+            <div class="sidebar-poster-wrap">
+              <img
+                class="sidebar-poster"
+                [src]="screenPosterUrl(state!.playback)"
+                [alt]="state!.playback.title"
+                loading="lazy"
+              />
+              <span class="sidebar-poster-badge"
+                ><i class="fa-solid fa-play" aria-hidden="true"></i> Đang chiếu</span
+              >
+            </div>
+          }
+          <h2 class="sidebar-title">
+            {{ state?.playback?.title ?? 'Đang chuẩn bị phòng chiếu…' }}
+          </h2>
+          <div class="sidebar-meta">
+            <span class="sidebar-source">
+              <i
+                class="fa-solid"
+                [class.fa-list-ol]="state?.playback?.source === 'queue'"
+                [class.fa-photo-film]="state?.playback?.source?.startsWith('personal-')"
+                [class.fa-radio]="state?.playback?.source === 'lofi'"
+                aria-hidden="true"
+              ></i>
+              {{ playbackSourceLabel(state?.playback?.source) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Vote skip (Backend processed: cần >= 90% số người đồng ý) -->
+        <div class="vote-section">
+          <button class="vote-btn" (click)="voteSkip()" [class.voted]="hasVotedSkip">
+            <span class="vote-icon"
+              ><i class="fa-solid fa-forward-step" aria-hidden="true"></i
+            ></span>
+            <span class="vote-label">Vote bỏ qua <small>(≥90%)</small></span>
+            <strong>{{ skipVotes }}/{{ minSkipVotes }}</strong>
+          </button>
+          <div class="vote-bar-wrap">
+            <div class="vote-bar" [style.width.%]="skipPercent"></div>
+          </div>
+        </div>
+
+        <!-- Reaction buttons -->
+        <div class="sidebar-section">
+          <p class="sidebar-eyebrow">PHẢN ỨNG</p>
+          <div class="reaction-grid">
+            @for (emoji of reactionEmojis; track emoji) {
+              <button class="reaction-emoji-btn" (click)="sendReactionEmoji(emoji)" [title]="emoji">
+                {{ emoji }}
+              </button>
+            }
+          </div>
+        </div>
+      </aside>
+
+      <!-- 3D SCENE + YOUTUBE CINEMA SCREEN -->
+      <div
+        class="scene-area"
+        [class.outdoor-scene]="outdoorCinemaMode"
+        [class.gym-active]="currentRoom === 'gym'"
+      >
+        <!-- YouTube Screen đặt phía sau (z-index: 1, không box shadow) -->
+        <div class="cinema-screen-overlay" [class.room-mode-hidden]="currentRoom === 'gym'">
+          <div #playerHost id="youtube-embed-screen"></div>
+          @if (showOutdoorScreenLoading) {
+            <div class="outdoor-screen-loading" role="status" aria-live="polite">
+              <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+              <span>Đang tải video</span>
+            </div>
+          }
+        </div>
+
+        <!-- Three.js Visualizer / 3D Auditorium Room đặt phía trên (z-index: 2) để ánh đèn, quả cầu disco và loa nằm trên màn hình -->
+        <app-three-cinema
+          [class.room-mode-hidden]="currentRoom === 'gym'"
+          [state]="state"
+          [sessionId]="sessionId"
+          [discoEnabled]="discoEnabled"
+          [environment]="outdoorCinemaMode ? 'outdoor' : 'indoor'"
+          (seatSelected)="claimSeat($event)"
+          (environmentChanged)="onCinemaEnvironmentChanged($event)"
+        ></app-three-cinema>
+
+        <app-gym-room
+          [class.room-mode-hidden]="currentRoom !== 'gym'"
+          [active]="currentRoom === 'gym'"
+          [guest]="myGuest"
+          [displayName]="guestName"
+          (exitGym)="switchRoom('cinema')"
+        ></app-gym-room>
+
+        @if (currentRoom === 'cinema') {
+          <section class="character-movement-controls" aria-label="Điều khiển di chuyển nhân vật">
+            <span class="movement-control-label">DI CHUYỂN</span>
+            <div class="movement-control-pad">
+              <button
+                type="button"
+                title="Đi lên (W hoặc mũi tên lên)"
+                aria-label="Đi lên"
+                (click)="moveCharacterBy('up')"
+              >
+                <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
+                title="Đi sang trái (A hoặc mũi tên trái)"
+                aria-label="Đi sang trái"
+                (click)="moveCharacterBy('left')"
+              >
+                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
+                title="Đi xuống (S hoặc mũi tên xuống)"
+                aria-label="Đi xuống"
+                (click)="moveCharacterBy('down')"
+              >
+                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
+                title="Đi sang phải (D hoặc mũi tên phải)"
+                aria-label="Đi sang phải"
+                (click)="moveCharacterBy('right')"
+              >
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+              </button>
+            </div>
+            <small>W A S D · ↑ ↓ ← →</small>
+          </section>
+        }
+
+        <!-- Nút nổi bật để bật âm thanh khi trình duyệt autoplay ở chế độ tắt tiếng -->
+        @if (videoPlaybackError !== null && currentRoom === 'cinema') {
+          <button class="unmute-banner" (click)="openCurrentVideoOnYouTube()">
+            <span class="unmute-icon"
+              ><i class="fa-solid fa-circle-play" aria-hidden="true"></i
+            ></span>
+            <span>Video lỗi ({{ videoPlaybackError }}). Mở trên YouTube</span>
+          </button>
+        } @else if ((isMuted || autoplayBlocked) && currentRoom === 'cinema') {
+          <button class="unmute-banner" (click)="unmuteAudio()">
+            <span class="unmute-icon"
+              ><i class="fa-solid fa-volume-high" aria-hidden="true"></i
+            ></span>
+            <span>{{ autoplayBlocked ? 'Chạm để phát video' : 'Chạm để bật âm thanh rạp' }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- RIGHT SIDEBAR -->
+      @if (mobileActionMenuOpen) {
+        <button
+          type="button"
+          class="mobile-menu-backdrop"
+          aria-label="Đóng bảng điều khiển"
+          (click)="closeMobileActionMenu()"
+        ></button>
       }
+      <aside
+        id="right-sidebar"
+        class="right-sidebar"
+        [class.mobile-dropdown-open]="mobileActionMenuOpen"
+      >
+        <button
+          class="rs-btn room-switch-btn"
+          [class.rs-btn--active]="currentRoom === 'cinema'"
+          title="Chuyển đến phòng xem phim"
+          (click)="switchRoom('cinema')"
+        >
+          <i class="fa-solid fa-film" aria-hidden="true"></i><span>Rạp phim</span>
+        </button>
+        <button
+          class="rs-btn room-switch-btn"
+          [class.rs-btn--active]="currentRoom === 'gym'"
+          title="Chuyển đến phòng gym"
+          (click)="switchRoom('gym')"
+        >
+          <i class="fa-solid fa-dumbbell" aria-hidden="true"></i>
+          <span>Phòng gym</span>
+        </button>
+
+        @if (currentRoom === 'cinema') {
+          <!-- 2. Chọn ghế -->
+          <button
+            class="rs-btn"
+            [class.rs-btn--active]="activePanelId === 'seats'"
+            title="Chọn ghế"
+            (click)="togglePanel('seats')"
+          >
+            <i class="fa-solid fa-couch" aria-hidden="true"></i>
+            <span>Chọn ghế</span>
+          </button>
+
+          <!-- 3. Nội dung cá nhân -->
+          <button
+            class="rs-btn"
+            [class.rs-btn--active]="activePanelId === 'personal-media'"
+            title="Tải ảnh hoặc video cá nhân lên màn ảnh"
+            (click)="togglePanel('personal-media')"
+          >
+            <i class="fa-solid fa-photo-film" aria-hidden="true"></i>
+            <span>Tải lên</span>
+          </button>
+
+          <!-- 4. Diễn đàn (guest list) -->
+          <button
+            class="rs-btn"
+            [class.rs-btn--active]="activePanelId === 'guests'"
+            title="Khán giả trong phòng"
+            (click)="togglePanel('guests')"
+          >
+            <i class="fa-solid fa-users" aria-hidden="true"></i>
+            <span>Diễn đàn</span>
+            @if (guestCount > 0) {
+              <span class="rs-badge">{{ guestCount }}</span>
+            }
+          </button>
+
+          <!-- 5. Hàng chờ -->
+          <button
+            class="rs-btn rs-btn--highlight"
+            [class.rs-btn--active]="activePanelId === 'queue'"
+            title="Hàng chờ video"
+            (click)="togglePanel('queue')"
+          >
+            <i class="fa-solid fa-rectangle-list" aria-hidden="true"></i>
+            <span>Hàng chờ</span>
+            @if (queueCount > 0) {
+              <span class="rs-badge">{{ queueCount }}</span>
+            }
+          </button>
+
+          <!-- 6. Trò chuyện (chat) -->
+          <button
+            class="rs-btn"
+            [class.rs-btn--active]="activePanelId === 'chat'"
+            title="Chat phòng"
+            (click)="togglePanel('chat')"
+          >
+            <i class="fa-solid fa-comments" aria-hidden="true"></i>
+            <span>Trò chuyện</span>
+            @if (chatMessages.length > 0) {
+              <span class="rs-badge rs-badge--violet">{{ chatMessages.length }}</span>
+            }
+          </button>
+
+          <!-- 7. Tủ đồ (wardrobe) -->
+          <button
+            class="rs-btn"
+            [class.rs-btn--active]="activePanelId === 'wardrobe'"
+            title="Tùy chỉnh nhân vật"
+            (click)="togglePanel('wardrobe')"
+          >
+            <i class="fa-solid fa-user-astronaut" aria-hidden="true"></i>
+            <span>Tủ đồ</span>
+          </button>
+
+          <!-- Động tác avatar -->
+          <button
+            class="rs-btn rs-btn--dance"
+            [class.rs-btn--active]="activePanelId === 'dance' || myDanceAction !== 'idle'"
+            title="Chọn động tác cho nhân vật"
+            (click)="togglePanel('dance')"
+          >
+            <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+            <span>Hành động</span>
+          </button>
+
+          <!-- Phòng riêng đặt ngay trước nút ủng hộ -->
+          <button
+            class="rs-btn rs-btn--private"
+            title="Tạo hoặc tham gia phòng riêng"
+            (click)="openPrivateRoom()"
+          >
+            <i class="fa-solid fa-door-open" aria-hidden="true"></i>
+            <span>Phòng riêng</span>
+          </button>
+
+          <!-- 8. Ủng hộ (support) -->
+          <button
+            class="rs-btn"
+            [class.rs-btn--active]="donationModalOpen"
+            title="Ủng hộ admin"
+            (click)="toggleDonationModal()"
+          >
+            <i class="fa-solid fa-heart" aria-hidden="true"></i>
+            <span>ủng hộ</span>
+          </button>
+        }
+      </aside>
     </div>
 
-    @if (currentRoom === 'cinema') {
-      <div class="bottom-right">
-        <button class="br-btn" title="Cài đặt" (click)="togglePanel('wardrobe')">
-          <i class="fa-solid fa-gear" aria-hidden="true"></i>
+    <!--BOTTOM BAR-->
+    <footer class="cinema-bottombar">
+      <div class="bottom-left">
+        <button class="bl-btn" title="Chế độ phòng">
+          <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
         </button>
-        <button
-          class="br-btn"
-          [class.br-btn--active]="discoEnabled"
-          [title]="discoEnabled ? 'Tắt quả cầu disco' : 'Bật quả cầu disco'"
-          [attr.aria-label]="discoEnabled ? 'Tắt quả cầu disco' : 'Bật quả cầu disco'"
-          (click)="toggleDisco()"
-        >
-          <i class="fa-solid fa-compact-disc" aria-hidden="true"></i>
+        <button class="bl-btn" title="Danh sách người dùng" (click)="togglePanel('guests')">
+          <i class="fa-solid fa-users" aria-hidden="true"></i>
         </button>
-        <button
-          class="br-btn"
-          [title]="isMuted || volumeLevel === 0 ? 'Bật âm thanh' : 'Tắt âm thanh'"
-          (click)="toggleMute()"
-        >
-          @if (!isMuted && volumeLevel > 0) {
-            <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
-          }
-          @if (isMuted || volumeLevel === 0) {
-            <i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>
-          }
+        <button class="bl-btn" title="Chat" (click)="togglePanel('chat')">
+          <i class="fa-solid fa-comments" aria-hidden="true"></i>
         </button>
-        <div class="volume-slider-wrap">
-          <input
-            type="range"
-            class="volume-slider"
-            min="0"
-            max="100"
-            step="1"
-            [formControl]="volumeControl"
-            (input)="onVolumeInput()"
-            [title]="'Âm lượng cá nhân: ' + (isMuted ? 0 : volumeLevel) + '%'"
-          />
-        </div>
-        <span class="volume-value">{{ isMuted ? 0 : volumeLevel }}%</span>
       </div>
-    }
-  </footer>
-</div>
+
+      <div class="bottom-center">
+        <button class="chat-emoji-btn" (click)="togglePanel('chat')" title="Mở trò chuyện">
+          <i class="fa-solid fa-comments" aria-hidden="true"></i>
+        </button>
+        <input
+          class="chat-input"
+          type="text"
+          [formControl]="footerChatControl"
+          [placeholder]="
+            !chatApproved
+              ? 'Chat cần admin duyệt'
+              : connected
+                ? currentRoom === 'gym'
+                  ? 'Nói gì với mọi người...'
+                  : 'Nói gì với cả rạp đi...'
+                : 'Đang kết nối lại…'
+          "
+          maxlength="100"
+          (keydown.enter)="sendChat()"
+        />
+        <button
+          type="button"
+          class="chat-picker-toggle"
+          (click)="toggleChatEmojiPicker('footer')"
+          [attr.aria-expanded]="chatEmojiPicker === 'footer'"
+          aria-label="Chọn icon cho tin nhắn"
+          title="Chèn icon"
+        >
+          <i class="fa-regular fa-face-smile" aria-hidden="true"></i>
+        </button>
+        <span class="chat-count">{{ footerChatControl.value.length }}/100</span>
+        <button class="chat-send-btn" (click)="sendChat()" [disabled]="!canChat" title="Gửi">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+        </button>
+        @if (chatEmojiPicker === 'footer') {
+          <div
+            class="chat-emoji-picker footer-emoji-picker"
+            role="group"
+            aria-label="Icon tin nhắn"
+          >
+            @for (emoji of chatEmojis; track emoji) {
+              <button
+                type="button"
+                (click)="insertChatEmoji(emoji)"
+                [attr.aria-label]="'Chèn ' + emoji"
+              >
+                {{ emoji }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (currentRoom === 'cinema') {
+        <div class="bottom-right">
+          <button class="br-btn" title="Cài đặt" (click)="togglePanel('wardrobe')">
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+          </button>
+          <button
+            class="br-btn"
+            [class.br-btn--active]="discoEnabled"
+            [title]="discoEnabled ? 'Tắt quả cầu disco' : 'Bật quả cầu disco'"
+            [attr.aria-label]="discoEnabled ? 'Tắt quả cầu disco' : 'Bật quả cầu disco'"
+            (click)="toggleDisco()"
+          >
+            <i class="fa-solid fa-compact-disc" aria-hidden="true"></i>
+          </button>
+          <button
+            class="br-btn"
+            [title]="isMuted || volumeLevel === 0 ? 'Bật âm thanh' : 'Tắt âm thanh'"
+            (click)="toggleMute()"
+          >
+            @if (!isMuted && volumeLevel > 0) {
+              <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+            }
+            @if (isMuted || volumeLevel === 0) {
+              <i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>
+            }
+          </button>
+          <div class="volume-slider-wrap">
+            <input
+              type="range"
+              class="volume-slider"
+              min="0"
+              max="100"
+              step="1"
+              [formControl]="volumeControl"
+              (input)="onVolumeInput()"
+              [title]="'Âm lượng cá nhân: ' + (isMuted ? 0 : volumeLevel) + '%'"
+            />
+          </div>
+          <span class="volume-value">{{ isMuted ? 0 : volumeLevel }}%</span>
+        </div>
+      }
+    </footer>
+  </div>
 }
 
 @if (privateRoomModalOpen) {

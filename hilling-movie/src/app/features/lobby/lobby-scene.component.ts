@@ -21,9 +21,21 @@ import type { LobbyCinemaEnvironment } from './lobby-page.component';
   template: '<div #host class="lobby-scene-host" aria-label="Sảnh chờ 3D"></div>',
   styles: [
     `
-      :host { position: absolute; inset: 0; display: block; overflow: hidden; }
-      .lobby-scene-host { width: 100%; height: 100%; }
-      .lobby-scene-host canvas { display: block; width: 100%; height: 100%; }
+      :host {
+        position: absolute;
+        inset: 0;
+        display: block;
+        overflow: hidden;
+      }
+      .lobby-scene-host {
+        width: 100%;
+        height: 100%;
+      }
+      .lobby-scene-host canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
     `,
   ],
 })
@@ -292,16 +304,25 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     const shaftHeight = height - 1.08;
     const shaftY = baseHeight + shaftHeight / 2;
 
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.75, radius * 1.95, baseHeight, 24), stone);
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius * 1.75, radius * 1.95, baseHeight, 24),
+      stone,
+    );
     base.position.y = baseHeight / 2;
     base.castShadow = true;
     base.receiveShadow = true;
     column.add(base);
-    const baseRing = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.56, radius * 1.75, 0.12, 24), trim);
+    const baseRing = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius * 1.56, radius * 1.75, 0.12, 24),
+      trim,
+    );
     baseRing.position.y = baseHeight + 0.04;
     column.add(baseRing);
 
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.08, shaftHeight, 24), stone);
+    const shaft = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius * 1.08, shaftHeight, 24),
+      stone,
+    );
     shaft.position.y = shaftY;
     shaft.castShadow = true;
     shaft.receiveShadow = true;
@@ -314,17 +335,16 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
         new THREE.BoxGeometry(radius * 0.12, shaftHeight * 0.9, radius * 0.16),
         groove % 2 ? highlight : stone,
       );
-      flute.position.set(
-        Math.cos(angle) * radius * 0.94,
-        shaftY,
-        Math.sin(angle) * radius * 0.94,
-      );
+      flute.position.set(Math.cos(angle) * radius * 0.94, shaftY, Math.sin(angle) * radius * 0.94);
       flute.rotation.y = -angle;
       flute.castShadow = true;
       column.add(flute);
     }
 
-    const lowerCollar = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.2, radius * 1.1, 0.16, 24), trim);
+    const lowerCollar = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius * 1.2, radius * 1.1, 0.16, 24),
+      trim,
+    );
     lowerCollar.position.y = baseHeight + 0.17;
     column.add(lowerCollar);
     const capitalY = height - 0.42;
@@ -341,7 +361,10 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     );
     capitalTop.position.y = height - 0.14;
     column.add(capitalTop);
-    const abacus = new THREE.Mesh(new THREE.BoxGeometry(radius * 3.9, 0.17, radius * 3.9), highlight);
+    const abacus = new THREE.Mesh(
+      new THREE.BoxGeometry(radius * 3.9, 0.17, radius * 3.9),
+      highlight,
+    );
     abacus.position.y = height - 0.01;
     abacus.castShadow = true;
     column.add(abacus);
@@ -471,10 +494,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     });
     scene.add(this.box(0.075, 3.24, 0.1, 0xb78b58, x - 1.29, 1.72, z + 0.22, innerJamb));
     scene.add(this.box(0.075, 3.24, 0.1, 0xb78b58, x + 1.29, 1.72, z + 0.22, innerJamb));
-    const arch = new THREE.Mesh(
-      new THREE.TorusGeometry(1.48, 0.17, 12, 42, Math.PI),
-      wood,
-    );
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(1.48, 0.17, 12, 42, Math.PI), wood);
     arch.position.set(x, 3.48, z + 0.03);
     scene.add(arch);
     const innerArch = new THREE.Mesh(
@@ -488,7 +508,10 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
 
     const sign = new THREE.Mesh(
       new THREE.PlaneGeometry(2.5, 0.54),
-      new THREE.MeshBasicMaterial({ map: this.makeSignTexture(environment === 'outdoor' ? 'RẠP NGOÀI TRỜI' : 'RẠP KÍN'), transparent: true }),
+      new THREE.MeshBasicMaterial({
+        map: this.makeSignTexture(environment === 'outdoor' ? 'RẠP NGOÀI TRỜI' : 'RẠP KÍN'),
+        transparent: true,
+      }),
     );
     sign.position.set(x, 4.65, z + 0.12);
     scene.add(sign);
@@ -503,7 +526,12 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       );
       moon.position.set(x + 0.72, 2.82, z + 0.025);
       scene.add(moon);
-      for (const [dx, dy] of [[-0.8, 0.45], [-0.15, 0.72], [0.3, 0.2], [0.98, -0.12]]) {
+      for (const [dx, dy] of [
+        [-0.8, 0.45],
+        [-0.15, 0.72],
+        [0.3, 0.2],
+        [0.98, -0.12],
+      ]) {
         const star = new THREE.Mesh(
           new THREE.SphereGeometry(0.045, 8, 6),
           new THREE.MeshBasicMaterial({ color: 0xffe5aa }),
@@ -527,7 +555,11 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
 
     const threshold = this.box(3.2, 0.06, 1.2, accent, x, 0.025, -4.9);
     scene.add(threshold);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xb18c5e, metalness: 0.52, roughness: 0.32 });
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xb18c5e,
+      metalness: 0.52,
+      roughness: 0.32,
+    });
     scene.add(this.box(2.85, 0.08, 0.1, 0xb18c5e, x, 0.07, -5.53, mat));
     scene.add(this.box(2.4, 0.045, 1.05, 0x302725, x, 0.04, -5.95));
     const welcomeLight = new THREE.PointLight(accent, 11, 4.5, 2);
@@ -536,9 +568,17 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   }
 
   private addBench(scene: THREE.Scene, x: number): void {
-    const wood = new THREE.MeshStandardMaterial({ color: 0x5a4035, roughness: 0.4, metalness: 0.08 });
+    const wood = new THREE.MeshStandardMaterial({
+      color: 0x5a4035,
+      roughness: 0.4,
+      metalness: 0.08,
+    });
     const velvet = new THREE.MeshStandardMaterial({ color: 0x704a46, roughness: 0.94 });
-    const piping = new THREE.MeshStandardMaterial({ color: 0xb79669, metalness: 0.48, roughness: 0.42 });
+    const piping = new THREE.MeshStandardMaterial({
+      color: 0xb79669,
+      metalness: 0.48,
+      roughness: 0.42,
+    });
     const bench = new THREE.Group();
     bench.position.set(x, 0, 1.5);
 

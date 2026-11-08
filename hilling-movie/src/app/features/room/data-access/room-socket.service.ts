@@ -350,7 +350,14 @@ export class RoomSocketService {
         const environment: RoomEnvironment = destination.endsWith('/state/gym')
           ? 'gym'
           : destination.endsWith('/state/outdoor') ? 'outdoor' : 'indoor';
-        const state = this.mapState(raw);
+        const mappedState = this.mapState(raw);
+        const currentState = this.statesByEnvironment.get(environment);
+        const state = currentState?.roomId === this.roomId
+          ? {
+              ...mappedState,
+              playback: this.preferLatestPlayback(mappedState.playback, currentState.playback),
+            }
+          : mappedState;
         this.statesByEnvironment.set(environment, state);
         if (environment === this.currentEnvironment) this.state$.next(state);
       } else if (destination.endsWith(`/joined/${this.clientId}`)) {
@@ -361,7 +368,14 @@ export class RoomSocketService {
         )
           return;
         this.sessionId$.next(joined.sessionId);
-        const state = this.mapState(joined.state);
+        const mappedState = this.mapState(joined.state);
+        const currentState = this.statesByEnvironment.get(this.currentEnvironment);
+        const state = currentState?.roomId === this.roomId
+          ? {
+              ...mappedState,
+              playback: this.preferLatestPlayback(mappedState.playback, currentState.playback),
+            }
+          : mappedState;
         this.statesByEnvironment.set(this.currentEnvironment, state);
         this.state$.next(state);
       } else if (destination.includes('/movement/')) {
@@ -401,16 +415,22 @@ export class RoomSocketService {
         const environment = destination.endsWith('/playback/outdoor') ? 'outdoor' : 'indoor';
         const current = this.statesByEnvironment.get(environment);
         if (current?.roomId === this.roomId) {
-          const updated = { ...current, playback };
-          this.statesByEnvironment.set(environment, updated);
-          if (environment === this.currentEnvironment) this.state$.next(updated);
+          const latestPlayback = this.preferLatestPlayback(playback, current.playback);
+          if (latestPlayback !== current.playback) {
+            const updated = { ...current, playback: latestPlayback };
+            this.statesByEnvironment.set(environment, updated);
+            if (environment === this.currentEnvironment) this.state$.next(updated);
+          }
         }
         if (environment === 'indoor' && this.currentEnvironment === 'gym') {
           const gymState = this.statesByEnvironment.get('gym');
           if (gymState) {
-            const updatedGymState = { ...gymState, playback };
-            this.statesByEnvironment.set('gym', updatedGymState);
-            this.state$.next(updatedGymState);
+            const latestPlayback = this.preferLatestPlayback(playback, gymState.playback);
+            if (latestPlayback !== gymState.playback) {
+              const updatedGymState = { ...gymState, playback: latestPlayback };
+              this.statesByEnvironment.set('gym', updatedGymState);
+              this.state$.next(updatedGymState);
+            }
           }
         }
       } else if (destination.endsWith(`/errors/${this.clientId}`)) {
@@ -419,6 +439,20 @@ export class RoomSocketService {
     } catch {
       this.error$.next('Máy chủ gửi dữ liệu phòng không hợp lệ.');
     }
+  }
+
+  /**
+   * State snapshots and playback ticks travel on separate WebSocket topics and can
+   * arrive out of order. Keep the latest timeline revision so an older position
+   * cannot rewind a video that is already playing.
+   */
+  private preferLatestPlayback(incoming: Playback, current?: Playback): Playback {
+    if (!current || incoming.roomId !== current.roomId) return incoming;
+    if (incoming.updatedAt < current.updatedAt) return current;
+    if (incoming.updatedAt === current.updatedAt && incoming.serverNow < current.serverNow) {
+      return current;
+    }
+    return incoming;
   }
 
   private mapState(raw: any): RoomState {
