@@ -113,7 +113,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
   private renderer?: THREE.WebGLRenderer;
   private lastPlaybackIdentity = '';
   private televisionEmbedKey = '';
-  private televisionEmbedUrl?: SafeResourceUrl;
+  private safeTelevisionUrl?: SafeResourceUrl;
   private readonly televisionCorners = [
     new THREE.Vector3(-1.7, -0.955, 0),
     new THREE.Vector3(1.7, 0.955, 0),
@@ -217,7 +217,7 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
     const videoId = playback?.videoId || 'Llw9Q6akRo4';
     const source = playback?.source || 'youtube';
     const key = `${source}:${videoId}:${playback?.playing ?? true}`;
-    if (key !== this.televisionEmbedKey || !this.televisionEmbedUrl) {
+    if (key !== this.televisionEmbedKey || !this.safeTelevisionUrl) {
       const elapsed = playback?.playing
         ? Math.max(0, (playback.serverNow - playback.updatedAt) / 1000)
         : 0;
@@ -225,9 +225,9 @@ export class LobbySceneComponent implements AfterViewInit, OnChanges, OnDestroy 
       const autoplay = playback?.playing ?? true;
       const url = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=${autoplay ? 1 : 0}&mute=1&controls=1&start=${start}&rel=0&playsinline=1`;
       this.televisionEmbedKey = key;
-      this.televisionEmbedUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+      this.safeTelevisionUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
-    return this.televisionEmbedUrl!;
+    return this.safeTelevisionUrl!;
   }
 
   seekPersonalVideo(event: Event): void {
